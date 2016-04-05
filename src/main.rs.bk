@@ -1,0 +1,62 @@
+// extern crate math
+mod three_math;
+use three_math::Vector3;
+// use math::Vector3;
+
+fn foo(x: &Vector3, y: &Vector3) {
+    println!("{:?}", x.x + y.x);
+}
+
+fn main () {
+    let      mut origin = Vector3 {
+        x:  0.0,
+        y: 0.0,
+        z: 0.0,
+    };
+    let po = Vector3 {
+        x: 1.0,
+        y: 1.0,
+        z: 1.0,
+    };
+    let po2 = Vector3 {
+        x: 2.0,
+        y: 2.0,
+        z: 2.0,
+    };
+
+    println!("Начало координат находится в ({}, {}, {})",
+             &origin.x,
+             &origin.y,
+             &origin.z);
+
+
+    foo(&origin, &po);
+    origin.add_vectors(&po, &po2);
+    origin.add(&po);
+
+    println!("Начало координат находится в ({}, {}, {})",
+             &origin.x,
+             &origin.y,
+             &origin.z);
+    // println!("Угадайте число!");
+    //
+    // println!("Пожалуйста, введите предположение.");
+    //
+    // let mut guess = String::new();
+    //
+    // io::stdin().read_line(&mut guess)
+    //     .expect("Не удалось прочитать строку");
+    //
+    // println!("Ваша попытка: {}", guess);
+}
+
+// struct Point {
+//     x: i32,
+//     y: i32,
+// }
+//
+// fn main() {
+//     let origin = Point { x: 0, y: 0 }; // origin: Point
+//
+//     println!("Начало координат находится в ({}, {})", origin.x, origin.y);
+// }
