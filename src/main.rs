@@ -1,7 +1,7 @@
 // extern crate math
 mod math;
-use math::Vector::Vector3;
-use math::Vector::Vector;
+use math::vector::Vector3;
+use math::vector::Vector;
 // use math::Vector3;
 
 fn foo(x: &Vector3, y: &Vector3) {

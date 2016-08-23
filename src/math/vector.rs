@@ -71,9 +71,9 @@ pub trait Vector {
 
     fn new() -> Self;
     fn newFrom(v: &Self) -> Self;
-    // .fromArray (array) this
-    // .setComponent (index, value) this
-    // .getComponent (index)
+    fn fromArray(arr: &[f64; 3]) -> Self;
+    fn setComponent<'a, 'b>(&'b mut self, index: &'a i32, value: &'a f64) -> &'b mut Self;
+    fn getComponent(&self, index: &i32) -> &f64;
     // .angleTo (v)
     //
     // .setFromMatrixPosition ( m ) this
@@ -390,6 +390,46 @@ impl Vector for Vector3 {
         self.copy(tmpVector).multiplyScalar(dot);
 
         self
+    }
+
+    fn fromArray(arr: &[f64; 3]) -> Self {
+        Vector3 {
+            x: arr[0],
+            y: arr[1],
+            z: arr[2],
+        }
+    }
+
+    fn setComponent<'a, 'b>(&'b mut self, index: &'a i32, value: &'a f64) -> &'b mut Self {
+        let i = index.clone();
+        let val =  value.clone();
+
+        if i == 0 {
+            self.x = val;
+            return self;
+        }
+
+        if i == 1 {
+            self.y = val;
+            return self;
+        }
+
+        self.z = val;
+        self
+    }
+
+    fn getComponent(&self, index: &i32) -> &f64 {
+        let i = index.clone();
+
+        if i == 0 {
+            return &(self.x);
+        }
+
+        if i == 1 {
+            return &(self.y);
+        }
+
+        return &(self.z)
     }
 }
 

@@ -1,7 +1,10 @@
 // pub use self::vector3;
 // mod vector_3;
 #[allow(non_snake_case)]
-pub mod Vector;
+pub mod vector;
+// pub mod vector3;
+
+// pub use self::Vector3 as Vector32;
 
 // pub use Vector3::Vector3;
 // pub use Vector::Vector as ;
