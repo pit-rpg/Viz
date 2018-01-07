@@ -154,4 +154,8 @@ impl Vector for Vector2 {
         self.y += ( v.y - self.y ) * alpha;
 		self
     }
+
+    fn zero() -> Self {
+        Vector2{x:0.0,y:0.0}
+    }
 }

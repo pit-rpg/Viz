@@ -23,6 +23,7 @@ pub trait Vector {
     fn ceil(&mut self) -> &mut Self;
     fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self;
     fn lerp (&mut self, v: &Self,  alpha:f64 )-> &mut Self;
+    fn zero () -> Self;
 
     fn divideScalar(&mut self, s: f64) -> &mut Self {
         return self.multiplyScalar(1.0 / s);

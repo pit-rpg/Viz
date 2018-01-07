@@ -1,6 +1,8 @@
 // mod vector;
 //
 use math::Vector;
+use math::Matrix4;
+use math::Matrix3;
 
 #[derive(Clone, Debug, Copy)]
 pub struct Vector3 {
@@ -12,8 +14,8 @@ pub struct Vector3 {
 
 #[allow(dead_code)]
 impl Vector3 {
-    fn new(x: f64, y: f64, z: f64) -> Self {
-        Vector3 { x, y, z }
+    pub fn new() -> Self {
+        Vector3 { x: 0.0, y: 0.0, z: 0.0 }
     }
 
     pub fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
@@ -40,6 +42,48 @@ impl Vector3 {
         self.z = z;
         self
     }
+
+	pub fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
+        let i = index * 4;
+        self.from_array( &m.elements[i..i*4] );
+		self
+	}
+
+    // 	fromArray: function ( array, offset ) {
+    // 		if ( offset === undefined ) offset = 0;
+    // 		this.x = array[ offset ];
+    // 		this.y = array[ offset + 1 ];
+    // 		this.z = array[ offset + 2 ];
+    // 		return this;
+    // 	},
+	pub fn from_array (&mut self, array: &[f64] ) -> &mut Self {
+		self.x = array[ 0 ];
+		self.y = array[ 1 ];
+		self.z = array[ 2 ];
+        self
+	}
+
+	pub fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
+		let x = self.x; let y = self.y; let z = self.z;
+		let e = m.elements;
+		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
+
+        self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
+		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
+		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+
+        self
+	}
+
+
+	pub fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
+		let x = self.x; let y = self.y; let z = self.z;
+		let e = m.elements;
+		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
+		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
+		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
+		self
+	}
 }
 
 impl Vector for Vector3 {
@@ -194,6 +238,10 @@ impl Vector for Vector3 {
 		self
     }
 
+    fn zero() -> Self {
+        Vector3{x:0.0,y:0.0,z:0.0}
+    }
+
 }
 
 // 	clampScalar: function () {
@@ -281,19 +329,11 @@ impl Vector for Vector3 {
 // 		this.z = sz;
 // 		return this;
 // 	},
-// 	setFromMatrixColumn: function ( m, index ) {
-// 		return this.fromArray( m.elements, index * 4 );
-// 	},
+
 // 	equals: function ( v ) {
 // 		return ( ( v.x === this.x ) && ( v.y === this.y ) && ( v.z === this.z ) );
 // 	},
-// 	fromArray: function ( array, offset ) {
-// 		if ( offset === undefined ) offset = 0;
-// 		this.x = array[ offset ];
-// 		this.y = array[ offset + 1 ];
-// 		this.z = array[ offset + 2 ];
-// 		return this;
-// 	},
+
 // 	toArray: function ( array, offset ) {
 // 		if ( array === undefined ) array = [];
 // 		if ( offset === undefined ) offset = 0;
@@ -351,23 +391,8 @@ impl Vector for Vector3 {
 // 			return this.applyQuaternion( quaternion.setFromAxisAngle( axis, angle ) );
 // 		};
 // 	}(),
-// 	// 	applyMatrix3: function ( m ) {
-// 		var x = this.x, y = this.y, z = this.z;
-// 		var e = m.elements;
-// 		this.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
-// 		this.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
-// 		this.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
-// 		return this;
-// 	},
-// 	applyMatrix4: function ( m ) {
-// 		var x = this.x, y = this.y, z = this.z;
-// 		var e = m.elements;
-// 		var w = 1 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
-// 		this.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
-// 		this.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
-// 		this.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
-// 		return this;
-// 	},
+
+
 // 	applyQuaternion: function ( q ) {
 // 		var x = this.x, y = this.y, z = this.z;
 // 		var qx = q.x, qy = q.y, qz = q.z, qw = q.w;
@@ -386,14 +411,14 @@ impl Vector for Vector3 {
 // 		var matrix = new Matrix4();
 // 		return function project( camera ) {
 // 			matrix.multiplyMatrices( camera.projectionMatrix, matrix.getInverse( camera.matrixWorld ) );
-// 			return this.applyMatrix4( matrix );
+// 			return this.apply_matrix_4( matrix );
 // 		};
 // 	}(),
 // 	unproject: function () {
 // 		var matrix = new Matrix4();
 // 		return function unproject( camera ) {
 // 			matrix.multiplyMatrices( camera.matrixWorld, matrix.getInverse( camera.projectionMatrix ) );
-// 			return this.applyMatrix4( matrix );
+// 			return this.apply_matrix_4( matrix );
 // 		};
 // 	}(),
 // 	transformDirection: function ( m ) {

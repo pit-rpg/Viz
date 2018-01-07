@@ -1,4 +1,5 @@
 use math::Vector3;
+use math::Vector;
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
@@ -6,8 +7,19 @@ pub struct Matrix4 {
     pub elements: [f64; 16],
 }
 
+static IDENTITY: [f64; 16] = [  1.0, 0.0, 0.0, 0.0,
+                                0.0, 1.0, 0.0, 0.0,
+                                0.0, 0.0, 1.0, 0.0,
+                                0.0, 0.0, 0.0, 1.0];
+
 #[allow(dead_code)]
 impl Matrix4 {
+
+    pub fn new () -> Self {
+        Matrix4 {
+            elements: IDENTITY.clone()
+        }
+    }
 
     pub fn set ( &mut self, n11:f64, n12:f64, n13:f64, n14:f64, n21:f64, n22:f64, n23:f64, n24:f64, n31:f64, n32:f64, n33:f64, n34:f64, n41:f64, n42:f64, n43:f64, n44:f64 ) -> &mut Self {
     	let mut te = self.elements;
@@ -18,7 +30,7 @@ impl Matrix4 {
         self
     }
 
-	pub fn identity ( &mut self ) -> &Self {
+	pub fn identity ( &mut self ) ->  &mut Self {
 		self.set(
 			1.0, 0.0, 0.0, 0.0,
 			0.0, 1.0, 0.0, 0.0,
@@ -28,7 +40,7 @@ impl Matrix4 {
 		self
 	}
 
-	pub fn copy_position ( &mut self, m:Self  ) -> &Self {
+	pub fn copy_position ( &mut self, m:Self  ) ->  &mut Self {
 		let mut te = self.elements;
         let me = m.elements;
 		te[ 12 ] = me[ 12 ];
@@ -37,7 +49,7 @@ impl Matrix4 {
 		self
 	}
 
-    fn make_basis ( &mut self, x: Vector3, y: Vector3, z: Vector3 ) -> &Self {
+    pub fn make_basis ( &mut self, x: Vector3, y: Vector3, z: Vector3 ) -> &mut Self {
 		self.set(
 			x.x, y.x, z.x, 0.0,
 			x.y, y.y, z.y, 0.0,
@@ -47,6 +59,380 @@ impl Matrix4 {
 		self
     }
 
+	pub fn extract_basis (&self, x: &mut Vector3, y: &mut Vector3, z: &mut Vector3 ) -> &Self {
+		x.set_from_matrix_column( self, 0 );
+		y.set_from_matrix_column( self, 1 );
+		z.set_from_matrix_column( self, 2 );
+		self
+	}
+
+	pub fn makerotation_axis (&mut self, axis: &Vector3, angle: f64 ) -> &mut Self {
+		// Based on http://www.gamedev.net/reference/articles/article1199.asp
+		let c =  angle.cos();
+		let s = angle.sin();
+		let t = 1.0 - c;
+		let x = axis.x;
+        let y = axis.y;
+        let z = axis.z;
+		let tx = t * x;
+        let ty = t * y;
+		self.set(
+			tx * x + c, tx * y - s * z, tx * z + s * y, 0.0,
+			tx * y + s * z, ty * y + c, ty * z - s * x, 0.0,
+			tx * z - s * y, ty * z + s * x, t * z * z + c, 0.0,
+			0.0, 0.0, 0.0, 1.0
+		);
+		self
+	}
+
+	pub fn make_scale (&mut self, x:f64 , y:f64, z:f64 ) -> &mut Self {
+		self.set(
+			x, 0.0, 0.0, 0.0,
+			0.0, y, 0.0, 0.0,
+			0.0, 0.0, z, 0.0,
+			0.0, 0.0, 0.0, 1.0
+		);
+		self
+	}
+
+	pub fn make_shear (&mut self, x:f64 , y:f64, z:f64 ) -> &mut Self {
+		self.set(
+			1.0, y, z, 0.0,
+			x, 1.0, z, 0.0,
+			x, y, 1.0, 0.0,
+			0.0, 0.0, 0.0, 1.0
+		);
+		self
+	}
+
+	pub fn make_translation (&mut self, x:f64 , y:f64, z:f64 ) -> &mut Self {
+		self.set(
+			1.0, 0.0, 0.0, x,
+			0.0, 1.0, 0.0, y,
+			0.0, 0.0, 1.0, z,
+			0.0, 0.0, 0.0, 1.0
+		);
+		self
+	}
+
+    pub fn make_rotation_x(&mut self, theta: f64 ) -> &mut Self {
+    	let c =  theta.cos();
+        let s =  theta.sin();
+    	self.set(
+    		1.0, 0.0, 0.0, 0.0,
+    		0.0, c, - s, 0.0,
+    		0.0, s, c, 0.0,
+    		0.0, 0.0, 0.0, 1.0
+    	);
+    	self
+    }
+
+    pub fn make_rotation_y(&mut self, theta: f64 ) -> &mut Self {
+    	let c =  theta.cos();
+        let s =  theta.sin();
+    	self.set(
+    		 c, 0.0, s, 0.0,
+    		 0.0, 1.0, 0.0, 0.0,
+    		- s, 0.0, c, 0.0,
+    		 0.0, 0.0, 0.0, 1.0
+    	);
+    	self
+    }
+
+    pub fn make_rotation_z(&mut self, theta: f64 ) -> &mut Self {
+    	let c =  theta.cos();
+        let s =  theta.sin();
+    	self.set(
+    		c, - s, 0.0, 0.0,
+    		s, c, 0.0, 0.0,
+    		0.0, 0.0, 1.0, 0.0,
+    		0.0, 0.0, 0.0, 1.0
+    	);
+    	self
+    }
+
+	pub fn scale (&mut self, v: &Vector3 )-> &mut Self {
+		let mut te = self.elements;
+		let x = v.x;
+        let y = v.y;
+        let z = v.z;
+		te[ 0 ] *= x; te[ 4 ] *= y; te[ 8 ] *= z;
+		te[ 1 ] *= x; te[ 5 ] *= y; te[ 9 ] *= z;
+		te[ 2 ] *= x; te[ 6 ] *= y; te[ 10 ] *= z;
+		te[ 3 ] *= x; te[ 7 ] *= y; te[ 11 ] *= z;
+		self
+	}
+
+	pub fn function (&mut self, matrix: &Matrix4 ) -> bool {
+		let te = self.elements;
+		let me = matrix.elements;
+
+		for i in 0..17  {
+			if te[ i ] != me[ i ] {return false};
+		}
+		true
+	}
+
+	pub fn make_perspective (&mut self, left: f64, right: f64, top: f64, bottom: f64, near: f64, far: f64 ) -> &mut Self {
+		let mut te = self.elements;
+		let x = 2.0 * near / ( right - left );
+		let y = 2.0 * near / ( top - bottom );
+		let a = ( right + left ) / ( right - left );
+		let b = ( top + bottom ) / ( top - bottom );
+		let c = - ( far + near ) / ( far - near );
+		let d = - 2.0 * far * near / ( far - near );
+		te[ 0 ] = x;	te[ 4 ] = 0.0;	te[ 8 ] = a;	te[ 12 ] = 0.0;
+		te[ 1 ] = 0.0;	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = 0.0;
+		te[ 2 ] = 0.0;	te[ 6 ] = 0.0;	te[ 10 ] = c;	te[ 14 ] = d;
+		te[ 3 ] = 0.0;	te[ 7 ] = 0.0;	te[ 11 ] = - 1.0;	te[ 15 ] = 0.0;
+		self
+	}
+
+    pub fn make_orthographic (&mut self, left: f64, right: f64, top: f64, bottom: f64, near: f64, far: f64 ) -> &mut Self {
+		let mut te = self.elements;
+		let w = 1.0 / ( right - left );
+		let h = 1.0 / ( top - bottom );
+		let p = 1.0 / ( far - near );
+		let x = ( right + left ) * w;
+		let y = ( top + bottom ) * h;
+		let z = ( far + near ) * p;
+		te[ 0 ] = 2.0 * w ;	te[ 4 ] = 0.0;	te[ 8 ] = 0.0;	te[ 12 ] = - x;
+		te[ 1 ] = 0.0;	te[ 5 ] = 2.0 * h;	te[ 9 ] = 0.0;	te[ 13 ] = - y;
+		te[ 2 ] = 0.0;	te[ 6 ] = 0.0;	te[ 10 ] = - 2.0 * p;	te[ 14 ] = - z;
+		te[ 3 ] = 0.0;	te[ 7 ] = 0.0;	te[ 11 ] = 0.0;	te[ 15 ] = 1.0;
+		self
+    }
+
+	pub fn transpose (&mut self) -> &mut Self {
+		let mut te = self.elements;
+		let mut tmp;
+		tmp = te[ 1 ]; te[ 1 ] = te[ 4 ]; te[ 4 ] = tmp;
+		tmp = te[ 2 ]; te[ 2 ] = te[ 8 ]; te[ 8 ] = tmp;
+		tmp = te[ 6 ]; te[ 6 ] = te[ 9 ]; te[ 9 ] = tmp;
+		tmp = te[ 3 ]; te[ 3 ] = te[ 12 ]; te[ 12 ] = tmp;
+		tmp = te[ 7 ]; te[ 7 ] = te[ 13 ]; te[ 13 ] = tmp;
+		tmp = te[ 11 ]; te[ 11 ] = te[ 14 ]; te[ 14 ] = tmp;
+		self
+	}
+
+	pub fn set_position (&mut self, v: &Vector3 ) -> &mut Self {
+		let mut te = self.elements;
+		te[ 12 ] = v.x;
+		te[ 13 ] = v.y;
+		te[ 14 ] = v.z;
+		self
+	}
+
+    pub fn	extract_rotation (&mut self, m: &Self) -> &mut Self {
+		let mut  v1 =  Vector3::zero();
+
+		let mut te = self.elements;
+		let me = m.elements;
+		let scale_x = 1.0 / v1.set_from_matrix_column( m, 0 ).length();
+		let scale_y = 1.0 / v1.set_from_matrix_column( m, 1 ).length();
+		let scale_z = 1.0 / v1.set_from_matrix_column( m, 2 ).length();
+		te[ 0 ] = me[ 0 ] * scale_x;
+		te[ 1 ] = me[ 1 ] * scale_x;
+		te[ 2 ] = me[ 2 ] * scale_x;
+		te[ 4 ] = me[ 4 ] * scale_y;
+		te[ 5 ] = me[ 5 ] * scale_y;
+		te[ 6 ] = me[ 6 ] * scale_y;
+		te[ 8 ] = me[ 8 ] * scale_z;
+		te[ 9 ] = me[ 9 ] * scale_z;
+		te[ 10 ] = me[ 10 ] * scale_z;
+        self
+    }
+
+	pub fn multiply(&mut self,  m: &Self ) -> &mut Self {
+        let clone = &self.clone();
+		self.multiply_matrices( clone, m )
+	}
+
+    pub fn premultiply (&mut self, m: &Self ) -> &mut Self {
+        let clone = &self.clone();
+    	self.multiply_matrices( m, clone )
+    }
+
+	pub fn multiply_matrices (&mut self, a:&Self, b:&Self ) -> &mut Self {
+		let ae = a.elements;
+		let be = b.elements;
+		let mut te = self.elements;
+
+        let a11 = ae[ 0 ]; let a12 = ae[ 4 ]; let a13 = ae[ 8 ];  let a14 = ae[ 12 ];
+		let a21 = ae[ 1 ]; let a22 = ae[ 5 ]; let a23 = ae[ 9 ];  let a24 = ae[ 13 ];
+		let a31 = ae[ 2 ]; let a32 = ae[ 6 ]; let a33 = ae[ 10 ]; let a34 = ae[ 14 ];
+		let a41 = ae[ 3 ]; let a42 = ae[ 7 ]; let a43 = ae[ 11 ]; let a44 = ae[ 15 ];
+		let b11 = be[ 0 ]; let b12 = be[ 4 ]; let b13 = be[ 8 ];  let b14 = be[ 12 ];
+		let b21 = be[ 1 ]; let b22 = be[ 5 ]; let b23 = be[ 9 ];  let b24 = be[ 13 ];
+		let b31 = be[ 2 ]; let b32 = be[ 6 ]; let b33 = be[ 10 ]; let b34 = be[ 14 ];
+		let b41 = be[ 3 ]; let b42 = be[ 7 ]; let b43 = be[ 11 ]; let b44 = be[ 15 ];
+
+        te[ 0 ] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
+		te[ 4 ] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
+		te[ 8 ] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
+		te[ 12 ] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
+		te[ 1 ] = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
+		te[ 5 ] = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
+		te[ 9 ] = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
+		te[ 13 ] = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
+		te[ 2 ] = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
+		te[ 6 ] = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
+		te[ 10 ] = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
+		te[ 14 ] = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
+		te[ 3 ] = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
+		te[ 7 ] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
+		te[ 11 ] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
+		te[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
+
+        self
+	}
+
+	pub fn look_at (&mut self, eye: &Vector3, target: &Vector3, up: &Vector3 ) -> &mut Self {
+		let mut x = Vector3::zero();
+		let mut y = Vector3::zero();
+		let mut z = Vector3::zero();
+
+		let mut te = self.elements;
+
+        z.subVectors( eye, target );
+		if  z.lengthSq() == 0.0  {
+			// eye and target are in the same position
+			z.z = 1.0;
+		}
+		z.normalize();
+
+        x.cross_vectors( up, &z );
+
+        if  x.lengthSq() == 0.0  {
+			// up and z are parallel
+			if  up.z.abs() == 1.0  {
+				z.x += 0.0001;
+			} else {
+				z.z += 0.0001;
+			}
+
+			z.normalize();
+			x.cross_vectors( up, &z );
+		}
+
+        x.normalize();
+		y.cross_vectors( &z, &x );
+
+        te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
+		te[ 1 ] = x.y; te[ 5 ] = y.y; te[ 9 ] = z.y;
+		te[ 2 ] = x.z; te[ 6 ] = y.z; te[ 10 ] = z.z;
+
+        self
+	}
+
+
+	pub fn multiply_scalar ( &mut self, s: f64 ) -> &mut Self {
+		let mut te = self.elements;
+		te[ 0 ] *= s; te[ 4 ] *= s; te[ 8 ] *= s; te[ 12 ] *= s;
+		te[ 1 ] *= s; te[ 5 ] *= s; te[ 9 ] *= s; te[ 13 ] *= s;
+		te[ 2 ] *= s; te[ 6 ] *= s; te[ 10 ] *= s; te[ 14 ] *= s;
+		te[ 3 ] *= s; te[ 7 ] *= s; te[ 11 ] *= s; te[ 15 ] *= s;
+		self
+	}
+
+    pub fn determinant (&mut self) -> f64 {
+		let te = self.elements;
+		let n11 = te[ 0 ]; let n12 = te[ 4 ]; let n13 = te[ 8 ];  let n14 = te[ 12 ];
+		let n21 = te[ 1 ]; let n22 = te[ 5 ]; let n23 = te[ 9 ];  let n24 = te[ 13 ];
+		let n31 = te[ 2 ]; let n32 = te[ 6 ]; let n33 = te[ 10 ]; let n34 = te[ 14 ];
+		let n41 = te[ 3 ]; let n42 = te[ 7 ]; let n43 = te[ 11 ]; let n44 = te[ 15 ];
+		//TODO: make this more efficient
+		//( based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm )
+
+		n41 * (
+			  n14 * n23 * n32
+			- n13 * n24 * n32
+			- n14 * n22 * n33
+			+ n12 * n24 * n33
+			+ n13 * n22 * n34
+			- n12 * n23 * n34
+        ) +
+		n42 * (
+			  n11 * n23 * n34
+			 - n11 * n24 * n33
+			 + n14 * n21 * n33
+			 - n13 * n21 * n34
+			 + n13 * n24 * n31
+			 - n14 * n23 * n31
+		) +
+		n43 * (
+			  n11 * n24 * n32
+			 - n11 * n22 * n34
+			 - n14 * n21 * n32
+			 + n12 * n21 * n34
+			 + n14 * n22 * n31
+			 - n12 * n24 * n31
+		) +
+		n44 * (
+			- n13 * n22 * n31
+			 - n11 * n23 * n32
+			 + n11 * n22 * n33
+			 + n13 * n21 * n32
+			 - n12 * n21 * n33
+			 + n12 * n23 * n31
+		)
+	}
+
+    pub fn get_inverse (&mut self, m: &Self, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
+		// based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
+		let mut te = self.elements;
+		let	me = m.elements;
+		let n11 = me[ 0 ]; let n21 = me[ 1 ]; let n31 = me[ 2 ]; let n41 = me[ 3 ];
+		let n12 = me[ 4 ]; let n22 = me[ 5 ]; let n32 = me[ 6 ]; let n42 = me[ 7 ];
+		let n13 = me[ 8 ]; let n23 = me[ 9 ]; let n33 = me[ 10 ]; let n43 = me[ 11 ];
+		let n14 = me[ 12 ]; let n24 = me[ 13 ]; let n34 = me[ 14 ]; let n44 = me[ 15 ];
+		let t11 = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44;
+		let t12 = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44;
+		let t13 = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44;
+		let t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
+		let det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
+
+        if det == 0.0 {
+			let msg = "THREE.Matrix4: .getInverse() can't invert matrix, determinant is 0";
+            eprintln!("{}", msg);
+
+            if throw_on_degenerate == true {
+                return Err(msg);
+			}
+
+            return Ok(self.identity());
+		}
+
+        let det_inv = 1.0 / det;
+		te[ 0 ] = t11 * det_inv;
+		te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * det_inv;
+		te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * det_inv;
+		te[ 3 ] = ( n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43 ) * det_inv;
+		te[ 4 ] = t12 * det_inv;
+		te[ 5 ] = ( n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44 ) * det_inv;
+		te[ 6 ] = ( n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44 ) * det_inv;
+		te[ 7 ] = ( n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43 ) * det_inv;
+		te[ 8 ] = t13 * det_inv;
+		te[ 9 ] = ( n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44 ) * det_inv;
+		te[ 10 ] = ( n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44 ) * det_inv;
+		te[ 11 ] = ( n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43 ) * det_inv;
+		te[ 12 ] = t14 * det_inv;
+		te[ 13 ] = ( n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34 ) * det_inv;
+		te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * det_inv;
+		te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * det_inv;
+
+        Ok(self)
+	}
+
+	pub fn get_max_scale_on_axis (&self) -> f64 {
+		let te = self.elements;
+
+        let scale_xs_q = te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ];
+		let scale_ys_q = te[ 4 ] * te[ 4 ] + te[ 5 ] * te[ 5 ] + te[ 6 ] * te[ 6 ];
+		let scale_zs_q = te[ 8 ] * te[ 8 ] + te[ 9 ] * te[ 9 ] + te[ 10 ] * te[ 10 ];
+
+        return ( scale_xs_q.max(scale_ys_q).max(scale_zs_q) ).sqrt();
+	}
 }
 
 
@@ -77,33 +463,9 @@ impl Matrix4 {
 // }
 // Object.assign( Matrix4.prototype, {
 // 	isMatrix4: true,
-// 	extractBasis: function ( xAxis, yAxis, zAxis ) {
-// 		xAxis.setFromMatrixColumn( this, 0 );
-// 		yAxis.setFromMatrixColumn( this, 1 );
-// 		zAxis.setFromMatrixColumn( this, 2 );
-// 		return this;
-// 	},
 
-// 	extractRotation: function () {
-// 		var v1 = new Vector3();
-// 		return function extractRotation( m ) {
-// 			var te = this.elements;
-// 			var me = m.elements;
-// 			var scaleX = 1 / v1.setFromMatrixColumn( m, 0 ).length();
-// 			var scaleY = 1 / v1.setFromMatrixColumn( m, 1 ).length();
-// 			var scaleZ = 1 / v1.setFromMatrixColumn( m, 2 ).length();
-// 			te[ 0 ] = me[ 0 ] * scaleX;
-// 			te[ 1 ] = me[ 1 ] * scaleX;
-// 			te[ 2 ] = me[ 2 ] * scaleX;
-// 			te[ 4 ] = me[ 4 ] * scaleY;
-// 			te[ 5 ] = me[ 5 ] * scaleY;
-// 			te[ 6 ] = me[ 6 ] * scaleY;
-// 			te[ 8 ] = me[ 8 ] * scaleZ;
-// 			te[ 9 ] = me[ 9 ] * scaleZ;
-// 			te[ 10 ] = me[ 10 ] * scaleZ;
-// 			return this;
-// 		};
-// 	}(),
+
+
 // 	makeRotationFromEuler: function ( euler ) {
 // 		if ( ! ( euler && euler.isEuler ) ) {
 // 			console.error( 'THREE.Matrix4: .makeRotationFromEuler() now expects a Euler rotation rather than a Vector3 and order.' );
@@ -218,85 +580,7 @@ impl Matrix4 {
 // 		te[ 15 ] = 1;
 // 		return this;
 // 	},
-// 	lookAt: function () {
-// 		var x = new Vector3();
-// 		var y = new Vector3();
-// 		var z = new Vector3();
-// 		return function lookAt( eye, target, up ) {
-// 			var te = this.elements;
-// 			z.subVectors( eye, target );
-// 			if ( z.lengthSq() === 0 ) {
-// 				// eye and target are in the same position
-// 				z.z = 1;
-// 			}
-// 			z.normalize();
-// 			x.crossVectors( up, z );
-// 			if ( x.lengthSq() === 0 ) {
-// 				// up and z are parallel
-// 				if ( Math.abs( up.z ) === 1 ) {
-// 					z.x += 0.0001;
-// 				} else {
-// 					z.z += 0.0001;
-// 				}
-// 				z.normalize();
-// 				x.crossVectors( up, z );
-// 			}
-// 			x.normalize();
-// 			y.crossVectors( z, x );
-// 			te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
-// 			te[ 1 ] = x.y; te[ 5 ] = y.y; te[ 9 ] = z.y;
-// 			te[ 2 ] = x.z; te[ 6 ] = y.z; te[ 10 ] = z.z;
-// 			return this;
-// 		};
-// 	}(),
-// 	multiply: function ( m, n ) {
-// 		if ( n !== undefined ) {
-// 			console.warn( 'THREE.Matrix4: .multiply() now only accepts one argument. Use .multiplyMatrices( a, b ) instead.' );
-// 			return this.multiplyMatrices( m, n );
-// 		}
-// 		return this.multiplyMatrices( this, m );
-// 	},
-// 	premultiply: function ( m ) {
-// 		return this.multiplyMatrices( m, this );
-// 	},
-// 	multiplyMatrices: function ( a, b ) {
-// 		var ae = a.elements;
-// 		var be = b.elements;
-// 		var te = this.elements;
-// 		var a11 = ae[ 0 ], a12 = ae[ 4 ], a13 = ae[ 8 ], a14 = ae[ 12 ];
-// 		var a21 = ae[ 1 ], a22 = ae[ 5 ], a23 = ae[ 9 ], a24 = ae[ 13 ];
-// 		var a31 = ae[ 2 ], a32 = ae[ 6 ], a33 = ae[ 10 ], a34 = ae[ 14 ];
-// 		var a41 = ae[ 3 ], a42 = ae[ 7 ], a43 = ae[ 11 ], a44 = ae[ 15 ];
-// 		var b11 = be[ 0 ], b12 = be[ 4 ], b13 = be[ 8 ], b14 = be[ 12 ];
-// 		var b21 = be[ 1 ], b22 = be[ 5 ], b23 = be[ 9 ], b24 = be[ 13 ];
-// 		var b31 = be[ 2 ], b32 = be[ 6 ], b33 = be[ 10 ], b34 = be[ 14 ];
-// 		var b41 = be[ 3 ], b42 = be[ 7 ], b43 = be[ 11 ], b44 = be[ 15 ];
-// 		te[ 0 ] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
-// 		te[ 4 ] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
-// 		te[ 8 ] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
-// 		te[ 12 ] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
-// 		te[ 1 ] = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
-// 		te[ 5 ] = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
-// 		te[ 9 ] = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
-// 		te[ 13 ] = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
-// 		te[ 2 ] = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
-// 		te[ 6 ] = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
-// 		te[ 10 ] = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
-// 		te[ 14 ] = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
-// 		te[ 3 ] = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
-// 		te[ 7 ] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
-// 		te[ 11 ] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
-// 		te[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
-// 		return this;
-// 	},
-// 	multiplyScalar: function ( s ) {
-// 		var te = this.elements;
-// 		te[ 0 ] *= s; te[ 4 ] *= s; te[ 8 ] *= s; te[ 12 ] *= s;
-// 		te[ 1 ] *= s; te[ 5 ] *= s; te[ 9 ] *= s; te[ 13 ] *= s;
-// 		te[ 2 ] *= s; te[ 6 ] *= s; te[ 10 ] *= s; te[ 14 ] *= s;
-// 		te[ 3 ] *= s; te[ 7 ] *= s; te[ 11 ] *= s; te[ 15 ] *= s;
-// 		return this;
-// 	},
+
 // 	applyToBufferAttribute: function () {
 // 		var v1 = new Vector3();
 // 		return function applyToBufferAttribute( attribute ) {
@@ -310,196 +594,10 @@ impl Matrix4 {
 // 			return attribute;
 // 		};
 // 	}(),
-// 	determinant: function () {
-// 		var te = this.elements;
-// 		var n11 = te[ 0 ], n12 = te[ 4 ], n13 = te[ 8 ], n14 = te[ 12 ];
-// 		var n21 = te[ 1 ], n22 = te[ 5 ], n23 = te[ 9 ], n24 = te[ 13 ];
-// 		var n31 = te[ 2 ], n32 = te[ 6 ], n33 = te[ 10 ], n34 = te[ 14 ];
-// 		var n41 = te[ 3 ], n42 = te[ 7 ], n43 = te[ 11 ], n44 = te[ 15 ];
-// 		//TODO: make this more efficient
-// 		//( based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm )
-// 		return (
-// 			n41 * (
-// 				+ n14 * n23 * n32
-// 				 - n13 * n24 * n32
-// 				 - n14 * n22 * n33
-// 				 + n12 * n24 * n33
-// 				 + n13 * n22 * n34
-// 				 - n12 * n23 * n34
-// 			) +
-// 			n42 * (
-// 				+ n11 * n23 * n34
-// 				 - n11 * n24 * n33
-// 				 + n14 * n21 * n33
-// 				 - n13 * n21 * n34
-// 				 + n13 * n24 * n31
-// 				 - n14 * n23 * n31
-// 			) +
-// 			n43 * (
-// 				+ n11 * n24 * n32
-// 				 - n11 * n22 * n34
-// 				 - n14 * n21 * n32
-// 				 + n12 * n21 * n34
-// 				 + n14 * n22 * n31
-// 				 - n12 * n24 * n31
-// 			) +
-// 			n44 * (
-// 				- n13 * n22 * n31
-// 				 - n11 * n23 * n32
-// 				 + n11 * n22 * n33
-// 				 + n13 * n21 * n32
-// 				 - n12 * n21 * n33
-// 				 + n12 * n23 * n31
-// 			)
-// 		);
-// 	},
-// 	transpose: function () {
-// 		var te = this.elements;
-// 		var tmp;
-// 		tmp = te[ 1 ]; te[ 1 ] = te[ 4 ]; te[ 4 ] = tmp;
-// 		tmp = te[ 2 ]; te[ 2 ] = te[ 8 ]; te[ 8 ] = tmp;
-// 		tmp = te[ 6 ]; te[ 6 ] = te[ 9 ]; te[ 9 ] = tmp;
-// 		tmp = te[ 3 ]; te[ 3 ] = te[ 12 ]; te[ 12 ] = tmp;
-// 		tmp = te[ 7 ]; te[ 7 ] = te[ 13 ]; te[ 13 ] = tmp;
-// 		tmp = te[ 11 ]; te[ 11 ] = te[ 14 ]; te[ 14 ] = tmp;
-// 		return this;
-// 	},
-// 	setPosition: function ( v ) {
-// 		var te = this.elements;
-// 		te[ 12 ] = v.x;
-// 		te[ 13 ] = v.y;
-// 		te[ 14 ] = v.z;
-// 		return this;
-// 	},
-// 	getInverse: function ( m, throwOnDegenerate ) {
-// 		// based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
-// 		var te = this.elements,
-// 			me = m.elements,
-// 			n11 = me[ 0 ], n21 = me[ 1 ], n31 = me[ 2 ], n41 = me[ 3 ],
-// 			n12 = me[ 4 ], n22 = me[ 5 ], n32 = me[ 6 ], n42 = me[ 7 ],
-// 			n13 = me[ 8 ], n23 = me[ 9 ], n33 = me[ 10 ], n43 = me[ 11 ],
-// 			n14 = me[ 12 ], n24 = me[ 13 ], n34 = me[ 14 ], n44 = me[ 15 ],
-// 			t11 = n23 * n34 * n42 - n24 * n33 * n42 + n24 * n32 * n43 - n22 * n34 * n43 - n23 * n32 * n44 + n22 * n33 * n44,
-// 			t12 = n14 * n33 * n42 - n13 * n34 * n42 - n14 * n32 * n43 + n12 * n34 * n43 + n13 * n32 * n44 - n12 * n33 * n44,
-// 			t13 = n13 * n24 * n42 - n14 * n23 * n42 + n14 * n22 * n43 - n12 * n24 * n43 - n13 * n22 * n44 + n12 * n23 * n44,
-// 			t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
-// 		var det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
-// 		if ( det === 0 ) {
-// 			var msg = "THREE.Matrix4: .getInverse() can't invert matrix, determinant is 0";
-// 			if ( throwOnDegenerate === true ) {
-// 				throw new Error( msg );
-// 			} else {
-// 				console.warn( msg );
-// 			}
-// 			return this.identity();
-// 		}
-// 		var detInv = 1 / det;
-// 		te[ 0 ] = t11 * detInv;
-// 		te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * detInv;
-// 		te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * detInv;
-// 		te[ 3 ] = ( n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43 ) * detInv;
-// 		te[ 4 ] = t12 * detInv;
-// 		te[ 5 ] = ( n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44 ) * detInv;
-// 		te[ 6 ] = ( n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44 ) * detInv;
-// 		te[ 7 ] = ( n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43 ) * detInv;
-// 		te[ 8 ] = t13 * detInv;
-// 		te[ 9 ] = ( n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44 ) * detInv;
-// 		te[ 10 ] = ( n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44 ) * detInv;
-// 		te[ 11 ] = ( n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43 ) * detInv;
-// 		te[ 12 ] = t14 * detInv;
-// 		te[ 13 ] = ( n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34 ) * detInv;
-// 		te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * detInv;
-// 		te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * detInv;
-// 		return this;
-// 	},
-// 	scale: function ( v ) {
-// 		var te = this.elements;
-// 		var x = v.x, y = v.y, z = v.z;
-// 		te[ 0 ] *= x; te[ 4 ] *= y; te[ 8 ] *= z;
-// 		te[ 1 ] *= x; te[ 5 ] *= y; te[ 9 ] *= z;
-// 		te[ 2 ] *= x; te[ 6 ] *= y; te[ 10 ] *= z;
-// 		te[ 3 ] *= x; te[ 7 ] *= y; te[ 11 ] *= z;
-// 		return this;
-// 	},
-// 	getMaxScaleOnAxis: function () {
-// 		var te = this.elements;
-// 		var scaleXSq = te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ];
-// 		var scaleYSq = te[ 4 ] * te[ 4 ] + te[ 5 ] * te[ 5 ] + te[ 6 ] * te[ 6 ];
-// 		var scaleZSq = te[ 8 ] * te[ 8 ] + te[ 9 ] * te[ 9 ] + te[ 10 ] * te[ 10 ];
-// 		return Math.sqrt( Math.max( scaleXSq, scaleYSq, scaleZSq ) );
-// 	},
-// 	makeTranslation: function ( x, y, z ) {
-// 		this.set(
-// 			1, 0, 0, x,
-// 			0, 1, 0, y,
-// 			0, 0, 1, z,
-// 			0, 0, 0, 1
-// 		);
-// 		return this;
-// 	},
-// 	makeRotationX: function ( theta ) {
-// 		var c = Math.cos( theta ), s = Math.sin( theta );
-// 		this.set(
-// 			1, 0, 0, 0,
-// 			0, c, - s, 0,
-// 			0, s, c, 0,
-// 			0, 0, 0, 1
-// 		);
-// 		return this;
-// 	},
-// 	makeRotationY: function ( theta ) {
-// 		var c = Math.cos( theta ), s = Math.sin( theta );
-// 		this.set(
-// 			 c, 0, s, 0,
-// 			 0, 1, 0, 0,
-// 			- s, 0, c, 0,
-// 			 0, 0, 0, 1
-// 		);
-// 		return this;
-// 	},
-// 	makeRotationZ: function ( theta ) {
-// 		var c = Math.cos( theta ), s = Math.sin( theta );
-// 		this.set(
-// 			c, - s, 0, 0,
-// 			s, c, 0, 0,
-// 			0, 0, 1, 0,
-// 			0, 0, 0, 1
-// 		);
-// 		return this;
-// 	},
-// 	makeRotationAxis: function ( axis, angle ) {
-// 		// Based on http://www.gamedev.net/reference/articles/article1199.asp
-// 		var c = Math.cos( angle );
-// 		var s = Math.sin( angle );
-// 		var t = 1 - c;
-// 		var x = axis.x, y = axis.y, z = axis.z;
-// 		var tx = t * x, ty = t * y;
-// 		this.set(
-// 			tx * x + c, tx * y - s * z, tx * z + s * y, 0,
-// 			tx * y + s * z, ty * y + c, ty * z - s * x, 0,
-// 			tx * z - s * y, ty * z + s * x, t * z * z + c, 0,
-// 			0, 0, 0, 1
-// 		);
-// 		 return this;
-// 	},
-// 	makeScale: function ( x, y, z ) {
-// 		this.set(
-// 			x, 0, 0, 0,
-// 			0, y, 0, 0,
-// 			0, 0, z, 0,
-// 			0, 0, 0, 1
-// 		);
-// 		return this;
-// 	},
-// 	makeShear: function ( x, y, z ) {
-// 		this.set(
-// 			1, y, z, 0,
-// 			x, 1, z, 0,
-// 			x, y, 1, 0,
-// 			0, 0, 0, 1
-// 		);
-// 		return this;
-// 	},
+
+
+
+
 // 	compose: function ( position, quaternion, scale ) {
 // 		this.makeRotationFromQuaternion( quaternion );
 // 		this.scale( scale );
@@ -541,45 +639,8 @@ impl Matrix4 {
 // 			return this;
 // 		};
 // 	}(),
-// 	makePerspective: function ( left, right, top, bottom, near, far ) {
-// 		if ( far === undefined ) {
-// 			console.warn( 'THREE.Matrix4: .makePerspective() has been redefined and has a new signature. Please check the docs.' );
-// 		}
-// 		var te = this.elements;
-// 		var x = 2 * near / ( right - left );
-// 		var y = 2 * near / ( top - bottom );
-// 		var a = ( right + left ) / ( right - left );
-// 		var b = ( top + bottom ) / ( top - bottom );
-// 		var c = - ( far + near ) / ( far - near );
-// 		var d = - 2 * far * near / ( far - near );
-// 		te[ 0 ] = x;	te[ 4 ] = 0;	te[ 8 ] = a;	te[ 12 ] = 0;
-// 		te[ 1 ] = 0;	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = 0;
-// 		te[ 2 ] = 0;	te[ 6 ] = 0;	te[ 10 ] = c;	te[ 14 ] = d;
-// 		te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = - 1;	te[ 15 ] = 0;
-// 		return this;
-// 	},
-// 	makeOrthographic: function ( left, right, top, bottom, near, far ) {
-// 		var te = this.elements;
-// 		var w = 1.0 / ( right - left );
-// 		var h = 1.0 / ( top - bottom );
-// 		var p = 1.0 / ( far - near );
-// 		var x = ( right + left ) * w;
-// 		var y = ( top + bottom ) * h;
-// 		var z = ( far + near ) * p;
-// 		te[ 0 ] = 2 * w;	te[ 4 ] = 0;	te[ 8 ] = 0;	te[ 12 ] = - x;
-// 		te[ 1 ] = 0;	te[ 5 ] = 2 * h;	te[ 9 ] = 0;	te[ 13 ] = - y;
-// 		te[ 2 ] = 0;	te[ 6 ] = 0;	te[ 10 ] = - 2 * p;	te[ 14 ] = - z;
-// 		te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = 0;	te[ 15 ] = 1;
-// 		return this;
-// 	},
-// 	equals: function ( matrix ) {
-// 		var te = this.elements;
-// 		var me = matrix.elements;
-// 		for ( var i = 0; i < 16; i ++ ) {
-// 			if ( te[ i ] !== me[ i ] ) return false;
-// 		}
-// 		return true;
-// 	},
+
+
 // 	fromArray: function ( array, offset ) {
 // 		if ( offset === undefined ) offset = 0;
 // 		for ( var i = 0; i < 16; i ++ ) {

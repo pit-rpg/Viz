@@ -1,5 +1,6 @@
 // extern crate math;
 mod math;
+mod core;
 // use math::Vector_3::Vector3;
 // use math::Vector3::;
 // use math::vector::Vector;
@@ -16,6 +17,11 @@ fn main() {
         z: 0.0,
     };
     origin.x = 0.2;
+
+    let geometry = core::Geometry::new();
+
+    println!("{:?}", geometry);
+
     // let po = Vector3 {
     //     x: 1.0,
     //     y: 1.0,
