@@ -5,3 +5,6 @@ authors = ["Krovspey Stepan <pit-rpg@yandex.ua>"]
 
 [dependencies]
 uuid = { version = "0.5", features = ["v4"] }
+glutin = "*"
+gl = "*"
+rand = "*"
