@@ -12,7 +12,10 @@ use std::os::raw::c_void;
 use self::glutin::GlContext;
 use self::gl::GetString;
 use self::gl::types::*;
-use self::rand::Rng;
+// use self::rand::Rng;
+
+use math::Color;
+use math::ColorTrait;
 
 
 const VERTEX_SHADER_SOURCE: &str = r#"
@@ -39,7 +42,8 @@ pub fn create_window() {
 
     create_triangle();
 
-    let mut rng = rand::thread_rng();
+    // let rng = rand::thread_rng();
+    // let mut rng = rand::thread_rng();
 
     let positions: [f32; 9] = [
         -0.5, -0.5, 0.0, // left
@@ -49,13 +53,19 @@ pub fn create_window() {
 
     let mut buf_id = 0;
     let mut va_buf_id = 0;
+    let mut f_count = 0.0;
+
+
+    let mut color1 = Color::<f32>::random();
+    let mut color2 = Color::<f32>::random();
+    let mut color_tmp = Color::new(color1.r,color1.g, color1.b);
 
     unsafe {
         gl::GenBuffers(1, &mut buf_id);
         gl::GenVertexArrays(1, &mut va_buf_id);
 
         gl::BindVertexArray(va_buf_id);
-        gl::BindBuffer(gl::ARRAY_BUFFER, va_buf_id);
+        // gl::BindBuffer(gl::ARRAY_BUFFER, va_buf_id);
 
         gl::BindBuffer(gl::ARRAY_BUFFER, buf_id);
 
@@ -83,8 +93,20 @@ pub fn create_window() {
                 _ => ()
             }
         });
+
+        if f_count > 1.0 {
+            color1.copy(&color2);
+            color2 = Color::random();
+            f_count = 0.0;
+        }
+
+        f_count += 0.04;
+
+        color_tmp.copy(&color1);
+        color_tmp.lerp(&color2, f_count);
+
         unsafe {
-            gl::ClearColor(rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>(), 1.0);
+            gl::ClearColor(color_tmp.r, color_tmp.g, color_tmp.b, 1.0);
         }
 
         clear();

@@ -7,11 +7,15 @@ mod vector2;
 mod vector3;
 mod matrix4;
 mod matrix3;
+mod color;
+
 pub use self::vector::Vector;
 pub use self::vector2::Vector2;
 pub use self::vector3::Vector3;
 pub use self::matrix4::Matrix4;
 pub use self::matrix3::Matrix3;
+pub use self::color::Color;
+pub use self::color::ColorTrait;
 
 // pub use self::Vector3 as Vector32;
 
