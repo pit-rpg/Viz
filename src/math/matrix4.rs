@@ -1,5 +1,6 @@
-use math::Vector3;
-use math::Vector;
+use math::vector3::Vector3;
+use math::vector3::Vector;
+// use math::Vector;
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
@@ -295,7 +296,7 @@ impl Matrix4 {
 		let mut te = self.elements;
 
         z.subVectors( eye, target );
-		if  z.lengthSq() == 0.0  {
+		if  z.length_sq() == 0.0  {
 			// eye and target are in the same position
 			z.z = 1.0;
 		}
@@ -303,7 +304,7 @@ impl Matrix4 {
 
         x.cross_vectors( up, &z );
 
-        if  x.lengthSq() == 0.0  {
+        if  x.length_sq() == 0.0  {
 			// up and z are parallel
 			if  up.z.abs() == 1.0  {
 				z.x += 0.0001;

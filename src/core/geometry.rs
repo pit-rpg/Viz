@@ -1,7 +1,7 @@
 extern crate uuid;
 use self::uuid::Uuid;
-use math::Vector3;
-use math::Vector;
+use math::vector3::Vector3;
+use math::vector3::Vector;
 use math::Matrix4;
 use math::Matrix3;
 use core::Face3;

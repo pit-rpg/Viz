@@ -3,7 +3,7 @@ mod math;
 mod core;
 mod render;
 // use math::Vector_3::Vector3;
-// use math::Vector3::;
+use math::vector3::*;
 // use math::vector::Vector;
 // // use math::Vector3;
 //
@@ -12,7 +12,7 @@ mod render;
 // }
 
 fn main() {
-    let mut origin = math::Vector3 {
+    let mut origin = Vector3 {
         x: 0.0,
         y: 0.0,
         z: 0.0,

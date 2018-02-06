@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Krovspey Stepan <pit-rpg@yandex.ua>"]
 
 [dependencies]
-uuid = { version = "0.5", features = ["v4"] }
 glutin = "*"
 gl = "*"
 rand = "*"
+num-traits = "*"
+# lib_derive = { path = "lib_derive" }
+uuid = { version = "0.5", features = ["v4"] }

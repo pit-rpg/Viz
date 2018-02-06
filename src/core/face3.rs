@@ -1,6 +1,6 @@
-use math::Vector3;
+use math::vector3::*;
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug)]
 pub struct Face3 {
     pub a: usize,
     pub b: usize,

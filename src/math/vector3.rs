@@ -1,94 +1,110 @@
 // mod vector;
 //
-use math::Vector;
+// use math::Vector;
 use math::Matrix4;
 use math::Matrix3;
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug)]
 pub struct Vector3 {
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
+//
+// #[derive(Clone, Debug)]
+// pub struct Vector64 {
+//     pub x: f64,
+//     pub y: f64,
+//     pub z: f64,
+// }
 
+pub trait Vector {
+    // fn clone(v: &Self) -> Self;
+    fn new() -> Self;
+    fn multiply_scalar(&mut self, s: f64) -> &mut Self;
+    fn length(&self) -> f64;
+    fn length_sq(&self) -> f64;
+    fn manhattanLength(&mut self) -> f64;
+    fn setScalar(&mut self, s: f64) -> &mut Self;
+    fn addScalar(&mut self, s: f64) -> &mut Self;
+    fn subScalar(&mut self, s: f64) -> &mut Self;
+    fn add(&mut self, v: &Self) -> &mut Self;
+    fn sub(&mut self, v: &Self) -> &mut Self;
+    fn multiply(&mut self, v: &Self) -> &mut Self;
+    fn divide(&mut self, v: &Self) -> &mut Self;
+    fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self;
+    fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self;
+    fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self;
+    fn negate(&mut self) -> &mut Self;
+    fn min(&mut self, v: &Self) -> &mut Self;
+    fn max(&mut self, v: &Self) -> &mut Self;
+    fn dot(&mut self, v: &Self) -> f64;
+    fn round(&mut self) -> &mut Self;
+    fn floor(&mut self) -> &mut Self;
+    fn ceil(&mut self) -> &mut Self;
+    fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self;
+    fn lerp (&mut self, v: &Self,  alpha:f64 )-> &mut Self;
+    fn zero () -> Self;
+    fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self;
+    fn cross (&mut self, v: &Self )-> &mut Self;
+    fn set(&mut self, x: f64, y: f64, z: f64) -> &mut Self;
+    fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self;
+    fn from_array (&mut self, array: &[f64] ) -> &mut Self;
+    fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self;
+    fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self;
 
-#[allow(dead_code)]
-impl Vector3 {
-    pub fn new() -> Self {
-        Vector3 { x: 0.0, y: 0.0, z: 0.0 }
+    fn divideScalar(&mut self, s: f64) -> &mut Self {
+        return self.multiply_scalar(1.0 / s);
     }
 
-    pub fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
-        let ax = a.x;
-        let ay = a.y;
-        let az = a.z;
-        let bx = b.x;
-        let by = b.y;
-        let bz = b.z;
-        self.x = ay * bz - az * by;
-        self.y = az * bx - ax * bz;
-        self.z = ax * by - ay * bx;
+    fn normalize(&mut self) -> &mut Self {
+        let mut l = self.length();
+        if l == 0.0 {
+            l = 1.0
+        };
+        self.divideScalar(l);
         self
     }
 
-    pub fn cross (&mut self, v: &Self )-> &mut Self {
-        let c = Self::clone(self);
-        self.cross_vectors(&c , v )
+    fn setLength(&mut self, length: f64) -> &mut Self {
+        self.normalize().multiply_scalar(length)
     }
 
-    pub fn set(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
-        self.x = x;
-        self.y = y;
-        self.z = z;
-        self
+    fn clampLength (&mut self, min:f64, max:f64 )-> &mut Self {
+        let mut l = self.length();
+        if l == 0.0 {l = 1.0};
+        self.divideScalar( l ).multiply_scalar( min.min(max.max(l)) )
     }
 
-	pub fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
-        let i = index * 4;
-        self.from_array( &m.elements[i..i*4] );
-		self
-	}
-
-    // 	fromArray: function ( array, offset ) {
-    // 		if ( offset === undefined ) offset = 0;
-    // 		this.x = array[ offset ];
-    // 		this.y = array[ offset + 1 ];
-    // 		this.z = array[ offset + 2 ];
-    // 		return this;
-    // 	},
-	pub fn from_array (&mut self, array: &[f64] ) -> &mut Self {
-		self.x = array[ 0 ];
-		self.y = array[ 1 ];
-		self.z = array[ 2 ];
-        self
-	}
-
-	pub fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
-		let x = self.x; let y = self.y; let z = self.z;
-		let e = m.elements;
-		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
-
-        self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
-		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
-		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
-
-        self
-	}
-
-
-	pub fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
-		let x = self.x; let y = self.y; let z = self.z;
-		let e = m.elements;
-		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
-		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
-		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
-		self
-	}
+    fn lerpVectors (&mut self, v1: &Self, v2: &Self, alpha:f64 )-> &mut Self {
+        self.subVectors( v2, v1 ).multiply_scalar( alpha ).add( v1 )
+    }
 }
+
+// #[macro_export]
+// macro_rules! Vector3 {
+//     ( $( $x:expr ),* ) => {
+//         {
+//             let mut temp_vec = Vec::new();
+//             $(
+//                 temp_vec.push($x);
+//             )*
+//             temp_vec
+//         }
+//     };
+// }
+
+
+
+
 
 impl Vector for Vector3 {
 
-    fn multiplyScalar(&mut self, s: f64) -> &mut Self {
+    fn new() -> Self {
+        Self { x: 0.0, y: 0.0, z: 0.0 }
+    }
+
+    fn multiply_scalar(&mut self, s: f64) -> &mut Self {
         self.x *= s;
         self.y *= s;
         self.z *= s;
@@ -100,7 +116,7 @@ impl Vector for Vector3 {
         // return Math.sqrt( this.x * this.x + this.y * this.y + this.z * this.z );
     }
 
-    fn lengthSq(&self) -> f64 {
+    fn length_sq(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
@@ -242,7 +258,104 @@ impl Vector for Vector3 {
         Vector3{x:0.0,y:0.0,z:0.0}
     }
 
+    fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
+        let ax = a.x;
+        let ay = a.y;
+        let az = a.z;
+        let bx = b.x;
+        let by = b.y;
+        let bz = b.z;
+        self.x = ay * bz - az * by;
+        self.y = az * bx - ax * bz;
+        self.z = ax * by - ay * bx;
+        self
+    }
+
+    fn cross (&mut self, v: &Self )-> &mut Self {
+        let c = Self::clone(self);
+        self.cross_vectors(&c , v )
+    }
+
+    fn set(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
+        self.x = x;
+        self.y = y;
+        self.z = z;
+        self
+    }
+
+	fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
+        let i = index * 4;
+        self.from_array( &m.elements[i..i*4] );
+		self
+	}
+
+    // 	fromArray: function ( array, offset ) {
+    // 		if ( offset === undefined ) offset = 0;
+    // 		this.x = array[ offset ];
+    // 		this.y = array[ offset + 1 ];
+    // 		this.z = array[ offset + 2 ];
+    // 		return this;
+    // 	},
+	fn from_array (&mut self, array: &[f64] ) -> &mut Self {
+		self.x = array[ 0 ];
+		self.y = array[ 1 ];
+		self.z = array[ 2 ];
+        self
+	}
+
+	fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
+		let x = self.x; let y = self.y; let z = self.z;
+		let e = m.elements;
+		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
+
+        self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
+		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
+		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+
+        self
+	}
+
+
+	fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
+		let x = self.x; let y = self.y; let z = self.z;
+		let e = m.elements;
+		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
+		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
+		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
+		self
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 	clampScalar: function () {
 // 		var min = new Vector3();
@@ -267,8 +380,8 @@ impl Vector for Vector3 {
 
 
 // 	projectOnVector: function ( vector ) {
-// 		var scalar = vector.dot( this ) / vector.lengthSq();
-// 		return this.copy( vector ).multiplyScalar( scalar );
+// 		var scalar = vector.dot( this ) / vector.length_sq();
+// 		return this.copy( vector ).multiply_scalar( scalar );
 // 	},
 // 	projectOnPlane: function () {
 // 		var v1 = new Vector3();
@@ -282,11 +395,11 @@ impl Vector for Vector3 {
 // 		// normal is assumed to have unit length
 // 		var v1 = new Vector3();
 // 		return function reflect( normal ) {
-// 			return this.sub( v1.copy( normal ).multiplyScalar( 2 * this.dot( normal ) ) );
+// 			return this.sub( v1.copy( normal ).multiply_scalar( 2 * this.dot( normal ) ) );
 // 		};
 // 	}(),
 // 	angleTo: function ( v ) {
-// 		var theta = this.dot( v ) / ( Math.sqrt( this.lengthSq() * v.lengthSq() ) );
+// 		var theta = this.dot( v ) / ( Math.sqrt( this.length_sq() * v.length_sq() ) );
 // 		// clamp, to handle numerical problems
 // 		return Math.acos( _Math.clamp( theta, - 1, 1 ) );
 // 	},
