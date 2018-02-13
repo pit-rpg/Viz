@@ -8,5 +8,9 @@ glutin = "*"
 gl = "*"
 rand = "*"
 num-traits = "*"
-# lib_derive = { path = "lib_derive" }
 uuid = { version = "0.5", features = ["v4"] }
+# features = ["secure-password", "civet", "prod"]
+
+
+[features]
+prod = []

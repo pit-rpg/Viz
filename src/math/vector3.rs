@@ -1,8 +1,14 @@
 // mod vector;
 //
 // use math::Vector;
+
+extern crate num_traits;
 use math::Matrix4;
 use math::Matrix3;
+// use std::cmp::{ Eq, Ord};
+// use std::ops::{Div,AddAssign,SubAssign,MulAssign};
+use std::ops::{Div};
+use self::num_traits::Float;
 
 #[derive(Clone, Debug)]
 pub struct Vector3 {
@@ -18,16 +24,34 @@ pub struct Vector3 {
 //     pub z: f64,
 // }
 
-pub trait Vector {
+// pub trait FloatDefaults<T> {
+//     fn zero() -> T;
+//     fn one() -> T;
+// }
+//
+// impl FloatDefaults<f32> for f32 {
+//     fn zero() -> f32 { 0.0 }
+//     fn one() -> f32 { 1.0 }
+// }
+//
+// impl FloatDefaults<f64> for f64 {
+//     fn zero () -> f64 { 0.0 }
+//     fn one () -> f64 { 1.0 }
+// }
+
+
+
+pub trait Vector<T>
+where T: PartialOrd+Div<Output=T>+Float {
     // fn clone(v: &Self) -> Self;
     fn new() -> Self;
-    fn multiply_scalar(&mut self, s: f64) -> &mut Self;
-    fn length(&self) -> f64;
-    fn length_sq(&self) -> f64;
-    fn manhattanLength(&mut self) -> f64;
-    fn setScalar(&mut self, s: f64) -> &mut Self;
-    fn addScalar(&mut self, s: f64) -> &mut Self;
-    fn subScalar(&mut self, s: f64) -> &mut Self;
+    fn multiply_scalar(&mut self, s: T) -> &mut Self;
+    fn length(&self) -> T;
+    fn length_sq(&self) -> T;
+    fn manhattanLength(&mut self) -> T;
+    fn setScalar(&mut self, s: T) -> &mut Self;
+    fn addScalar(&mut self, s: T) -> &mut Self;
+    fn subScalar(&mut self, s: T) -> &mut Self;
     fn add(&mut self, v: &Self) -> &mut Self;
     fn sub(&mut self, v: &Self) -> &mut Self;
     fn multiply(&mut self, v: &Self) -> &mut Self;
@@ -38,45 +62,46 @@ pub trait Vector {
     fn negate(&mut self) -> &mut Self;
     fn min(&mut self, v: &Self) -> &mut Self;
     fn max(&mut self, v: &Self) -> &mut Self;
-    fn dot(&mut self, v: &Self) -> f64;
+    fn dot(&mut self, v: &Self) -> T;
     fn round(&mut self) -> &mut Self;
     fn floor(&mut self) -> &mut Self;
     fn ceil(&mut self) -> &mut Self;
     fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self;
-    fn lerp (&mut self, v: &Self,  alpha:f64 )-> &mut Self;
+    fn lerp (&mut self, v: &Self,  alpha:T )-> &mut Self;
     fn zero () -> Self;
     fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self;
     fn cross (&mut self, v: &Self )-> &mut Self;
-    fn set(&mut self, x: f64, y: f64, z: f64) -> &mut Self;
+    fn set(&mut self, x: T, y: T, z: T) -> &mut Self;
     fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self;
-    fn from_array (&mut self, array: &[f64] ) -> &mut Self;
+    fn from_array (&mut self, array: &[T] ) -> &mut Self;
     fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self;
     fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self;
 
-    fn divideScalar(&mut self, s: f64) -> &mut Self {
-        return self.multiply_scalar(1.0 / s);
+    fn divideScalar(&mut self, s: T) -> &mut Self {
+        return self.multiply_scalar(T::one() / s);
     }
 
     fn normalize(&mut self) -> &mut Self {
         let mut l = self.length();
-        if l == 0.0 {
-            l = 1.0
+        if l == T::zero() {
+            l = T::one()
         };
         self.divideScalar(l);
         self
     }
 
-    fn setLength(&mut self, length: f64) -> &mut Self {
+    fn setLength(&mut self, length: T) -> &mut Self {
         self.normalize().multiply_scalar(length)
     }
 
-    fn clampLength (&mut self, min:f64, max:f64 )-> &mut Self {
+    fn clampLength (&mut self, min:T, max:T )-> &mut Self {
         let mut l = self.length();
-        if l == 0.0 {l = 1.0};
-        self.divideScalar( l ).multiply_scalar( min.min(max.max(l)) )
+        if l == T::zero() {l = T::one()};
+        self.divideScalar( l ).multiply_scalar(min.min( max.max(l)))
+        // self.divideScalar( l ).multiply_scalar(min(min1, max(max1, l)))
     }
 
-    fn lerpVectors (&mut self, v1: &Self, v2: &Self, alpha:f64 )-> &mut Self {
+    fn lerpVectors (&mut self, v1: &Self, v2: &Self, alpha:T )-> &mut Self {
         self.subVectors( v2, v1 ).multiply_scalar( alpha ).add( v1 )
     }
 }
@@ -95,236 +120,475 @@ pub trait Vector {
 // }
 
 
+#[allow(unused_macros)]
+macro_rules! deriveVector {
+    ( $obj:ty, $T:ty  ) => {
+
+        impl Vector<$T> for $obj
+        {
+
+            fn new() -> Self {
+                Self { x: 0.0, y: 0.0, z: 0.0 }
+            }
+
+            fn multiply_scalar(&mut self, s: $T) -> &mut Self {
+                self.x *= s;
+                self.y *= s;
+                self.z *= s;
+                self
+            }
+
+            fn length(&self) -> $T {
+                (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+                // return Math.sqrt( this.x * this.x + this.y * this.y + this.z * this.z );
+            }
+
+            fn length_sq(&self) -> $T {
+                self.x * self.x + self.y * self.y + self.z * self.z
+            }
+
+            fn manhattanLength(&mut self) -> $T {
+                (self.x).abs() + (self.y).abs() + (self.z).abs()
+            }
+
+            fn setScalar(&mut self, s: $T) -> &mut Self {
+                self.x = s;
+                self.y = s;
+                self.z = s;
+                self
+            }
+
+            fn addScalar(&mut self, s: $T) -> &mut Self {
+                self.x += s;
+                self.y += s;
+                self.z += s;
+                self
+            }
+
+            fn subScalar(&mut self, s: $T) -> &mut Self {
+                self.x -= s;
+                self.y -= s;
+                self.z -= s;
+                self
+            }
+
+            fn add(&mut self, v: &Self) -> &mut Self {
+                self.x += v.x;
+                self.y += v.y;
+                self.z += v.z;
+                self
+            }
+
+            fn sub(&mut self, v: &Self) -> &mut Self {
+                self.x -= v.x;
+                self.y -= v.y;
+                self.z -= v.z;
+                self
+            }
+
+            fn multiply(&mut self, v: &Self) -> &mut Self {
+                self.x *= v.x;
+                self.y *= v.y;
+                self.z *= v.z;
+                self
+            }
+
+            fn divide(&mut self, v: &Self) -> &mut Self {
+                self.x /= v.x;
+                self.y /= v.y;
+                self.z /= v.z;
+                self
+            }
+
+            fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+                self.x = a.x + b.x;
+                self.y = a.y + b.y;
+                self.z = a.z + b.z;
+                self
+            }
+
+            fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+                self.x = a.x - b.x;
+                self.y = a.y - b.y;
+                self.z = a.z - b.z;
+                self
+            }
+
+            fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+                self.x = a.x * b.x;
+                self.y = a.y * b.y;
+                self.z = a.z * b.z;
+                self
+            }
+
+            fn negate(&mut self) -> &mut Self {
+                self.x = -self.x;
+                self.y = -self.y;
+                self.z = -self.z;
+                self
+            }
+
+            fn min(&mut self, v: &Self) -> &mut Self {
+                self.x = (self.x).min(v.x);
+                self.y = (self.y).min(v.y);
+                self.z = (self.z).min(v.z);
+                self
+            }
+
+            fn max(&mut self, v: &Self) -> &mut Self {
+                self.x = (self.x).max(v.x);
+                self.y = (self.y).max(v.y);
+                self.z = (self.z).max(v.z);
+                self
+            }
+
+            fn dot(&mut self, v: &Self) -> $T {
+                self.x * v.x + self.y * v.y + self.z * v.z
+            }
+
+            fn round(&mut self) -> &mut Self {
+                self.x = self.x.round();
+                self.y = self.y.round();
+                self.z = self.z.round();
+                self
+            }
+
+            fn floor(&mut self) -> &mut Self {
+                self.x = self.x.floor();
+                self.y = self.y.floor();
+                self.z = self.z.floor();
+                self
+            }
+
+            fn ceil(&mut self) -> &mut Self {
+                self.x = self.x.ceil();
+                self.y = self.y.ceil();
+                self.z = self.z.ceil();
+                self
+            }
+
+            fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self {
+        		self.x = min.x.max(max.x.min(self.x));
+        		self.y = min.y.max(max.y.min(self.y));
+        		self.z = min.z.max(max.z.min(self.z));
+        		self
+            }
+
+            fn lerp (&mut self, v: &Self,  alpha:$T )-> &mut Self {
+                self.x += ( v.x - self.x ) * alpha;
+                self.y += ( v.y - self.y ) * alpha;
+                self.z += ( v.z - self.z ) * alpha;
+        		self
+            }
+
+            fn zero() -> Self {
+                Self{x:0.0,y:0.0,z:0.0}
+            }
+
+            fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
+                let ax = a.x;
+                let ay = a.y;
+                let az = a.z;
+                let bx = b.x;
+                let by = b.y;
+                let bz = b.z;
+                self.x = ay * bz - az * by;
+                self.y = az * bx - ax * bz;
+                self.z = ax * by - ay * bx;
+                self
+            }
+
+            fn cross (&mut self, v: &Self )-> &mut Self {
+                let c = Self::clone(self);
+                self.cross_vectors(&c , v )
+            }
+
+            fn set(&mut self, x: $T, y: $T, z: $T) -> &mut Self {
+                self.x = x;
+                self.y = y;
+                self.z = z;
+                self
+            }
+
+        	fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
+                let i = index * 4;
+                self.from_array( &m.elements[i..i*4] );
+        		self
+        	}
+
+            // 	fromArray: function ( array, offset ) {
+            // 		if ( offset === undefined ) offset = 0;
+            // 		this.x = array[ offset ];
+            // 		this.y = array[ offset + 1 ];
+            // 		this.z = array[ offset + 2 ];
+            // 		return this;
+            // 	},
+        	fn from_array (&mut self, array: &[$T] ) -> &mut Self {
+        		self.x = array[ 0 ];
+        		self.y = array[ 1 ];
+        		self.z = array[ 2 ];
+                self
+        	}
+
+        	fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
+        		let x = self.x; let y = self.y; let z = self.z;
+        		let e = m.elements;
+        		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
+
+                self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
+        		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
+        		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+
+                self
+        	}
 
 
-
-impl Vector for Vector3 {
-
-    fn new() -> Self {
-        Self { x: 0.0, y: 0.0, z: 0.0 }
-    }
-
-    fn multiply_scalar(&mut self, s: f64) -> &mut Self {
-        self.x *= s;
-        self.y *= s;
-        self.z *= s;
-        self
-    }
-
-    fn length(&self) -> f64 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
-        // return Math.sqrt( this.x * this.x + this.y * this.y + this.z * this.z );
-    }
-
-    fn length_sq(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
-    }
-
-    fn manhattanLength(&mut self) -> f64 {
-        (self.x).abs() + (self.y).abs() + (self.z).abs()
-    }
-
-    fn setScalar(&mut self, s: f64) -> &mut Self {
-        self.x = s;
-        self.y = s;
-        self.z = s;
-        self
-    }
-
-    fn addScalar(&mut self, s: f64) -> &mut Self {
-        self.x += s;
-        self.y += s;
-        self.z += s;
-        self
-    }
-
-    fn subScalar(&mut self, s: f64) -> &mut Self {
-        self.x -= s;
-        self.y -= s;
-        self.z -= s;
-        self
-    }
-
-    fn add(&mut self, v: &Self) -> &mut Self {
-        self.x += v.x;
-        self.y += v.y;
-        self.z += v.z;
-        self
-    }
-
-    fn sub(&mut self, v: &Self) -> &mut Self {
-        self.x -= v.x;
-        self.y -= v.y;
-        self.z -= v.z;
-        self
-    }
-
-    fn multiply(&mut self, v: &Self) -> &mut Self {
-        self.x *= v.x;
-        self.y *= v.y;
-        self.z *= v.z;
-        self
-    }
-
-    fn divide(&mut self, v: &Self) -> &mut Self {
-        self.x /= v.x;
-        self.y /= v.y;
-        self.z /= v.z;
-        self
-    }
-
-    fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
-        self.x = a.x + b.x;
-        self.y = a.y + b.y;
-        self.z = a.z + b.z;
-        self
-    }
-
-    fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
-        self.x = a.x - b.x;
-        self.y = a.y - b.y;
-        self.z = a.z - b.z;
-        self
-    }
-
-    fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
-        self.x = a.x * b.x;
-        self.y = a.y * b.y;
-        self.z = a.z * b.z;
-        self
-    }
-
-    fn negate(&mut self) -> &mut Self {
-        self.x = -self.x;
-        self.y = -self.y;
-        self.z = -self.z;
-        self
-    }
-
-    fn min(&mut self, v: &Self) -> &mut Self {
-        self.x = (self.x).min(v.x);
-        self.y = (self.y).min(v.y);
-        self.z = (self.z).min(v.z);
-        self
-    }
-
-    fn max(&mut self, v: &Self) -> &mut Self {
-        self.x = (self.x).max(v.x);
-        self.y = (self.y).max(v.y);
-        self.z = (self.z).max(v.z);
-        self
-    }
-
-    fn dot(&mut self, v: &Self) -> f64 {
-        self.x * v.x + self.y * v.y + self.z * v.z
-    }
-
-    fn round(&mut self) -> &mut Self {
-        self.x = self.x.round();
-        self.y = self.y.round();
-        self.z = self.z.round();
-        self
-    }
-
-    fn floor(&mut self) -> &mut Self {
-        self.x = self.x.floor();
-        self.y = self.y.floor();
-        self.z = self.z.floor();
-        self
-    }
-
-    fn ceil(&mut self) -> &mut Self {
-        self.x = self.x.ceil();
-        self.y = self.y.ceil();
-        self.z = self.z.ceil();
-        self
-    }
-
-    fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self {
-		self.x = min.x.max(max.x.min(self.x));
-		self.y = min.y.max(max.y.min(self.y));
-		self.z = min.z.max(max.z.min(self.z));
-		self
-    }
-
-    fn lerp (&mut self, v: &Self,  alpha:f64 )-> &mut Self {
-        self.x += ( v.x - self.x ) * alpha;
-        self.y += ( v.y - self.y ) * alpha;
-        self.z += ( v.z - self.z ) * alpha;
-		self
-    }
-
-    fn zero() -> Self {
-        Vector3{x:0.0,y:0.0,z:0.0}
-    }
-
-    fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
-        let ax = a.x;
-        let ay = a.y;
-        let az = a.z;
-        let bx = b.x;
-        let by = b.y;
-        let bz = b.z;
-        self.x = ay * bz - az * by;
-        self.y = az * bx - ax * bz;
-        self.z = ax * by - ay * bx;
-        self
-    }
-
-    fn cross (&mut self, v: &Self )-> &mut Self {
-        let c = Self::clone(self);
-        self.cross_vectors(&c , v )
-    }
-
-    fn set(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
-        self.x = x;
-        self.y = y;
-        self.z = z;
-        self
-    }
-
-	fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
-        let i = index * 4;
-        self.from_array( &m.elements[i..i*4] );
-		self
-	}
-
-    // 	fromArray: function ( array, offset ) {
-    // 		if ( offset === undefined ) offset = 0;
-    // 		this.x = array[ offset ];
-    // 		this.y = array[ offset + 1 ];
-    // 		this.z = array[ offset + 2 ];
-    // 		return this;
-    // 	},
-	fn from_array (&mut self, array: &[f64] ) -> &mut Self {
-		self.x = array[ 0 ];
-		self.y = array[ 1 ];
-		self.z = array[ 2 ];
-        self
-	}
-
-	fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
-		let x = self.x; let y = self.y; let z = self.z;
-		let e = m.elements;
-		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
-
-        self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
-		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
-		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
-
-        self
-	}
+        	fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
+        		let x = self.x; let y = self.y; let z = self.z;
+        		let e = m.elements;
+        		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
+        		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
+        		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
+        		self
+        	}
+        }
 
 
-	fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
-		let x = self.x; let y = self.y; let z = self.z;
-		let e = m.elements;
-		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
-		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
-		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
-		self
-	}
+    };
 }
+
+
+deriveVector!(Vector3, f64);
+
+// impl Vector<f64> for Vector3
+// {
+// // where T:Mul+MulAssign+Ord+FloatDefaults<f64>+Div<Output=T>{
+//
+//     fn new() -> Self {
+//         Self { x: 0.0, y: 0.0, z: 0.0 }
+//     }
+//
+//     fn multiply_scalar(&mut self, s: f64) -> &mut Self {
+//         self.x *= s;
+//         self.y *= s;
+//         self.z *= s;
+//         self
+//     }
+//
+//     fn length(&self) -> f64 {
+//         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+//         // return Math.sqrt( this.x * this.x + this.y * this.y + this.z * this.z );
+//     }
+//
+//     fn length_sq(&self) -> f64 {
+//         self.x * self.x + self.y * self.y + self.z * self.z
+//     }
+//
+//     fn manhattanLength(&mut self) -> f64 {
+//         (self.x).abs() + (self.y).abs() + (self.z).abs()
+//     }
+//
+//     fn setScalar(&mut self, s: f64) -> &mut Self {
+//         self.x = s;
+//         self.y = s;
+//         self.z = s;
+//         self
+//     }
+//
+//     fn addScalar(&mut self, s: f64) -> &mut Self {
+//         self.x += s;
+//         self.y += s;
+//         self.z += s;
+//         self
+//     }
+//
+//     fn subScalar(&mut self, s: f64) -> &mut Self {
+//         self.x -= s;
+//         self.y -= s;
+//         self.z -= s;
+//         self
+//     }
+//
+//     fn add(&mut self, v: &Self) -> &mut Self {
+//         self.x += v.x;
+//         self.y += v.y;
+//         self.z += v.z;
+//         self
+//     }
+//
+//     fn sub(&mut self, v: &Self) -> &mut Self {
+//         self.x -= v.x;
+//         self.y -= v.y;
+//         self.z -= v.z;
+//         self
+//     }
+//
+//     fn multiply(&mut self, v: &Self) -> &mut Self {
+//         self.x *= v.x;
+//         self.y *= v.y;
+//         self.z *= v.z;
+//         self
+//     }
+//
+//     fn divide(&mut self, v: &Self) -> &mut Self {
+//         self.x /= v.x;
+//         self.y /= v.y;
+//         self.z /= v.z;
+//         self
+//     }
+//
+//     fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+//         self.x = a.x + b.x;
+//         self.y = a.y + b.y;
+//         self.z = a.z + b.z;
+//         self
+//     }
+//
+//     fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+//         self.x = a.x - b.x;
+//         self.y = a.y - b.y;
+//         self.z = a.z - b.z;
+//         self
+//     }
+//
+//     fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+//         self.x = a.x * b.x;
+//         self.y = a.y * b.y;
+//         self.z = a.z * b.z;
+//         self
+//     }
+//
+//     fn negate(&mut self) -> &mut Self {
+//         self.x = -self.x;
+//         self.y = -self.y;
+//         self.z = -self.z;
+//         self
+//     }
+//
+//     fn min(&mut self, v: &Self) -> &mut Self {
+//         self.x = (self.x).min(v.x);
+//         self.y = (self.y).min(v.y);
+//         self.z = (self.z).min(v.z);
+//         self
+//     }
+//
+//     fn max(&mut self, v: &Self) -> &mut Self {
+//         self.x = (self.x).max(v.x);
+//         self.y = (self.y).max(v.y);
+//         self.z = (self.z).max(v.z);
+//         self
+//     }
+//
+//     fn dot(&mut self, v: &Self) -> f64 {
+//         self.x * v.x + self.y * v.y + self.z * v.z
+//     }
+//
+//     fn round(&mut self) -> &mut Self {
+//         self.x = self.x.round();
+//         self.y = self.y.round();
+//         self.z = self.z.round();
+//         self
+//     }
+//
+//     fn floor(&mut self) -> &mut Self {
+//         self.x = self.x.floor();
+//         self.y = self.y.floor();
+//         self.z = self.z.floor();
+//         self
+//     }
+//
+//     fn ceil(&mut self) -> &mut Self {
+//         self.x = self.x.ceil();
+//         self.y = self.y.ceil();
+//         self.z = self.z.ceil();
+//         self
+//     }
+//
+//     fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self {
+// 		self.x = min.x.max(max.x.min(self.x));
+// 		self.y = min.y.max(max.y.min(self.y));
+// 		self.z = min.z.max(max.z.min(self.z));
+// 		self
+//     }
+//
+//     fn lerp (&mut self, v: &Self,  alpha:f64 )-> &mut Self {
+//         self.x += ( v.x - self.x ) * alpha;
+//         self.y += ( v.y - self.y ) * alpha;
+//         self.z += ( v.z - self.z ) * alpha;
+// 		self
+//     }
+//
+//     fn zero() -> Self {
+//         Self{x:0.0,y:0.0,z:0.0}
+//     }
+//
+//     fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
+//         let ax = a.x;
+//         let ay = a.y;
+//         let az = a.z;
+//         let bx = b.x;
+//         let by = b.y;
+//         let bz = b.z;
+//         self.x = ay * bz - az * by;
+//         self.y = az * bx - ax * bz;
+//         self.z = ax * by - ay * bx;
+//         self
+//     }
+//
+//     fn cross (&mut self, v: &Self )-> &mut Self {
+//         let c = Self::clone(self);
+//         self.cross_vectors(&c , v )
+//     }
+//
+//     fn set(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
+//         self.x = x;
+//         self.y = y;
+//         self.z = z;
+//         self
+//     }
+//
+// 	fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
+//         let i = index * 4;
+//         self.from_array( &m.elements[i..i*4] );
+// 		self
+// 	}
+//
+//     // 	fromArray: function ( array, offset ) {
+//     // 		if ( offset === undefined ) offset = 0;
+//     // 		this.x = array[ offset ];
+//     // 		this.y = array[ offset + 1 ];
+//     // 		this.z = array[ offset + 2 ];
+//     // 		return this;
+//     // 	},
+// 	fn from_array (&mut self, array: &[f64] ) -> &mut Self {
+// 		self.x = array[ 0 ];
+// 		self.y = array[ 1 ];
+// 		self.z = array[ 2 ];
+//         self
+// 	}
+//
+// 	fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
+// 		let x = self.x; let y = self.y; let z = self.z;
+// 		let e = m.elements;
+// 		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
+//
+//         self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
+// 		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
+// 		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+//
+//         self
+// 	}
+//
+//
+// 	fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
+// 		let x = self.x; let y = self.y; let z = self.z;
+// 		let e = m.elements;
+// 		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
+// 		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
+// 		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
+// 		self
+// 	}
+// }
 
 
 
