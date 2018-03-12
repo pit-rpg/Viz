@@ -14,7 +14,6 @@ use self::glutin::GlContext;
 use self::gl::GetString;
 use self::gl::types::*;
 // use self::rand::Rng;
-
 use math::Color;
 use math::ColorTrait;
 
@@ -22,16 +21,22 @@ use math::ColorTrait;
 const VERTEX_SHADER_SOURCE: &str = r#"
     #version 330 core
     layout (location = 0) in vec3 aPos;
+    layout (location = 1) in vec3 aColor;
+    out vec4 color;
     void main() {
-       gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+        color = vec4(aColor.xyz, 1.0);
+        gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
     }
 "#;
 
 const FRAGMENT_SHADER_SOURCE: &str = r#"
     #version 330 core
     layout (location = 0) out vec4 FragColor;
+    in vec4 color;
+    // uniform vec4 u_Color;
+
     void main() {
-        FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+        FragColor = color;
     }
 "#;
 
@@ -72,19 +77,27 @@ pub fn create_window() {
 
     let shader_id = compile_shader_program(FRAGMENT_SHADER_SOURCE, VERTEX_SHADER_SOURCE);
 
+
     create_triangle();
 
     // let rng = rand::thread_rng();
     // let mut rng = rand::thread_rng();
 
-    let positions: [f32; 9] = [
-        -0.5, -0.5, 0.0, // left
-         0.5, -0.5, 0.0, // right
-         0.0,  0.5, 0.0  // top
+    let positions: [f32; 24] = [
+        0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
+        0.5,    -0.5,   0.0,        0.0,    1.0,    0.0,  // bottom right
+        -0.5,   -0.5,   0.0,        1.0,    1.0,    1.0,  // bottom left
+        -0.5,   0.5,    0.0,        0.0,    0.0,    1.0  // top left
     ];
 
-    let mut buf_id = 0;
-    let mut va_buf_id = 0;
+    let indices: [i32; 6] = [  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3    // second triangle
+    ];
+
+    let mut VBO = 0;
+    let mut VAO = 0;
+    let mut EBO = 0;
     let mut f_count = 0.0;
 
 
@@ -93,13 +106,14 @@ pub fn create_window() {
     let mut color_tmp = Color::new(color1.r,color1.g, color1.b);
 
     gl_call!({
-        gl::GenBuffers(1, &mut buf_id);
-        gl::GenVertexArrays(1, &mut va_buf_id);
+        gl::GenVertexArrays(1, &mut VAO);
+        gl::GenBuffers(1, &mut VBO);
+        gl::GenBuffers(1, &mut EBO);
 
-        gl::BindVertexArray(va_buf_id);
-        // gl::BindBuffer(gl::ARRAY_BUFFER, va_buf_id);
+        gl::BindVertexArray(VAO);
 
-        gl::BindBuffer(gl::ARRAY_BUFFER, buf_id);
+        gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
 
         gl::BufferData(
             gl::ARRAY_BUFFER,
@@ -108,9 +122,34 @@ pub fn create_window() {
             gl::DYNAMIC_DRAW
         );
 
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 3 * mem::size_of::<GLfloat>() as GLsizei, ptr::null());
+        gl::BufferData(
+            gl::ELEMENT_ARRAY_BUFFER,
+            (mem::size_of::<GLint>() * indices.len()) as GLsizeiptr,
+            &indices[0] as *const i32 as *const c_void,
+            gl::STATIC_DRAW
+        );
+
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, 0 as *const c_void);
         gl::EnableVertexAttribArray(0);
+        gl::VertexAttribPointer(1, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, (3 * mem::size_of::<GLfloat>()) as *const c_void );
+        gl::EnableVertexAttribArray(1);
+        // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+        // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
     });
+
+    gl_call!({
+        gl::UseProgram(shader_id);
+    });
+
+            // let u_color_uniform_id;
+            // gl_call!({
+            //     u_color_uniform_id = gl::GetUniformLocation(shader_id, CString::new("u_Color").unwrap().as_ptr());
+            //     gl::Uniform4f(u_color_uniform_id, 0.2, 0.2, 0.2, 1.0);
+            //     // u_color_uniform_id = gl::GetUniformLocation(shader_id, "u_Color" as *const &[gl::types::GLchar]);
+            // });
+
+
+
 
     let mut running = true;
     while running {
@@ -128,13 +167,17 @@ pub fn create_window() {
 
         gl_clear_error();
 
+        f_count += 0.01;
+
         if f_count > 1.0 {
             color1.copy(&color2);
             color2 = Color::random();
             f_count = 0.0;
+            // gl_call!({
+            //     gl::Uniform4f(u_color_uniform_id, rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>(), 1.0);
+            // });
         }
 
-        f_count += 0.04;
 
         color_tmp.copy(&color1);
         color_tmp.lerp(&color2, f_count);
@@ -146,9 +189,29 @@ pub fn create_window() {
         clear();
 
         gl_call!({
+
+            // gl::UseProgram(shader_id);
+            // let u_color_uniform_id;
+            // gl_call!({
+            //     u_color_uniform_id = gl::GetUniformLocation(shader_id, CString::new("u_Color").unwrap().as_ptr());
+            //     gl::Uniform4f(u_color_uniform_id, 0.2, 0.2, 0.2, 1.0);
+            //     // u_color_uniform_id = gl::GetUniformLocation(shader_id, "u_Color" as *const &[gl::types::GLchar]);
+            // });
+            // gl::BindVertexArray(VBO);
+            // // gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+            // gl::DrawArrays(gl::TRIANGLES, 0, 3);
+
+            gl::BindVertexArray(VAO);
             gl::UseProgram(shader_id);
-            gl::BindBuffer(gl::ARRAY_BUFFER, buf_id);
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const c_void);
+
+            // if f_count > 0.5 {
+            //     gl::UseProgram(shader_id);
+            //     gl::Uniform4f(u_color_uniform_id, rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>(), 1.0);
+            //     gl::DrawElements(gl::TRIANGLES, 3, gl::UNSIGNED_INT, 3 as *const c_void);
+            // }
+
+            gl::BindVertexArray(0);
         });
 
         gl_window.swap_buffers().unwrap();
@@ -241,8 +304,10 @@ fn init_window() -> (glutin::EventsLoop, glutin::GlWindow) {
     let window = glutin::WindowBuilder::new()
         .with_title("Hello, world!")
         .with_dimensions(1024, 768);
+
     let context = glutin::ContextBuilder::new()
         .with_vsync(true);
+
     let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
 
     unsafe {
