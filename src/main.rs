@@ -11,6 +11,7 @@ use math::vector3::*;
 //     println!("{:?}", x.x + y.x);
 // }
 
+
 fn main() {
     let mut origin = Vector3 {
         x: 0.0,
@@ -23,7 +24,8 @@ fn main() {
 
     println!("{:?}", geometry);
 
-    render::glr::create_window();
+    render::render_gl::init();
+    render::render_gl::create_window();
 
     // let po = Vector3 {
     //     x: 1.0,

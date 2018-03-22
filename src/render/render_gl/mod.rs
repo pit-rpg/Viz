@@ -2,6 +2,7 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 
+mod gl_geometry;
 use std::mem;
 use std::fmt::Display;
 use std::ptr;
@@ -16,6 +17,10 @@ use self::gl::types::*;
 // use self::rand::Rng;
 use math::Color;
 use math::ColorTrait;
+
+use core::BufferGeometry;
+// use core::BufferGroup;
+// use core::BufferAttribute;
 
 
 const VERTEX_SHADER_SOURCE: &str = r#"
@@ -39,6 +44,11 @@ const FRAGMENT_SHADER_SOURCE: &str = r#"
         FragColor = color;
     }
 "#;
+
+pub fn init () {
+    self::gl_geometry::init();
+}
+
 
 fn gl_clear_error() {
     while unsafe { gl::GetError() } != gl::NO_ERROR {}
@@ -72,16 +82,43 @@ macro_rules! gl_call {
 
 
 pub fn create_window() {
+    self::gl_geometry::init();
 
     let (mut events_loop, gl_window) = init_window();
 
     let shader_id = compile_shader_program(FRAGMENT_SHADER_SOURCE, VERTEX_SHADER_SOURCE);
 
+    // println!("{}", self::gl_geometry::a);
 
     create_triangle();
 
     // let rng = rand::thread_rng();
     // let mut rng = rand::thread_rng();
+
+    let pos = vec![
+            0.5,    0.5,    0.0,  // top right
+            0.5,    -0.5,   0.0,  // bottom right
+            -0.5,   -0.5,   0.0,  // bottom left
+            -0.5,   0.5,    0.0  // top left
+    ];
+
+
+    let col = vec![
+            1.0,    0.0,    0.0,  // top right
+            0.0,    1.0,    0.0,  // bottom right
+            1.0,    1.0,    1.0,  // bottom left
+            0.0,    0.0,    1.0  // top left
+    ];
+
+    let ind = vec![
+            0, 1, 3,   // first triangle
+            1, 2, 3    // second triangle
+    ];
+
+    let mut geom = BufferGeometry::new();
+    geom.create_buffer_attribute("position".to_string(), Box::from(pos), 3);
+    geom.create_buffer_attribute("color".to_string(), Box::from(col), 3);
+    geom.set_indices(Box::from(ind));
 
     let positions: [f32; 24] = [
         0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
