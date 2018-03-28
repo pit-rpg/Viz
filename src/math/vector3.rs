@@ -11,6 +11,7 @@ use std::ops::{Div};
 use self::num_traits::Float;
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct Vector3 {
     pub x: f64,
     pub y: f64,

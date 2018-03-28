@@ -2,7 +2,8 @@
 //
 use math::Vector;
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug)]
+#[repr(C)]
 pub struct Vector2 {
     pub x: f64,
     pub y: f64,

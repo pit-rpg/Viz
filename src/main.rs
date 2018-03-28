@@ -1,7 +1,9 @@
 // extern crate math;
+mod macros;
 mod math;
 mod core;
 mod render;
+mod helpers;
 // use math::Vector_3::Vector3;
 use math::vector3::*;
 // use math::vector::Vector;

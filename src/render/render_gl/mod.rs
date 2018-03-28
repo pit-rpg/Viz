@@ -1,10 +1,16 @@
+// #![macro_escape]
+
+
 extern crate gl;
 extern crate glutin;
 extern crate rand;
 
+#[macro_use]
+pub mod macros;
 mod gl_geometry;
+
 use std::mem;
-use std::fmt::Display;
+
 use std::ptr;
 use std::str;
 use std::ffi::CStr;
@@ -46,7 +52,7 @@ const FRAGMENT_SHADER_SOURCE: &str = r#"
 "#;
 
 pub fn init () {
-    self::gl_geometry::init();
+    // self::gl_geometry::init();
 }
 
 
@@ -54,35 +60,12 @@ fn gl_clear_error() {
     while unsafe { gl::GetError() } != gl::NO_ERROR {}
 }
 
-fn gl_check_error<T: Display>(code: T) {
-    let mut err;
-    let mut count = 0;
-    while { err = unsafe{ gl::GetError()}; err != gl::NO_ERROR } {
-        println!("[OpenGL Error] ({})", err);
-        count += 1;
-    }
 
-    if count > 0 {
-        println!("{}", code);
-        panic!();
-    }
-}
 
-#[allow(unused_macros)]
-macro_rules! gl_call {
-    (  $x:block  ) => {
-        unsafe {
-            $x
-
-            #[cfg(not(feature="prod"))]
-            { gl_check_error(stringify!($x)); }
-        }
-    };
-}
 
 
 pub fn create_window() {
-    self::gl_geometry::init();
+    // self::gl_geometry::init();
 
     let (mut events_loop, gl_window) = init_window();
 
@@ -116,9 +99,9 @@ pub fn create_window() {
     ];
 
     let mut geom = BufferGeometry::new();
-    geom.create_buffer_attribute("position".to_string(), Box::from(pos), 3);
-    geom.create_buffer_attribute("color".to_string(), Box::from(col), 3);
-    geom.set_indices(Box::from(ind));
+    geom.create_buffer_attribute("position".to_string(), pos, 3);
+    geom.create_buffer_attribute("color".to_string(), col, 3);
+    geom.set_indices(ind);
 
     let positions: [f32; 24] = [
         0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
