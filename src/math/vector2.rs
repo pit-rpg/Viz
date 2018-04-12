@@ -1,6 +1,6 @@
 // mod vector;
 //
-use math::Vector;
+use math::vector::Vector;
 
 #[derive(Clone, Debug)]
 #[repr(C)]

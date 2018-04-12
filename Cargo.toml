@@ -10,7 +10,7 @@ rand = "*"
 num-traits = "*"
 uuid = { version = "0.5", features = ["v4"] }
 # features = ["secure-password", "civet", "prod"]
-
+byteorder = "1"
 
 [features]
 prod = []

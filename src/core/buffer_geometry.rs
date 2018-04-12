@@ -1,21 +1,35 @@
 // use std::collections::HashMap;
 extern crate uuid;
+// extern crate byteorder;
 use self::uuid::Uuid;
 use std::vec::Vec;
+use math::vector3::Vector3;
+use math::vector2::Vector2;
+use math::Color;
+use helpers::Nums;
+use std::marker::PhantomData;
+use std::process;
+// use byteorder::{BigEndian, WriteBytesExt, LittleEndian};
 use std::mem;
 // use std::vec::*;
 // use std::ops::IndexMut;
 
 #[allow(dead_code)]
-pub enum BufferType {
-	F32(Vec<f32>),
+pub enum BufferType
+{
+	Vector3f32(Vec<Vector3<f32>>),
+	Vector3f64(Vec<Vector3<f64>>),
+	Colorf32(Vec<Color<f32>>),
+	Colorf64(Vec<Color<f64>>),
+	// Vector2(Vec<Vector2<T>>),
 	// F64(Vec<f64>),
-	Usize(Vec<usize>),
+	// Usize(Vec<usize>),
 }
 
 
 #[allow(dead_code)]
-pub struct  BufferAttribute {
+pub struct  BufferAttribute
+{
 	pub data: BufferType,
 	pub name: String,
 	pub item_size: usize,
@@ -26,7 +40,9 @@ pub struct  BufferAttribute {
 
 
 #[allow(dead_code)]
-impl BufferAttribute {
+impl BufferAttribute
+{
+
 	pub fn count(&self) -> usize {
 		let l = self.len();
 		l / self.item_size
@@ -35,21 +51,11 @@ impl BufferAttribute {
 	pub fn len(&self) -> usize {
 		// let data = &self.data;
 		match &self.data {
-			&BufferType::F32(ref a) => a.len(),
-			&BufferType::Usize(ref a) => a.len(),
-			// &BufferType::F64(ref a) => a.len(),
+			&BufferType::Vector3f32(ref a) 	=> a.len(),
+			&BufferType::Vector3f64(ref a) 	=> a.len(),
+			&BufferType::Colorf32(ref a) 	=> a.len(),
+			&BufferType::Colorf64(ref a) 	=> a.len(),
 		}
-	}
-
-	pub fn elem_byte_len(&self) -> usize {
-		match self.data {
-			BufferType::F32(_) => {mem::size_of::<f32>()}
-			BufferType::Usize(_) => {mem::size_of::<usize>()}
-		}
-	}
-
-	pub fn byte_len(&self) -> usize {
-		self.elem_byte_len() * self.len()
 	}
 
 	pub fn set_normalized(&mut self, normalized:bool) -> &mut Self {
@@ -69,15 +75,12 @@ impl BufferAttribute {
 }
 
 
-// gl::BufferData(
-// 				gl::ARRAY_BUFFER,
-// 				(mem::size_of::<GLfloat>() * positions.len()) as GLsizeiptr,
-// 				&positions[0] as *const f32 as *const c_void,
-// 				gl::DYNAMIC_DRAW
-// 			);
-
-
-
+// // gl::BufferData(
+// // 				gl::ARRAY_BUFFER,
+// // 				(mem::size_of::<GLfloat>() * positions.len()) as GLsizeiptr,
+// // 				&positions[0] as *const f32 as *const c_void,
+// // 				gl::DYNAMIC_DRAW
+// // 			);
 
 
 #[allow(dead_code)]
@@ -88,34 +91,56 @@ pub struct BufferGroup {
 }
 
 
+
 #[allow(dead_code)]
-pub struct BufferGeometry {
-	pub attributes: Vec<BufferAttribute>,
+pub struct BufferGeometry
+{
 	pub groups: Vec<BufferGroup>,
-	pub indices: Option<Vec<usize>>,
+	pub indices: Option<Vec<i32>>,
 	pub uuid: Uuid,
+	pub attributes: Vec<BufferAttribute>,
+	callbacks: Vec<fn(&mut BufferGeometry)>
 }
 
-impl BufferGeometry {
+
+#[allow(dead_code)]
+impl BufferGeometry
+{
+
 	pub fn new() -> Self{
 		Self {
 			attributes: Vec::new(),
 			groups: Vec::new(),
 			indices: None,
 			uuid: Uuid::new_v4(),
+			callbacks: Vec::new(),
 		}
 	}
 
 
-	pub fn set_indices(&mut self, indices:Vec<usize>) -> &mut Self {
+	pub fn set_indices(&mut self, indices:Vec<i32>) -> &mut Self {
 		self.indices = Some(indices);
 		self
 	}
 
 
-	pub fn create_buffer_attribute(&mut self, name:String, data:Vec<f32>, item_size:usize ) -> &mut BufferAttribute {
-		let data = BufferType::F32(data);
+	pub fn add_buffer_attribute(&mut self, bufferattribute: BufferAttribute) -> &mut BufferAttribute  {
+		if self.attributes.len() > 0 {
+			let len = bufferattribute.len();
+			let prevLen = self.attributes[0].len();
+			if len != prevLen {
+				panic!("BufferGeometry: diffrent buffer length {}:{}, {}:{}", bufferattribute.name, len, self.attributes[0].name, prevLen);
+			}
+		}
 
+		self.attributes.push(bufferattribute);
+
+		let i = self.attributes.len() - 1;
+		&mut self.attributes[i]
+	}
+
+
+	pub fn create_buffer_attribute(&mut self, name:String, data: BufferType, item_size:usize ) -> &mut BufferAttribute {
 		let bufferattribute = BufferAttribute{
 			name, data, item_size,
 			normalized: false,
@@ -123,11 +148,22 @@ impl BufferGeometry {
 			version: 0,
 		};
 
-		self.attributes.push(bufferattribute);
+		self.add_buffer_attribute(bufferattribute)
+	}
 
-		let i = self.attributes.len() - 1;
-		&mut self.attributes[i]
-		// a
-		// &mut self.attributes[self.attributes.len()-1]
+
+	pub fn on_drop(&mut self, cb: fn(&mut BufferGeometry) ) {
+		self.callbacks.push(cb);
+	}
+}
+
+
+
+impl Drop for BufferGeometry {
+	fn drop(&mut self) {
+		while self.callbacks.len() > 0 {
+			let cb = self.callbacks.pop().unwrap();
+			cb(self);
+		}
 	}
 }

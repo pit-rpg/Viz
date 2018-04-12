@@ -1,34 +1,40 @@
 use math::Matrix4;
+use helpers::Nums;
+// use math::Vector;
+
+use std::cmp::{Ord};
+// use std::cmp::{ Eq, Ord, Ordering};
+use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
+
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
-pub struct Matrix3 {
-    pub elements: [f64; 9],
+pub struct Matrix3<T> {
+    pub elements: [T; 9],
 }
 
 
-static IDENTITY: [f64; 9] = [
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 0.0, 1.0
-    ];
-
-
 #[allow(dead_code)]
-impl Matrix3 {
+impl <T> Matrix3<T>
+where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Ord+Neg<Output=T>+Clone+Div<Output=T>+Into<T>+From<f64>+From<f32>
+{
     pub fn new() -> Self {
         Self {
-            elements: IDENTITY.clone()
+            elements: [
+				Nums::one(), Nums::zero(), Nums::zero(),
+				Nums::zero(), Nums::one(), Nums::zero(),
+				Nums::zero(), Nums::zero(), Nums::one()
+		    ]
         }
     }
 
-	pub fn get_normal_matrix (&mut self, matrix4: &Matrix4 ) -> &mut Self {
+	pub fn get_normal_matrix (&mut self, matrix4: &Matrix4<T> ) -> &mut Self {
         let clone = &self.clone();
 		self.set_from_matrix4( matrix4 ).get_inverse( clone, false ).unwrap().transpose()
 	}
 
 
-	pub fn set_from_matrix4 (&mut self,  m: &Matrix4 ) -> &mut Self {
+	pub fn set_from_matrix4 (&mut self,  m: &Matrix4<T> ) -> &mut Self {
 		let me = m.elements;
 		self.set(
 			me[ 0 ], me[ 4 ], me[ 8 ],
@@ -38,7 +44,7 @@ impl Matrix3 {
 		self
 	}
 
-	pub fn set (&mut self, n11: f64, n12: f64, n13: f64, n21: f64, n22: f64, n23: f64, n31: f64, n32: f64, n33: f64 ) -> &mut Self {
+	pub fn set (&mut self, n11: T, n12: T, n13: T, n21: T, n22: T, n23: T, n31: T, n32: T, n33: T ) -> &mut Self {
 		let mut te = self.elements;
 		te[ 0 ] = n11; te[ 1 ] = n21; te[ 2 ] = n31;
 		te[ 3 ] = n12; te[ 4 ] = n22; te[ 5 ] = n32;
@@ -46,7 +52,7 @@ impl Matrix3 {
 		self
 	}
 
-	pub fn get_inverse (&mut self, matrix: &Matrix3, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
+	pub fn get_inverse (&mut self, matrix: &Matrix3<T>, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
 
 		let me = matrix.elements;
 		let mut te = self.elements;
@@ -61,7 +67,7 @@ impl Matrix3 {
 
 		let det = n11 * t11 + n21 * t12 + n31 * t13;
 
-		if  det == 0.0  {
+		if  det == Nums::zero()  {
 
 			let msg = "THREE.Matrix3: .get_inverse() can't invert matrix, determinant is 0";
             eprintln!("{}", msg);
@@ -73,7 +79,7 @@ impl Matrix3 {
 			return Ok(self.identity());
 		}
 
-		let det_inv = 1.0 / det;
+		let det_inv = Nums::one() / det;
 
 		te[ 0 ] = t11 * det_inv;
 		te[ 1 ] = ( n31 * n23 - n33 * n21 ) * det_inv;
@@ -92,9 +98,9 @@ impl Matrix3 {
 
 	pub fn identity (&mut self) -> &mut Self {
 		self.set(
-			1.0, 0.0, 0.0,
-			0.0, 1.0, 0.0,
-			0.0, 0.0, 1.0
+			Nums::one(), Nums::zero(), Nums::zero(),
+			Nums::zero(), Nums::one(), Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
 	}

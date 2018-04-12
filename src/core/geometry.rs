@@ -2,20 +2,26 @@ extern crate uuid;
 use self::uuid::Uuid;
 use math::vector3::Vector3;
 use math::vector3::Vector;
-use math::Matrix4;
-use math::Matrix3;
+// use math::Matrix4;
+// use math::Matrix3;
 use core::Face3;
+use helpers::Nums;
+// use std::cmp::{ Eq, Ord, Ordering};
+use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
+
 
 // 	this.name = '';
 // 	this.type = 'Geometry';
 
 // #[derive(Clone, Debug, Copy)]
 #[derive(Clone, Debug)]
-pub struct Geometry {
+pub struct Geometry<T>
+where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+From<f32>+From<f64>
+{
     pub uuid: Uuid,
     pub name: String,
-    pub vertices: Vec<Vector3>,
-    pub faces: Vec<Face3>,
+    pub vertices: Vec<Vector3<T>>,
+    pub faces: Vec<Face3<T>>,
 
 	pub elements_need_update: bool,
 	pub vertices_need_update: bool,
@@ -27,8 +33,10 @@ pub struct Geometry {
 }
 
 #[allow(dead_code)]
-impl Geometry {
-    pub fn new() -> Geometry {
+impl <T> Geometry<T>
+where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+From<f32>+From<f64>
+{
+    pub fn new() -> Geometry<T> {
         Geometry {
             uuid: Uuid::new_v4(),
             name: "".to_string(),
@@ -55,46 +63,46 @@ impl Geometry {
         // 	}(),
 
 
-	fn translate(&mut self, x: f64, y: f64, z: f64) -> &mut Self {
-		// translate geometry
-		let mut m1 = Matrix4::new();
+	// fn translate(&mut self, x: T, y: T, z: T) -> &mut Self {
+	// 	// translate geometry
+	// 	let mut m1 = Matrix4::new();
 
-        m1.make_translation( x, y, z );
-		self.apply_matrix( &m1 );
+    //     m1.make_translation( x, y, z );
+	// 	self.apply_matrix( &m1 );
 
-        self
-	}
+    //     self
+	// }
 
-	fn apply_matrix (&mut self, matrix: &Matrix4 ) -> &mut Self {
-		let mut normal_matrix = Matrix3::new();
-        normal_matrix.get_normal_matrix( matrix );
+	// fn apply_matrix (&mut self, matrix: &Matrix4<T> ) -> &mut Self {
+	// 	let mut normal_matrix = Matrix3::new();
+    //     normal_matrix.get_normal_matrix( matrix );
 
-        for vertex in &mut self.vertices {
-			vertex.apply_matrix_4( &matrix );
-		}
+    //     for vertex in &mut self.vertices {
+	// 		vertex.apply_matrix_4( &matrix );
+	// 	}
 
-        for face in &mut self.faces {
+    //     for face in &mut self.faces {
 
-            face.normal.apply_matrix_3( &normal_matrix ).normalize();
+    //         face.normal.apply_matrix_3( &normal_matrix ).normalize();
 
-            for normal in &mut face.vertex_normals {
-				normal.apply_matrix_3( &normal_matrix ).normalize();
-			}
-		}
+    //         for normal in &mut face.vertex_normals {
+	// 			normal.apply_matrix_3( &normal_matrix ).normalize();
+	// 		}
+	// 	}
 
-        // if ( this.boundingBox !== null ) {
-		// 	this.computeBoundingBox();
-		// }
+    //     // if ( this.boundingBox !== null ) {
+	// 	// 	this.computeBoundingBox();
+	// 	// }
 
-        // if ( this.boundingSphere !== null ) {
-		// 	this.computeBoundingSphere();
-		// }
+    //     // if ( this.boundingSphere !== null ) {
+	// 	// 	this.computeBoundingSphere();
+	// 	// }
 
-        self.vertices_need_update = true;
-		self.normals_need_update = true;
+    //     self.vertices_need_update = true;
+	// 	self.normals_need_update = true;
 
-        self
-	}
+    //     self
+	// }
 
 }
 

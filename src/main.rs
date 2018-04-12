@@ -4,6 +4,8 @@ mod math;
 mod core;
 mod render;
 mod helpers;
+use core::BufferGeometry;
+
 // use math::Vector_3::Vector3;
 use math::vector3::*;
 // use math::vector::Vector;
@@ -22,12 +24,23 @@ fn main() {
     };
     origin.x = 0.2;
 
-    let geometry = core::Geometry::new();
+    // let geometry = Geometry::<f32>::new();
 
-    println!("{:?}", geometry);
+    // println!("{:?}", geometry);
+    {
+        let mut geom = BufferGeometry::new();
+
+        geom.on_drop(|buff| {
+            println!("LOLOLO");
+        });
+
+    }
 
     render::render_gl::init();
     render::render_gl::create_window();
+
+
+    // let mut buffer = [0u8; 10];
 
     // let po = Vector3 {
     //     x: 1.0,

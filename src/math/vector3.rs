@@ -2,20 +2,22 @@
 //
 // use math::Vector;
 
-extern crate num_traits;
-use math::Matrix4;
-use math::Matrix3;
-// use std::cmp::{ Eq, Ord};
-// use std::ops::{Div,AddAssign,SubAssign,MulAssign};
-use std::ops::{Div};
-use self::num_traits::Float;
+// extern crate num_traits;
+// use math::Matrix4;
+// use math::Matrix3;
+// use std::cmp::{ Eq};
+// use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
+// use std::ops::{Div};
+// use self::num_traits::Float;
+use helpers::Nums;
 
 #[derive(Clone, Debug)]
 #[repr(C)]
-pub struct Vector3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+pub struct Vector3<T>
+where T:Nums {
+    pub x: T,
+    pub y: T,
+    pub z: T,
 }
 //
 // #[derive(Clone, Debug)]
@@ -43,23 +45,23 @@ pub struct Vector3 {
 
 
 pub trait Vector<T>
-where T: PartialOrd+Div<Output=T>+Float {
+where T: Nums {
     // fn clone(v: &Self) -> Self;
     fn new() -> Self;
     fn multiply_scalar(&mut self, s: T) -> &mut Self;
     fn length(&self) -> T;
     fn length_sq(&self) -> T;
-    fn manhattanLength(&mut self) -> T;
-    fn setScalar(&mut self, s: T) -> &mut Self;
-    fn addScalar(&mut self, s: T) -> &mut Self;
-    fn subScalar(&mut self, s: T) -> &mut Self;
+    fn manhattan_length(&mut self) -> T;
+    fn set_scalar(&mut self, s: T) -> &mut Self;
+    fn add_scalar(&mut self, s: T) -> &mut Self;
+    fn sub_scalar(&mut self, s: T) -> &mut Self;
     fn add(&mut self, v: &Self) -> &mut Self;
     fn sub(&mut self, v: &Self) -> &mut Self;
     fn multiply(&mut self, v: &Self) -> &mut Self;
     fn divide(&mut self, v: &Self) -> &mut Self;
-    fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self;
-    fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self;
-    fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self;
+    fn add_vectors(&mut self, a: &Self, b: &Self) -> &mut Self;
+    fn sub_vectors(&mut self, a: &Self, b: &Self) -> &mut Self;
+    fn multiply_vectors(&mut self, a: &Self, b: &Self) -> &mut Self;
     fn negate(&mut self) -> &mut Self;
     fn min(&mut self, v: &Self) -> &mut Self;
     fn max(&mut self, v: &Self) -> &mut Self;
@@ -73,12 +75,12 @@ where T: PartialOrd+Div<Output=T>+Float {
     fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self;
     fn cross (&mut self, v: &Self )-> &mut Self;
     fn set(&mut self, x: T, y: T, z: T) -> &mut Self;
-    fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self;
+    // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self;
     fn from_array (&mut self, array: &[T] ) -> &mut Self;
-    fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self;
-    fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self;
+    // fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self;
+    // fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self;
 
-    fn divideScalar(&mut self, s: T) -> &mut Self {
+    fn divide_scalar(&mut self, s: T) -> &mut Self {
         return self.multiply_scalar(T::one() / s);
     }
 
@@ -87,23 +89,23 @@ where T: PartialOrd+Div<Output=T>+Float {
         if l == T::zero() {
             l = T::one()
         };
-        self.divideScalar(l);
+        self.divide_scalar(l);
         self
     }
 
-    fn setLength(&mut self, length: T) -> &mut Self {
+    fn set_length(&mut self, length: T) -> &mut Self {
         self.normalize().multiply_scalar(length)
     }
 
-    fn clampLength (&mut self, min:T, max:T )-> &mut Self {
+    fn clamp_length (&mut self, min:T, max:T )-> &mut Self {
         let mut l = self.length();
         if l == T::zero() {l = T::one()};
-        self.divideScalar( l ).multiply_scalar(min.min( max.max(l)))
-        // self.divideScalar( l ).multiply_scalar(min(min1, max(max1, l)))
+        self.divide_scalar( l ).multiply_scalar(min.min( max.max(l)))
+        // self.divide_scalar( l ).multiply_scalar(min(min1, max(max1, l)))
     }
 
-    fn lerpVectors (&mut self, v1: &Self, v2: &Self, alpha:T )-> &mut Self {
-        self.subVectors( v2, v1 ).multiply_scalar( alpha ).add( v1 )
+    fn lerp_vectors (&mut self, v1: &Self, v2: &Self, alpha:T )-> &mut Self {
+        self.sub_vectors( v2, v1 ).multiply_scalar( alpha ).add( v1 )
     }
 }
 
@@ -120,53 +122,48 @@ where T: PartialOrd+Div<Output=T>+Float {
 //     };
 // }
 
-
-#[allow(unused_macros)]
-macro_rules! deriveVector {
-    ( $obj:ty, $T:ty  ) => {
-
-        impl Vector<$T> for $obj
+impl <T> Vector<T> for Vector3<T>
+where T:Nums
         {
 
             fn new() -> Self {
-                Self { x: 0.0, y: 0.0, z: 0.0 }
+                Self { x: T::zero(), y: T::zero(), z: T::zero() }
             }
 
-            fn multiply_scalar(&mut self, s: $T) -> &mut Self {
+            fn multiply_scalar(&mut self, s: T) -> &mut Self {
                 self.x *= s;
                 self.y *= s;
                 self.z *= s;
                 self
             }
 
-            fn length(&self) -> $T {
+            fn length(&self) -> T {
                 (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
-                // return Math.sqrt( this.x * this.x + this.y * this.y + this.z * this.z );
             }
 
-            fn length_sq(&self) -> $T {
+            fn length_sq(&self) -> T {
                 self.x * self.x + self.y * self.y + self.z * self.z
             }
 
-            fn manhattanLength(&mut self) -> $T {
+            fn manhattan_length(&mut self) -> T {
                 (self.x).abs() + (self.y).abs() + (self.z).abs()
             }
 
-            fn setScalar(&mut self, s: $T) -> &mut Self {
+            fn set_scalar(&mut self, s: T) -> &mut Self {
                 self.x = s;
                 self.y = s;
                 self.z = s;
                 self
             }
 
-            fn addScalar(&mut self, s: $T) -> &mut Self {
+            fn add_scalar(&mut self, s: T) -> &mut Self {
                 self.x += s;
                 self.y += s;
                 self.z += s;
                 self
             }
 
-            fn subScalar(&mut self, s: $T) -> &mut Self {
+            fn sub_scalar(&mut self, s: T) -> &mut Self {
                 self.x -= s;
                 self.y -= s;
                 self.z -= s;
@@ -201,21 +198,21 @@ macro_rules! deriveVector {
                 self
             }
 
-            fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+            fn add_vectors(&mut self, a: &Self, b: &Self) -> &mut Self {
                 self.x = a.x + b.x;
                 self.y = a.y + b.y;
                 self.z = a.z + b.z;
                 self
             }
 
-            fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+            fn sub_vectors(&mut self, a: &Self, b: &Self) -> &mut Self {
                 self.x = a.x - b.x;
                 self.y = a.y - b.y;
                 self.z = a.z - b.z;
                 self
             }
 
-            fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+            fn multiply_vectors(&mut self, a: &Self, b: &Self) -> &mut Self {
                 self.x = a.x * b.x;
                 self.y = a.y * b.y;
                 self.z = a.z * b.z;
@@ -243,7 +240,7 @@ macro_rules! deriveVector {
                 self
             }
 
-            fn dot(&mut self, v: &Self) -> $T {
+            fn dot(&mut self, v: &Self) -> T {
                 self.x * v.x + self.y * v.y + self.z * v.z
             }
 
@@ -275,7 +272,7 @@ macro_rules! deriveVector {
         		self
             }
 
-            fn lerp (&mut self, v: &Self,  alpha:$T )-> &mut Self {
+            fn lerp (&mut self, v: &Self,  alpha:T )-> &mut Self {
                 self.x += ( v.x - self.x ) * alpha;
                 self.y += ( v.y - self.y ) * alpha;
                 self.z += ( v.z - self.z ) * alpha;
@@ -283,7 +280,7 @@ macro_rules! deriveVector {
             }
 
             fn zero() -> Self {
-                Self{x:0.0,y:0.0,z:0.0}
+                Self{x: T::zero(), y: T::zero(), z: T::zero()}
             }
 
             fn cross_vectors ( &mut self, a: &Self, b: &Self ) -> &mut Self {
@@ -304,62 +301,52 @@ macro_rules! deriveVector {
                 self.cross_vectors(&c , v )
             }
 
-            fn set(&mut self, x: $T, y: $T, z: $T) -> &mut Self {
+            fn set(&mut self, x: T, y: T, z: T) -> &mut Self {
                 self.x = x;
                 self.y = y;
                 self.z = z;
                 self
             }
 
-        	fn set_from_matrix_column (&mut self, m: &Matrix4, index: usize ) -> &mut Self {
-                let i = index * 4;
-                self.from_array( &m.elements[i..i*4] );
-        		self
-        	}
+        	// fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self {
+            //     let i = index * 4;
+            //     self.from_array( &m.elements[i..i*4] );
+        	// 	self
+        	// }
 
-            // 	fromArray: function ( array, offset ) {
-            // 		if ( offset === undefined ) offset = 0;
-            // 		this.x = array[ offset ];
-            // 		this.y = array[ offset + 1 ];
-            // 		this.z = array[ offset + 2 ];
-            // 		return this;
-            // 	},
-        	fn from_array (&mut self, array: &[$T] ) -> &mut Self {
+        	fn from_array (&mut self, array: &[T] ) -> &mut Self {
         		self.x = array[ 0 ];
         		self.y = array[ 1 ];
         		self.z = array[ 2 ];
                 self
         	}
 
-        	fn apply_matrix_4 (&mut self, m: &Matrix4 ) -> &mut Self {
-        		let x = self.x; let y = self.y; let z = self.z;
-        		let e = m.elements;
-        		let w = 1.0 / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
+        	// fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self {
+            //     let one:T = Nums::one();
 
-                self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
-        		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
-        		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+            //     let x = self.x; let y = self.y; let z = self.z;
+        	// 	let e = m.elements;
+        	// 	let w = one / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
 
-                self
-        	}
+            //     self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
+        	// 	self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
+        	// 	self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+
+            //     self
+        	// }
 
 
-        	fn apply_matrix_3 (&mut self, m: &Matrix3 ) -> &mut Self {
-        		let x = self.x; let y = self.y; let z = self.z;
-        		let e = m.elements;
-        		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
-        		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
-        		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
-        		self
-        	}
+        	// fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self {
+        	// 	let x = self.x; let y = self.y; let z = self.z;
+        	// 	let e = m.elements;
+        	// 	self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
+        	// 	self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
+        	// 	self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
+        	// 	self
+        	// }
         }
 
-
-    };
-}
-
-
-deriveVector!(Vector3, f64);
+// deriveVector!(Vector3_64, f64);
 
 // impl Vector<f64> for Vector3
 // {
@@ -385,25 +372,25 @@ deriveVector!(Vector3, f64);
 //         self.x * self.x + self.y * self.y + self.z * self.z
 //     }
 //
-//     fn manhattanLength(&mut self) -> f64 {
+//     fn manhattan_length(&mut self) -> f64 {
 //         (self.x).abs() + (self.y).abs() + (self.z).abs()
 //     }
 //
-//     fn setScalar(&mut self, s: f64) -> &mut Self {
+//     fn set_scalar(&mut self, s: f64) -> &mut Self {
 //         self.x = s;
 //         self.y = s;
 //         self.z = s;
 //         self
 //     }
 //
-//     fn addScalar(&mut self, s: f64) -> &mut Self {
+//     fn add_scalar(&mut self, s: f64) -> &mut Self {
 //         self.x += s;
 //         self.y += s;
 //         self.z += s;
 //         self
 //     }
 //
-//     fn subScalar(&mut self, s: f64) -> &mut Self {
+//     fn sub_scalar(&mut self, s: f64) -> &mut Self {
 //         self.x -= s;
 //         self.y -= s;
 //         self.z -= s;
@@ -438,21 +425,21 @@ deriveVector!(Vector3, f64);
 //         self
 //     }
 //
-//     fn addVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+//     fn add_vectors(&mut self, a: &Self, b: &Self) -> &mut Self {
 //         self.x = a.x + b.x;
 //         self.y = a.y + b.y;
 //         self.z = a.z + b.z;
 //         self
 //     }
 //
-//     fn subVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+//     fn sub_vectors(&mut self, a: &Self, b: &Self) -> &mut Self {
 //         self.x = a.x - b.x;
 //         self.y = a.y - b.y;
 //         self.z = a.z - b.z;
 //         self
 //     }
 //
-//     fn multiplyVectors(&mut self, a: &Self, b: &Self) -> &mut Self {
+//     fn multiply_vectors(&mut self, a: &Self, b: &Self) -> &mut Self {
 //         self.x = a.x * b.x;
 //         self.y = a.y * b.y;
 //         self.z = a.z * b.z;

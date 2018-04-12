@@ -1,28 +1,41 @@
 use math::vector3::Vector3;
 use math::vector3::Vector;
+use helpers::Nums;
 // use math::Vector;
+
+use std::cmp::{ Eq, Ord, Ordering, PartialEq};
+use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
+// use std::convert::From;
+
 
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
-pub struct Matrix4 {
-    pub elements: [f64; 16],
+pub struct Matrix4<T> {
+    pub elements: [T; 16],
 }
 
-static IDENTITY: [f64; 16] = [  1.0, 0.0, 0.0, 0.0,
-                                0.0, 1.0, 0.0, 0.0,
-                                0.0, 0.0, 1.0, 0.0,
-                                0.0, 0.0, 0.0, 1.0];
+// static IDENTITY: [T; 16] = [	1.0, 0.0, 0.0, 0.0,
+//                                 0.0, 1.0, 0.0, 0.0,
+//                                 0.0, 0.0, 1.0, 0.0,
+//                                 0.0, 0.0, 0.0, 1.0];
 
 #[allow(dead_code)]
-impl Matrix4 {
+impl <T> Matrix4<T>
+where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+Into<T>+From<f64>+From<f32>+PartialEq+PartialOrd
+
+ {
+	// type float = T;
 
     pub fn new () -> Self {
         Matrix4 {
-            elements: IDENTITY.clone()
+            elements: [			Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
+                                Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
+                                Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
+                                Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()]
         }
     }
 
-    pub fn set ( &mut self, n11:f64, n12:f64, n13:f64, n14:f64, n21:f64, n22:f64, n23:f64, n24:f64, n31:f64, n32:f64, n33:f64, n34:f64, n41:f64, n42:f64, n43:f64, n44:f64 ) -> &mut Self {
+    pub fn set ( &mut self, n11:T, n12:T, n13:T, n14:T, n21:T, n22:T, n23:T, n24:T, n31:T, n32:T, n33:T, n34:T, n41:T, n42:T, n43:T, n44:T ) -> &mut Self {
     	let mut te = self.elements;
     	te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14;
     	te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24;
@@ -33,10 +46,10 @@ impl Matrix4 {
 
 	pub fn identity ( &mut self ) ->  &mut Self {
 		self.set(
-			1.0, 0.0, 0.0, 0.0,
-			0.0, 1.0, 0.0, 0.0,
-			0.0, 0.0, 1.0, 0.0,
-			0.0, 0.0, 0.0, 1.0
+			Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
+			Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
 	}
@@ -50,109 +63,110 @@ impl Matrix4 {
 		self
 	}
 
-    pub fn make_basis ( &mut self, x: Vector3, y: Vector3, z: Vector3 ) -> &mut Self {
+    pub fn make_basis ( &mut self, x: Vector3<T>, y: Vector3<T>, z: Vector3<T> ) -> &mut Self {
 		self.set(
-			x.x, y.x, z.x, 0.0,
-			x.y, y.y, z.y, 0.0,
-			x.z, y.z, z.z, 0.0,
-			0.0, 0.0, 0.0, 1.0
+			x.x, y.x, z.x, Nums::zero(),
+			x.y, y.y, z.y, Nums::zero(),
+			x.z, y.z, z.z, Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
     }
 
-	pub fn extract_basis (&self, x: &mut Vector3, y: &mut Vector3, z: &mut Vector3 ) -> &Self {
-		x.set_from_matrix_column( self, 0 );
-		y.set_from_matrix_column( self, 1 );
-		z.set_from_matrix_column( self, 2 );
-		self
-	}
+	// pub fn extract_basis (&self, x: &mut Vector3<T>, y: &mut Vector3<T>, z: &mut Vector3<T> ) -> &Self {
+	// 	x.set_from_matrix_column( self, 0 );
+	// 	y.set_from_matrix_column( self, 1 );
+	// 	z.set_from_matrix_column( self, 2 );
+	// 	self
+	// }
 
-	pub fn makerotation_axis (&mut self, axis: &Vector3, angle: f64 ) -> &mut Self {
+	pub fn makerotation_axis (&mut self, axis: &Vector3<T>, angle: T ) -> &mut Self {
 		// Based on http://www.gamedev.net/reference/articles/article1199.asp
 		let c =  angle.cos();
 		let s = angle.sin();
-		let t = 1.0 - c;
+		let one:T = Nums::one();
+		let t = one - c;
 		let x = axis.x;
         let y = axis.y;
         let z = axis.z;
 		let tx = t * x;
         let ty = t * y;
 		self.set(
-			tx * x + c, tx * y - s * z, tx * z + s * y, 0.0,
-			tx * y + s * z, ty * y + c, ty * z - s * x, 0.0,
-			tx * z - s * y, ty * z + s * x, t * z * z + c, 0.0,
-			0.0, 0.0, 0.0, 1.0
+			tx * x + c, tx * y - s * z, tx * z + s * y, Nums::zero(),
+			tx * y + s * z, ty * y + c, ty * z - s * x, Nums::zero(),
+			tx * z - s * y, ty * z + s * x, t * z * z + c, Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
 	}
 
-	pub fn make_scale (&mut self, x:f64 , y:f64, z:f64 ) -> &mut Self {
+	pub fn make_scale (&mut self, x:T , y:T, z:T ) -> &mut Self {
 		self.set(
-			x, 0.0, 0.0, 0.0,
-			0.0, y, 0.0, 0.0,
-			0.0, 0.0, z, 0.0,
-			0.0, 0.0, 0.0, 1.0
+			x, Nums::zero(), Nums::zero(), Nums::zero(),
+			Nums::zero(), y, Nums::zero(), Nums::zero(),
+			Nums::zero(), Nums::zero(), z, Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
 	}
 
-	pub fn make_shear (&mut self, x:f64 , y:f64, z:f64 ) -> &mut Self {
+	pub fn make_shear (&mut self, x:T , y:T, z:T ) -> &mut Self {
 		self.set(
-			1.0, y, z, 0.0,
-			x, 1.0, z, 0.0,
-			x, y, 1.0, 0.0,
-			0.0, 0.0, 0.0, 1.0
+			Nums::one(), y, z, Nums::zero(),
+			x, Nums::one(), z, Nums::zero(),
+			x, y, Nums::one(), Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
 	}
 
-	pub fn make_translation (&mut self, x:f64 , y:f64, z:f64 ) -> &mut Self {
+	pub fn make_translation (&mut self, x:T , y:T, z:T ) -> &mut Self {
 		self.set(
-			1.0, 0.0, 0.0, x,
-			0.0, 1.0, 0.0, y,
-			0.0, 0.0, 1.0, z,
-			0.0, 0.0, 0.0, 1.0
+			Nums::one(), Nums::zero(), Nums::zero(), x,
+			Nums::zero(), Nums::one(), Nums::zero(), y,
+			Nums::zero(), Nums::zero(), Nums::one(), z,
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
 	}
 
-    pub fn make_rotation_x(&mut self, theta: f64 ) -> &mut Self {
+    pub fn make_rotation_x(&mut self, theta: T ) -> &mut Self {
     	let c =  theta.cos();
         let s =  theta.sin();
     	self.set(
-    		1.0, 0.0, 0.0, 0.0,
-    		0.0, c, - s, 0.0,
-    		0.0, s, c, 0.0,
-    		0.0, 0.0, 0.0, 1.0
+    		Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
+    		Nums::zero(), c, - s, Nums::zero(),
+    		Nums::zero(), s, c, Nums::zero(),
+    		Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
     	);
     	self
     }
 
-    pub fn make_rotation_y(&mut self, theta: f64 ) -> &mut Self {
+    pub fn make_rotation_y(&mut self, theta: T ) -> &mut Self {
     	let c =  theta.cos();
         let s =  theta.sin();
     	self.set(
-    		 c, 0.0, s, 0.0,
-    		 0.0, 1.0, 0.0, 0.0,
-    		- s, 0.0, c, 0.0,
-    		 0.0, 0.0, 0.0, 1.0
+    		 c, Nums::zero(), s, Nums::zero(),
+    		 Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
+    		- s, Nums::zero(), c, Nums::zero(),
+    		 Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
     	);
     	self
     }
 
-    pub fn make_rotation_z(&mut self, theta: f64 ) -> &mut Self {
+    pub fn make_rotation_z(&mut self, theta: T ) -> &mut Self {
     	let c =  theta.cos();
         let s =  theta.sin();
     	self.set(
-    		c, - s, 0.0, 0.0,
-    		s, c, 0.0, 0.0,
-    		0.0, 0.0, 1.0, 0.0,
-    		0.0, 0.0, 0.0, 1.0
+    		c, - s, Nums::zero(), Nums::zero(),
+    		s, c, Nums::zero(), Nums::zero(),
+    		Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
+    		Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
     	);
     	self
     }
 
-	pub fn scale (&mut self, v: &Vector3 )-> &mut Self {
+	pub fn scale (&mut self, v: &Vector3<T> )-> &mut Self {
 		let mut te = self.elements;
 		let x = v.x;
         let y = v.y;
@@ -164,7 +178,7 @@ impl Matrix4 {
 		self
 	}
 
-	pub fn function (&mut self, matrix: &Matrix4 ) -> bool {
+	pub fn function (&mut self, matrix: &Matrix4<T> ) -> bool {
 		let te = self.elements;
 		let me = matrix.elements;
 
@@ -174,33 +188,37 @@ impl Matrix4 {
 		true
 	}
 
-	pub fn make_perspective (&mut self, left: f64, right: f64, top: f64, bottom: f64, near: f64, far: f64 ) -> &mut Self {
+	pub fn make_perspective (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
+		let two:T = 2.0.into();
+		let one:T = 1.0.into();
 		let mut te = self.elements;
-		let x = 2.0 * near / ( right - left );
-		let y = 2.0 * near / ( top - bottom );
+		let x = two * near / ( right - left );
+		let y = two * near / ( top - bottom );
 		let a = ( right + left ) / ( right - left );
 		let b = ( top + bottom ) / ( top - bottom );
 		let c = - ( far + near ) / ( far - near );
-		let d = - 2.0 * far * near / ( far - near );
-		te[ 0 ] = x;	te[ 4 ] = 0.0;	te[ 8 ] = a;	te[ 12 ] = 0.0;
-		te[ 1 ] = 0.0;	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = 0.0;
-		te[ 2 ] = 0.0;	te[ 6 ] = 0.0;	te[ 10 ] = c;	te[ 14 ] = d;
-		te[ 3 ] = 0.0;	te[ 7 ] = 0.0;	te[ 11 ] = - 1.0;	te[ 15 ] = 0.0;
+		let d:T = - two  * far * near / ( far - near );
+		te[ 0 ] = x;	te[ 4 ] = Nums::zero();	te[ 8 ] = a;	te[ 12 ] = Nums::zero();
+		te[ 1 ] = Nums::zero();	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = Nums::zero();
+		te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = c;	te[ 14 ] = d;
+		te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = - one;	te[ 15 ] = Nums::zero();
 		self
 	}
 
-    pub fn make_orthographic (&mut self, left: f64, right: f64, top: f64, bottom: f64, near: f64, far: f64 ) -> &mut Self {
+    pub fn make_orthographic (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
+		let two:T = 2.0.into();
+		let one:T = 2.0.into();
 		let mut te = self.elements;
-		let w = 1.0 / ( right - left );
-		let h = 1.0 / ( top - bottom );
-		let p = 1.0 / ( far - near );
+		let w = one / ( right - left );
+		let h = one / ( top - bottom );
+		let p = one / ( far - near );
 		let x = ( right + left ) * w;
 		let y = ( top + bottom ) * h;
 		let z = ( far + near ) * p;
-		te[ 0 ] = 2.0 * w ;	te[ 4 ] = 0.0;	te[ 8 ] = 0.0;	te[ 12 ] = - x;
-		te[ 1 ] = 0.0;	te[ 5 ] = 2.0 * h;	te[ 9 ] = 0.0;	te[ 13 ] = - y;
-		te[ 2 ] = 0.0;	te[ 6 ] = 0.0;	te[ 10 ] = - 2.0 * p;	te[ 14 ] = - z;
-		te[ 3 ] = 0.0;	te[ 7 ] = 0.0;	te[ 11 ] = 0.0;	te[ 15 ] = 1.0;
+		te[ 0 ] = two * w ;	te[ 4 ] = Nums::zero();	te[ 8 ] = Nums::zero();	te[ 12 ] = - x;
+		te[ 1 ] = Nums::zero();	te[ 5 ] = two * h;	te[ 9 ] = Nums::zero();	te[ 13 ] = - y;
+		te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = - two * p;	te[ 14 ] = - z;
+		te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = Nums::zero();	te[ 15 ] = Nums::one();
 		self
     }
 
@@ -216,7 +234,7 @@ impl Matrix4 {
 		self
 	}
 
-	pub fn set_position (&mut self, v: &Vector3 ) -> &mut Self {
+	pub fn set_position (&mut self, v: &Vector3<T> ) -> &mut Self {
 		let mut te = self.elements;
 		te[ 12 ] = v.x;
 		te[ 13 ] = v.y;
@@ -224,25 +242,25 @@ impl Matrix4 {
 		self
 	}
 
-    pub fn	extract_rotation (&mut self, m: &Self) -> &mut Self {
-		let mut  v1 =  Vector3::zero();
+    // pub fn	extract_rotation (&mut self, m: &Self) -> &mut Self {
+	// 	let mut  v1 =  Vector3::zero();
 
-		let mut te = self.elements;
-		let me = m.elements;
-		let scale_x = 1.0 / v1.set_from_matrix_column( m, 0 ).length();
-		let scale_y = 1.0 / v1.set_from_matrix_column( m, 1 ).length();
-		let scale_z = 1.0 / v1.set_from_matrix_column( m, 2 ).length();
-		te[ 0 ] = me[ 0 ] * scale_x;
-		te[ 1 ] = me[ 1 ] * scale_x;
-		te[ 2 ] = me[ 2 ] * scale_x;
-		te[ 4 ] = me[ 4 ] * scale_y;
-		te[ 5 ] = me[ 5 ] * scale_y;
-		te[ 6 ] = me[ 6 ] * scale_y;
-		te[ 8 ] = me[ 8 ] * scale_z;
-		te[ 9 ] = me[ 9 ] * scale_z;
-		te[ 10 ] = me[ 10 ] * scale_z;
-        self
-    }
+	// 	let mut te = self.elements;
+	// 	let me = m.elements;
+	// 	let scale_x = Nums::one() / v1.set_from_matrix_column( m, 0 ).length();
+	// 	let scale_y = Nums::one() / v1.set_from_matrix_column( m, 1 ).length();
+	// 	let scale_z = Nums::one() / v1.set_from_matrix_column( m, 2 ).length();
+	// 	te[ 0 ] = me[ 0 ] * scale_x;
+	// 	te[ 1 ] = me[ 1 ] * scale_x;
+	// 	te[ 2 ] = me[ 2 ] * scale_x;
+	// 	te[ 4 ] = me[ 4 ] * scale_y;
+	// 	te[ 5 ] = me[ 5 ] * scale_y;
+	// 	te[ 6 ] = me[ 6 ] * scale_y;
+	// 	te[ 8 ] = me[ 8 ] * scale_z;
+	// 	te[ 9 ] = me[ 9 ] * scale_z;
+	// 	te[ 10 ] = me[ 10 ] * scale_z;
+    //     self
+    // }
 
 	pub fn multiply(&mut self,  m: &Self ) -> &mut Self {
         let clone = &self.clone();
@@ -288,7 +306,7 @@ impl Matrix4 {
         self
 	}
 
-	pub fn look_at (&mut self, eye: &Vector3, target: &Vector3, up: &Vector3 ) -> &mut Self {
+	pub fn look_at (&mut self, eye: &Vector3<T>, target: &Vector3<T>, up: &Vector3<T> ) -> &mut Self {
 		let mut x = Vector3::zero();
 		let mut y = Vector3::zero();
 		let mut z = Vector3::zero();
@@ -296,20 +314,20 @@ impl Matrix4 {
 		let mut te = self.elements;
 
         z.subVectors( eye, target );
-		if  z.length_sq() == 0.0  {
+		if  z.length_sq() == Nums::zero()  {
 			// eye and target are in the same position
-			z.z = 1.0;
+			z.z = Nums::one();
 		}
 		z.normalize();
 
         x.cross_vectors( up, &z );
 
-        if  x.length_sq() == 0.0  {
+        if  x.length_sq() == Nums::zero()  {
 			// up and z are parallel
-			if  up.z.abs() == 1.0  {
-				z.x += 0.0001;
+			if  up.z.abs() == Nums::one()  {
+				z.x += 0.0001.into();
 			} else {
-				z.z += 0.0001;
+				z.z += 0.0001.into();
 			}
 
 			z.normalize();
@@ -327,7 +345,7 @@ impl Matrix4 {
 	}
 
 
-	pub fn multiply_scalar ( &mut self, s: f64 ) -> &mut Self {
+	pub fn multiply_scalar ( &mut self, s: T ) -> &mut Self {
 		let mut te = self.elements;
 		te[ 0 ] *= s; te[ 4 ] *= s; te[ 8 ] *= s; te[ 12 ] *= s;
 		te[ 1 ] *= s; te[ 5 ] *= s; te[ 9 ] *= s; te[ 13 ] *= s;
@@ -336,7 +354,7 @@ impl Matrix4 {
 		self
 	}
 
-    pub fn determinant (&mut self) -> f64 {
+    pub fn determinant (&mut self) -> T {
 		let te = self.elements;
 		let n11 = te[ 0 ]; let n12 = te[ 4 ]; let n13 = te[ 8 ];  let n14 = te[ 12 ];
 		let n21 = te[ 1 ]; let n22 = te[ 5 ]; let n23 = te[ 9 ];  let n24 = te[ 13 ];
@@ -393,7 +411,7 @@ impl Matrix4 {
 		let t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
 		let det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
 
-        if det == 0.0 {
+        if det == Nums::zero() {
 			let msg = "THREE.Matrix4: .getInverse() can't invert matrix, determinant is 0";
             eprintln!("{}", msg);
 
@@ -404,7 +422,8 @@ impl Matrix4 {
             return Ok(self.identity());
 		}
 
-        let det_inv = 1.0 / det;
+		let one:T = Nums::one();
+        let det_inv = one / det;
 		te[ 0 ] = t11 * det_inv;
 		te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * det_inv;
 		te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * det_inv;
@@ -425,7 +444,7 @@ impl Matrix4 {
         Ok(self)
 	}
 
-	pub fn get_max_scale_on_axis (&self) -> f64 {
+	pub fn get_max_scale_on_axis (&self) -> T {
 		let te = self.elements;
 
         let scale_xs_q = te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ];
@@ -438,7 +457,7 @@ impl Matrix4 {
 
 
 
-// import { Vector3 } from './Vector3.js';
+// import { Vector3<T> } from './Vector3<T>.js';
 // /**
 //  * @author mrdoob / http://mrdoob.com/
 //  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -469,7 +488,7 @@ impl Matrix4 {
 
 // 	makeRotationFromEuler: function ( euler ) {
 // 		if ( ! ( euler && euler.isEuler ) ) {
-// 			console.error( 'THREE.Matrix4: .makeRotationFromEuler() now expects a Euler rotation rather than a Vector3 and order.' );
+// 			console.error( 'THREE.Matrix4: .makeRotationFromEuler() now expects a Euler rotation rather than a Vector3<T> and order.' );
 // 		}
 // 		var te = this.elements;
 // 		var x = euler.x, y = euler.y, z = euler.z;
@@ -583,7 +602,7 @@ impl Matrix4 {
 // 	},
 
 // 	applyToBufferAttribute: function () {
-// 		var v1 = new Vector3();
+// 		var v1 = new Vector3<T>();
 // 		return function applyToBufferAttribute( attribute ) {
 // 			for ( var i = 0, l = attribute.count; i < l; i ++ ) {
 // 				v1.x = attribute.getX( i );
@@ -606,7 +625,7 @@ impl Matrix4 {
 // 		return this;
 // 	},
 // 	decompose: function () {
-// 		var vector = new Vector3();
+// 		var vector = new Vector3<T>();
 // 		var matrix = new Matrix4();
 // 		return function decompose( position, quaternion, scale ) {
 // 			var te = this.elements;

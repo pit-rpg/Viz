@@ -1,17 +1,27 @@
 use math::vector3::*;
+use std::cmp::{ Eq, Ord, Ordering};
+use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
+// use std::ops::{Div};
+// use self::num_traits::Float;
+use helpers::Nums;
+
 
 #[derive(Clone, Debug)]
-pub struct Face3 {
+pub struct Face3<T>
+where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>
+{
     pub a: usize,
     pub b: usize,
     pub c: usize,
-    pub normal: Vector3,
-    pub vertex_normals: [Vector3; 3],
+    pub normal: Vector3<T>,
+    pub vertex_normals: [Vector3<T>; 3],
 }
 
 #[allow(dead_code)]
-impl Face3 {
-    pub fn new (a:usize, b:usize, c:usize) -> Face3 {
+impl <T> Face3<T>
+where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+PartialOrd
+{
+    pub fn new (a:usize, b:usize, c:usize) -> Self {
         Face3 {
             a, b, c,
             normal: Vector3::new(),

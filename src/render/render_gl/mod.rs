@@ -98,10 +98,10 @@ pub fn create_window() {
             1, 2, 3    // second triangle
     ];
 
-    let mut geom = BufferGeometry::new();
-    geom.create_buffer_attribute("position".to_string(), pos, 3);
-    geom.create_buffer_attribute("color".to_string(), col, 3);
-    geom.set_indices(ind);
+    // let mut geom = BufferGeometry::new();
+    // geom.create_buffer_attribute("position".to_string(), pos, 3);
+    // geom.create_buffer_attribute("color".to_string(), col, 3);
+    // geom.set_indices(ind);
 
     let positions: [f32; 24] = [
         0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
