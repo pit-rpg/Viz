@@ -1,20 +1,17 @@
 extern crate gl;
+extern crate uuid;
+extern crate byteorder;
 
-#[macro_use]
-use render::render_gl::macros;
+// #[macro_use]
+// use render::render_gl::macros;
 use std::mem;
 use self::gl::types::*;
-// use std::mem;
-extern crate byteorder;
-use self::byteorder::{BigEndian, WriteBytesExt, LittleEndian};
+use self::byteorder::{BigEndian, WriteBytesExt};
 use std::os::raw::c_void;
-
 use core::{BufferGeometry, BufferType, BufferAttribute};
 use std::collections::HashMap;
-// use std::sync::{Mutex, Arc};
-extern crate uuid;
 use self::uuid::Uuid;
-// let mut book_reviews = HashMap::new();
+
 
 #[derive(Debug)]
 pub struct Buffers {
@@ -45,28 +42,35 @@ impl Default for Buffers {
 
 pub type VartexArrays<'a> = HashMap<Uuid, Buffers>;
 
-// pub static mut VARTEX_ARRAYS:  Option<Mutex<VartexArrays>> = None;
-// pub static mut VARTEX_ARRAYS: Option<HashMap<i32, i32>> = None;
 
 #[allow(dead_code)]
 pub trait GLGeometry {
 	fn bind(&self, hash_map: &mut VartexArrays);
 	fn un_bind(&self);
-	fn alloc_gl_gom(&mut self, hash_map: &mut VartexArrays);
+	fn alloc_gl_gom(&self) -> Buffers;
 	fn elem_byte_len(attribute: &BufferAttribute) -> usize;
-	// fn elems_byte_len(attribute: &BufferAttribute) -> usize;
-	// fn alloc_gl_gom(&self, hash_map: &mut VartexArrays) -> Buffers;
 }
 
 
 impl GLGeometry for BufferGeometry {
 
-	fn bind(&self, hash_map: &mut VartexArrays){
-		unimplemented!();
+	fn bind(&self, hash_map: &mut VartexArrays) {
+		match hash_map.get_mut(&self.uuid) {
+			None => {},
+			Some(ref buffers) => {
+				gl_call!({ gl::BindVertexArray(buffers.vertex_array); });
+				return;
+			}
+		}
+
+		let buffers = self.alloc_gl_gom();
+		hash_map.insert(self.uuid, buffers);
+
+		self.bind(hash_map);
 	}
 
 	fn un_bind(&self){
-		unimplemented!();
+		gl_call!({ gl::BindVertexArray(0); });
 	}
 
 	fn elem_byte_len(attribute: &BufferAttribute) -> usize {
@@ -78,7 +82,7 @@ impl GLGeometry for BufferGeometry {
 		}
 	}
 
-	fn alloc_gl_gom(&mut self, hash_map: &mut VartexArrays) {
+	fn alloc_gl_gom(&self) -> Buffers {
 		let len = self.attributes.len();
 		if len == 0 {
 			panic!("empty Geometry");
@@ -142,19 +146,19 @@ impl GLGeometry for BufferGeometry {
 			},
 		}
 
-		let mut VAO = 0;
-		let mut VBO = 0;
-		let mut EBO = 0;
+		let mut vertex_array = 0;
+		let mut array_buffer = 0;
+		let mut element_array_buffer = 0;
 
 		// gl_call!({});
 		gl_call!({
-			gl::GenVertexArrays(1, &mut VAO);
-			gl::GenBuffers(1, &mut VBO);
-			gl::GenBuffers(1, &mut EBO);
+			gl::GenVertexArrays(1, &mut vertex_array);
+			gl::GenBuffers(1, &mut array_buffer);
+			gl::GenBuffers(1, &mut element_array_buffer);
 
-			gl::BindVertexArray(VAO);
-			gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
-			gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
+			gl::BindVertexArray(vertex_array);
+			gl::BindBuffer(gl::ARRAY_BUFFER, array_buffer);
+			gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, element_array_buffer);
 		});
 
 		gl_call!({
@@ -210,6 +214,12 @@ impl GLGeometry for BufferGeometry {
 			});
 
 			byte_offset += Self::elem_byte_len(buffer_data);
+		}
+
+		Buffers {
+			vertex_array,
+			array_buffer,
+			element_array_buffer,
 		}
 	}
 

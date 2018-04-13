@@ -1,12 +1,6 @@
 extern crate rand;
-
-use std::ops::{Sub, Mul, Add, AddAssign};
-// pub use self::ColorTrait;
-// use colors;
-// use self::rand;
-// use std::convert::Into;
-// use std::num::Zero;
-// trait VecNum: Add + Mul + Sub + Neg + Copy {}
+use helpers::Nums;
+use std::ops::{Add};
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -21,11 +15,9 @@ pub struct Color <T> {
 impl <T> Color<T>{}
 
 pub trait ColorTrait <T> {
-	// type T;
-	// fn zero () -> Self;
-
 	fn copy ( &mut self, color: &Self ) -> &mut Self;
-	fn new (r: T, g: T, b: T) -> Self;
+	fn new () -> Self;
+	fn new_from (r: T, g: T, b: T) -> Self;
 	fn random () -> Self;
 	fn set_scalar (&mut self, scalar: T ) -> &mut Self;
 	fn lerp (  &mut self, color: &Self, alpha: T ) -> &mut Self;
@@ -34,7 +26,7 @@ pub trait ColorTrait <T> {
 
 
 impl <T> ColorTrait<T> for Color<T>
-where T: rand::Rand + Sub<Output=T> + AddAssign + Mul<Output=T> + Copy
+where T: Nums
 {
 
 	fn copy ( &mut self, color: &Self ) -> &mut Self {
@@ -44,7 +36,11 @@ where T: rand::Rand + Sub<Output=T> + AddAssign + Mul<Output=T> + Copy
 		self
 	}
 
-	fn new (r:T, g:T, b:T) -> Self {
+	fn new () -> Self {
+		Self {r:Nums::zero(), g:Nums::zero(), b:Nums::zero()}
+	}
+
+	fn new_from (r:T, g:T, b:T) -> Self {
 		Self {r, g, b}
 	}
 
@@ -73,10 +69,6 @@ where T: rand::Rand + Sub<Output=T> + AddAssign + Mul<Output=T> + Copy
 		self.b = b;
 		self
 	}
-
-	// fn zero () -> Self {
-	// 	Color {r: From::from(0) , g: From::from(0), b:  From::from(0)}
-	// }
 }
 
 impl <T> Add for Color<T>

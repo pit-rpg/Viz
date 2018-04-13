@@ -30,7 +30,7 @@ fn main() {
     {
         let mut geom = BufferGeometry::new();
 
-        geom.on_drop(|buff| {
+        geom.on_drop(|_buff| {
             println!("LOLOLO");
         });
 

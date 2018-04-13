@@ -4,15 +4,12 @@ extern crate uuid;
 use self::uuid::Uuid;
 use std::vec::Vec;
 use math::vector3::Vector3;
-use math::vector2::Vector2;
+// use math::vector2::Vector2;
 use math::Color;
-use helpers::Nums;
-use std::marker::PhantomData;
-use std::process;
-// use byteorder::{BigEndian, WriteBytesExt, LittleEndian};
-use std::mem;
-// use std::vec::*;
-// use std::ops::IndexMut;
+// use helpers::Nums;
+// use std::marker::PhantomData;
+// use std::process;
+// use std::mem;
 
 #[allow(dead_code)]
 pub enum BufferType
@@ -28,7 +25,7 @@ pub enum BufferType
 
 
 #[allow(dead_code)]
-pub struct  BufferAttribute
+pub struct BufferAttribute
 {
 	pub data: BufferType,
 	pub name: String,
@@ -75,15 +72,8 @@ impl BufferAttribute
 }
 
 
-// // gl::BufferData(
-// // 				gl::ARRAY_BUFFER,
-// // 				(mem::size_of::<GLfloat>() * positions.len()) as GLsizeiptr,
-// // 				&positions[0] as *const f32 as *const c_void,
-// // 				gl::DYNAMIC_DRAW
-// // 			);
-
-
 #[allow(dead_code)]
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub struct BufferGroup {
 	pub start: u32,
 	pub material_index: u32,
@@ -127,9 +117,9 @@ impl BufferGeometry
 	pub fn add_buffer_attribute(&mut self, bufferattribute: BufferAttribute) -> &mut BufferAttribute  {
 		if self.attributes.len() > 0 {
 			let len = bufferattribute.len();
-			let prevLen = self.attributes[0].len();
-			if len != prevLen {
-				panic!("BufferGeometry: diffrent buffer length {}:{}, {}:{}", bufferattribute.name, len, self.attributes[0].name, prevLen);
+			let prev_len = self.attributes[0].len();
+			if len != prev_len {
+				panic!("BufferGeometry: diffrent buffer length {}:{}, {}:{}", bufferattribute.name, len, self.attributes[0].name, prev_len);
 			}
 		}
 

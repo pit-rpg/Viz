@@ -9,7 +9,7 @@ extern crate rand;
 pub mod macros;
 mod gl_geometry;
 
-use std::mem;
+// use std::mem;
 
 use std::ptr;
 use std::str;
@@ -23,8 +23,13 @@ use self::gl::types::*;
 // use self::rand::Rng;
 use math::Color;
 use math::ColorTrait;
+use math::vector3::Vector3;
+use math::vector3::Vector;
 
 use core::BufferGeometry;
+use self::gl_geometry::VartexArrays;
+use self::gl_geometry::GLGeometry;
+use core::BufferType;
 // use core::BufferGroup;
 // use core::BufferAttribute;
 
@@ -79,18 +84,18 @@ pub fn create_window() {
     // let mut rng = rand::thread_rng();
 
     let pos = vec![
-            0.5,    0.5,    0.0,  // top right
-            0.5,    -0.5,   0.0,  // bottom right
-            -0.5,   -0.5,   0.0,  // bottom left
-            -0.5,   0.5,    0.0  // top left
+            Vector3::<f32>::new_from(0.5,    0.5,    0.0),  // top right
+            Vector3::<f32>::new_from(0.5,    -0.5,   0.0),  // bottom right
+            Vector3::<f32>::new_from(-0.5,   -0.5,   0.0),  // bottom left
+            Vector3::<f32>::new_from(-0.5,   0.5,    0.0)   // top left
     ];
 
 
     let col = vec![
-            1.0,    0.0,    0.0,  // top right
-            0.0,    1.0,    0.0,  // bottom right
-            1.0,    1.0,    1.0,  // bottom left
-            0.0,    0.0,    1.0  // top left
+        Color::new_from(1.0,    0.0,    0.0),  // top right
+        Color::new_from(0.0,    1.0,    0.0),  // bottom right
+        Color::new_from(1.0,    1.0,    1.0),  // bottom left
+        Color::new_from(0.0,    0.0,    1.0)  // top left
     ];
 
     let ind = vec![
@@ -98,64 +103,66 @@ pub fn create_window() {
             1, 2, 3    // second triangle
     ];
 
-    // let mut geom = BufferGeometry::new();
-    // geom.create_buffer_attribute("position".to_string(), pos, 3);
-    // geom.create_buffer_attribute("color".to_string(), col, 3);
-    // geom.set_indices(ind);
+    let mut geom = BufferGeometry::new();
+    geom.create_buffer_attribute("position".to_string(), BufferType::Vector3f32(pos), 3);
+    geom.create_buffer_attribute("color".to_string(), BufferType::Colorf32(col), 3);
+    geom.set_indices(ind);
 
-    let positions: [f32; 24] = [
-        0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
-        0.5,    -0.5,   0.0,        0.0,    1.0,    0.0,  // bottom right
-        -0.5,   -0.5,   0.0,        1.0,    1.0,    1.0,  // bottom left
-        -0.5,   0.5,    0.0,        0.0,    0.0,    1.0  // top left
-    ];
+    let mut hash_map = VartexArrays::new();
 
-    let indices: [i32; 6] = [  // note that we start from 0!
-        0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
-    ];
+    // let positions: [f32; 24] = [
+    //     0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
+    //     0.5,    -0.5,   0.0,        0.0,    1.0,    0.0,  // bottom right
+    //     -0.5,   -0.5,   0.0,        1.0,    1.0,    1.0,  // bottom left
+    //     -0.5,   0.5,    0.0,        0.0,    0.0,    1.0  // top left
+    // ];
 
-    let mut VBO = 0;
-    let mut VAO = 0;
-    let mut EBO = 0;
+    // let indices: [i32; 6] = [  // note that we start from 0!
+    //     0, 1, 3,   // first triangle
+    //     1, 2, 3    // second triangle
+    // ];
+
+    // let mut VBO = 0;
+    // let mut VAO = 0;
+    // let mut EBO = 0;
     let mut f_count = 0.0;
 
 
     let mut color1 = Color::<f32>::random();
     let mut color2 = Color::<f32>::random();
-    let mut color_tmp = Color::new(color1.r,color1.g, color1.b);
+    let mut color_tmp = Color::new_from(color1.r,color1.g, color1.b);
 
-    gl_call!({
-        gl::GenVertexArrays(1, &mut VAO);
-        gl::GenBuffers(1, &mut VBO);
-        gl::GenBuffers(1, &mut EBO);
+    // gl_call!({
+    //     gl::GenVertexArrays(1, &mut VAO);
+    //     gl::GenBuffers(1, &mut VBO);
+    //     gl::GenBuffers(1, &mut EBO);
 
-        gl::BindVertexArray(VAO);
+    //     gl::BindVertexArray(VAO);
 
-        gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
+    //     gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+    //     gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
 
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (mem::size_of::<GLfloat>() * positions.len()) as GLsizeiptr,
-            &positions[0] as *const f32 as *const c_void,
-            gl::DYNAMIC_DRAW
-        );
+    //     gl::BufferData(
+    //         gl::ARRAY_BUFFER,
+    //         (mem::size_of::<GLfloat>() * positions.len()) as GLsizeiptr,
+    //         &positions[0] as *const f32 as *const c_void,
+    //         gl::DYNAMIC_DRAW
+    //     );
 
-        gl::BufferData(
-            gl::ELEMENT_ARRAY_BUFFER,
-            (mem::size_of::<GLint>() * indices.len()) as GLsizeiptr,
-            &indices[0] as *const i32 as *const c_void,
-            gl::STATIC_DRAW
-        );
+    //     gl::BufferData(
+    //         gl::ELEMENT_ARRAY_BUFFER,
+    //         (mem::size_of::<GLint>() * indices.len()) as GLsizeiptr,
+    //         &indices[0] as *const i32 as *const c_void,
+    //         gl::STATIC_DRAW
+    //     );
 
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, 0 as *const c_void);
-        gl::EnableVertexAttribArray(0);
-        gl::VertexAttribPointer(1, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, (3 * mem::size_of::<GLfloat>()) as *const c_void );
-        gl::EnableVertexAttribArray(1);
-        // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-        // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-    });
+    //     gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, 0 as *const c_void);
+    //     gl::EnableVertexAttribArray(0);
+    //     gl::VertexAttribPointer(1, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, (3 * mem::size_of::<GLfloat>()) as *const c_void );
+    //     gl::EnableVertexAttribArray(1);
+    //     // gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+    //     // gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+    // });
 
     gl_call!({
         gl::UseProgram(shader_id);
@@ -221,7 +228,8 @@ pub fn create_window() {
             // // gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
             // gl::DrawArrays(gl::TRIANGLES, 0, 3);
 
-            gl::BindVertexArray(VAO);
+            geom.bind(&mut hash_map);
+            // gl::BindVertexArray(VAO);
             gl::UseProgram(shader_id);
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const c_void);
 
