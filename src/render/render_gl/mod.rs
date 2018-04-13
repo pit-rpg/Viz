@@ -9,7 +9,7 @@ extern crate rand;
 pub mod macros;
 mod gl_geometry;
 
-// use std::mem;
+use std::mem;
 
 use std::ptr;
 use std::str;
@@ -110,17 +110,17 @@ pub fn create_window() {
 
     let mut hash_map = VartexArrays::new();
 
-    // let positions: [f32; 24] = [
-    //     0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
-    //     0.5,    -0.5,   0.0,        0.0,    1.0,    0.0,  // bottom right
-    //     -0.5,   -0.5,   0.0,        1.0,    1.0,    1.0,  // bottom left
-    //     -0.5,   0.5,    0.0,        0.0,    0.0,    1.0  // top left
-    // ];
+    let _positions: [f32; 24] = [
+        0.5,    0.5,    0.0,        1.0,    0.0,    0.0,  // top right
+        0.5,    -0.5,   0.0,        0.0,    1.0,    0.0,  // bottom right
+        -0.5,   -0.5,   0.0,        1.0,    1.0,    1.0,  // bottom left
+        -0.5,   0.5,    0.0,        0.0,    0.0,    1.0  // top left
+    ];
 
-    // let indices: [i32; 6] = [  // note that we start from 0!
-    //     0, 1, 3,   // first triangle
-    //     1, 2, 3    // second triangle
-    // ];
+    let _indices: [i32; 6] = [  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3    // second triangle
+    ];
 
     // let mut VBO = 0;
     // let mut VAO = 0;
@@ -155,6 +155,11 @@ pub fn create_window() {
     //         &indices[0] as *const i32 as *const c_void,
     //         gl::STATIC_DRAW
     //     );
+
+    println!("or_cap{}", mem::size_of::<GLfloat>() * _positions.len());
+    println!("->VertexAttribPointer index:{}, vals:{}, val_type:{}, vertex_byte_len:{} byte_offset:{}", 0,3,gl::FLOAT, 6 * mem::size_of::<GLfloat>(), 0 );
+    println!("->VertexAttribPointer index:{}, vals:{}, val_type:{}, vertex_byte_len:{} byte_offset:{}", 1,3,gl::FLOAT, 6 * mem::size_of::<GLfloat>(), 3 * mem::size_of::<GLfloat>() );
+
 
     //     gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, 0 as *const c_void);
     //     gl::EnableVertexAttribArray(0);

@@ -6,7 +6,7 @@ extern crate byteorder;
 // use render::render_gl::macros;
 use std::mem;
 use self::gl::types::*;
-use self::byteorder::{BigEndian, WriteBytesExt};
+use self::byteorder::{BigEndian, WriteBytesExt, LittleEndian};
 use std::os::raw::c_void;
 use core::{BufferGeometry, BufferType, BufferAttribute};
 use std::collections::HashMap;
@@ -106,28 +106,28 @@ impl GLGeometry for BufferGeometry {
 
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
-		for i in 0..len {
+		for i in 0..self.attributes[0].len() {
 			for buffer_data in self.attributes.iter() {
 				match &buffer_data.data {
 					&BufferType::Vector3f32(ref v) => {
-						buffer.write_f32::<BigEndian>(v[i].x).unwrap();
-						buffer.write_f32::<BigEndian>(v[i].y).unwrap();
-						buffer.write_f32::<BigEndian>(v[i].z).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
 					},
 					&BufferType::Vector3f64(ref v) => {
-						buffer.write_f64::<BigEndian>(v[i].x).unwrap();
-						buffer.write_f64::<BigEndian>(v[i].y).unwrap();
-						buffer.write_f64::<BigEndian>(v[i].z).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].z).unwrap();
 					},
 					&BufferType::Colorf32(ref v) => {
-						buffer.write_f32::<BigEndian>(v[i].r).unwrap();
-						buffer.write_f32::<BigEndian>(v[i].g).unwrap();
-						buffer.write_f32::<BigEndian>(v[i].b).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].r).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].g).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].b).unwrap();
 					},
 					&BufferType::Colorf64(ref v) => {
-						buffer.write_f64::<BigEndian>(v[i].r).unwrap();
-						buffer.write_f64::<BigEndian>(v[i].g).unwrap();
-						buffer.write_f64::<BigEndian>(v[i].b).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].r).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].g).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].b).unwrap();
 					},
 				}
 			}
@@ -164,7 +164,7 @@ impl GLGeometry for BufferGeometry {
 		gl_call!({
 			gl::BufferData(
 				gl::ARRAY_BUFFER,
-				buffer_size as GLsizeiptr,
+				buffer.len() as GLsizeiptr,
 				&buffer[0] as *const u8 as *const c_void,
 				gl::DYNAMIC_DRAW
 			);
@@ -175,12 +175,6 @@ impl GLGeometry for BufferGeometry {
 				&indices[0] as *const i32 as *const c_void,
 				gl::STATIC_DRAW
 			);
-
-			gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, 0 as *const c_void);
-			gl::EnableVertexAttribArray(0);
-
-			gl::VertexAttribPointer(1, 3, gl::FLOAT, gl::FALSE, 6 * mem::size_of::<GLfloat>() as GLsizei, (3 * mem::size_of::<GLfloat>()) as *const c_void );
-			gl::EnableVertexAttribArray(1);
 		});
 
 		let mut byte_offset = 0;
@@ -208,6 +202,8 @@ impl GLGeometry for BufferGeometry {
 					},
 				}
 
+			println!("=>VertexAttribPointer index:{}, vals:{}, val_type:{}, vertex_byte_len:{} byte_offset:{}", i,vals,val_type, vertex_byte_len, byte_offset );
+			println!("Capacyty {}", buffer.len());
 			gl_call!({
 				gl::VertexAttribPointer( i as GLuint, vals, val_type, gl::FALSE, vertex_byte_len as GLsizei, byte_offset as *const c_void );
 				gl::EnableVertexAttribArray( i as GLuint );
