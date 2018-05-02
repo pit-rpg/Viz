@@ -3,10 +3,10 @@ extern crate uuid;
 // extern crate byteorder;
 use self::uuid::Uuid;
 use std::vec::Vec;
-use math::vector3::Vector3;
+use math::vector3::{Vector3, Vector};
 // use math::vector2::Vector2;
 use math::Color;
-// use helpers::Nums;
+use helpers::Nums;
 // use std::marker::PhantomData;
 // use std::process;
 // use std::mem;
@@ -85,9 +85,10 @@ pub struct BufferGroup {
 #[allow(dead_code)]
 pub struct BufferGeometry
 {
+	pub uuid: Uuid,
+	pub name: String,
 	pub groups: Vec<BufferGroup>,
 	pub indices: Option<Vec<i32>>,
-	pub uuid: Uuid,
 	pub attributes: Vec<BufferAttribute>,
 	callbacks: Vec<fn(&mut BufferGeometry)>
 }
@@ -104,6 +105,7 @@ impl BufferGeometry
 			indices: None,
 			uuid: Uuid::new_v4(),
 			callbacks: Vec::new(),
+			name: "".to_string(),
 		}
 	}
 
@@ -113,6 +115,23 @@ impl BufferGeometry
 		self
 	}
 
+
+	pub fn gen_indices(&mut self) -> Result<(), &str>  {
+		let mut len = 0;
+
+		match self.get_attribute("positions") {
+			None =>{ return Err("BufferGeometry: cant find positions"); },
+			Some(positions) =>{
+				len = positions.len();
+			},
+		};
+
+		let indices = (0..len as i32).collect();
+
+		self.set_indices(indices);
+
+		Ok(())
+	}
 
 	pub fn add_buffer_attribute(&mut self, bufferattribute: BufferAttribute) -> &mut BufferAttribute  {
 		if self.attributes.len() > 0 {
@@ -144,6 +163,74 @@ impl BufferGeometry
 
 	pub fn on_drop(&mut self, cb: fn(&mut BufferGeometry) ) {
 		self.callbacks.push(cb);
+	}
+
+	pub fn get_attribute(&self, name: &str) -> Option<&BufferAttribute> {
+		self.attributes
+			.iter()
+			.find(|e| e.name == name)
+	}
+
+	fn _compute_vertex_normals<T:Nums>(&self, positions: &Vec<Vector3<T>>, indices: &Vec<i32>) -> Vec<Vector3<T>> {
+		let len = indices.len()/3;
+		let mut normals = Vec::with_capacity(positions.len());
+
+
+		for i in 0..len {
+			let a = positions.get(*(indices.get(i*3    ).unwrap()) as usize).unwrap();
+			let b = positions.get(*(indices.get(i*3 + 1).unwrap()) as usize).unwrap();
+			let c = positions.get(*(indices.get(i*3 + 2).unwrap()) as usize).unwrap();
+
+			let mut cb = c - b;
+			let ab = a - b;
+			cb.cross(&ab);
+			normals.push(cb)
+		}
+
+		unimplemented!()
+	}
+
+	pub fn compute_vertex_normals(&mut self) -> Result<&BufferAttribute, &str> {
+		let err = Err("not found positions BufferAttribute");
+		let mut normals32 = None;
+		let mut normals64 = None;
+
+		match self.get_attribute("positions") {
+			None => { return err },
+			Some(attribute) =>{
+				match &attribute.data {
+					&BufferType::Vector3f32(ref data) => {
+						let mut normals = self._compute_vertex_normals(data, &self.indices.as_ref().unwrap() );
+						for e in normals.iter_mut() { e.normalize(); }
+						normals32 = Some(normals);
+					},
+					&BufferType::Vector3f64(ref data) => {
+						let mut normals = self._compute_vertex_normals(data, &self.indices.as_ref().unwrap() );
+						for e in normals.iter_mut() { e.normalize(); }
+						normals64 = Some(normals);
+					},
+					_ => { return err }
+				}
+			}
+		};
+
+		match normals32 {
+			Some(normals) => {
+				let buffer_attribute = self.create_buffer_attribute("normal".to_string(), BufferType::Vector3f32(normals), 3);
+				return Ok(buffer_attribute);
+			},
+			_=>{}
+		}
+
+		match normals64 {
+			Some(normals) => {
+				let buffer_attribute = self.create_buffer_attribute("normal".to_string(), BufferType::Vector3f64(normals), 3);
+				return Ok(buffer_attribute);
+			},
+			_=>{}
+		}
+
+		err
 	}
 }
 

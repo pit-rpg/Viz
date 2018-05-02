@@ -104,7 +104,7 @@ pub fn create_window() {
     ];
 
     let mut geom = BufferGeometry::new();
-    geom.create_buffer_attribute("position".to_string(), BufferType::Vector3f32(pos), 3);
+    geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3f32(pos), 3);
     geom.create_buffer_attribute("color".to_string(), BufferType::Colorf32(col), 3);
     geom.set_indices(ind);
 

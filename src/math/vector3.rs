@@ -7,12 +7,13 @@
 // use math::Matrix3;
 // use std::cmp::{ Eq};
 // use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
+use std::ops::{Sub};
 // use std::ops::{Div};
 // use self::num_traits::Float;
 use helpers::Nums;
 
+// #[repr(C)]
 #[derive(Clone, Debug)]
-#[repr(C)]
 pub struct Vector3<T>
 where T:Nums {
     pub x: T,
@@ -350,6 +351,31 @@ where T:Nums
         	// 	self
         	// }
         }
+
+
+
+impl <T> Sub for Vector3<T>
+where T:Nums
+{
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self {
+        let mut v = Vector3::new();
+        v.sub_vectors(&self, &rhs);
+        v
+    }
+
+}
+
+impl <'a,'b, T> Sub for &'a Vector3<T>
+where T:Nums
+{
+    type Output = Vector3<T>;
+    fn sub(self, rhs: &'a Vector3<T>) -> Vector3<T> {
+        let mut v = Vector3::new();
+        v.sub_vectors(&self, &rhs);
+        v
+    }
+}
 
 // deriveVector!(Vector3_64, f64);
 

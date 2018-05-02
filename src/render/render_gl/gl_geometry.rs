@@ -106,7 +106,9 @@ impl GLGeometry for BufferGeometry {
 
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
-		for i in 0..self.attributes[0].len() {
+		let positionsLen = self.get_attribute("positions").unwrap().len();
+
+		for i in 0..positionsLen {
 			for buffer_data in self.attributes.iter() {
 				match &buffer_data.data {
 					&BufferType::Vector3f32(ref v) => {
