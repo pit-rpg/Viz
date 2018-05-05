@@ -12,3 +12,10 @@ use self::uuid::Uuid;
 pub trait Material {
 
 }
+
+
+pub struct MeshNormalMaterial {}
+pub struct MeshBasicMaterial {}
+
+impl Material for MeshBasicMaterial {}
+impl Material for MeshNormalMaterial {}

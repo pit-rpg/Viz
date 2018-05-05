@@ -8,6 +8,7 @@ extern crate rand;
 #[macro_use]
 pub mod macros;
 mod gl_geometry;
+mod render;
 
 use std::mem;
 

@@ -171,10 +171,10 @@ impl BufferGeometry
 			.find(|e| e.name == name)
 	}
 
-	fn _compute_vertex_normals<T:Nums>(&self, positions: &Vec<Vector3<T>>, indices: &Vec<i32>) -> Vec<Vector3<T>> {
+
+	fn _compute_face_normals<T:Nums>(&self, positions: &Vec<Vector3<T>>, indices: &Vec<i32>) -> Vec<Vector3<T>> {
 		let len = indices.len()/3;
 		let mut normals = Vec::with_capacity(positions.len());
-
 
 		for i in 0..len {
 			let a = positions.get(*(indices.get(i*3    ).unwrap()) as usize).unwrap();
@@ -184,53 +184,115 @@ impl BufferGeometry
 			let mut cb = c - b;
 			let ab = a - b;
 			cb.cross(&ab);
+			cb.normalize();
 			normals.push(cb)
 		}
+		normals
+	}
+
+
+	fn _compute_vertex_normals<T:Nums>(&self, face_normals: &Vec<Vector3<T>>, indices: &Vec<i32>) -> Vec<Vector3<T>> {
+		// let vertex_normals = self.get_attribute("positions").unwrap();
+		// let indices = self.indices.as_ref().unwrap();
+
+		// match vertex_normals.data {
+		// 	BufferType::Vector3f32(ref normals) => {
+
+		// 		for i in 0..(indices.len()/3) {
+		// 			let normal = face_normals[i];
+		// 			normals[i].copy(normal);
+		// 		}
+
+		// 	},
+		// 	// BufferType::Vector3f64(normals) => {
+
+		// 	// },
+		// }
+
+
 
 		unimplemented!()
 	}
 
-	pub fn compute_vertex_normals(&mut self) -> Result<&BufferAttribute, &str> {
-		let err = Err("not found positions BufferAttribute");
+
+	pub fn compute_face_normals(&mut self) -> Option<&BufferAttribute> {
 		let mut normals32 = None;
 		let mut normals64 = None;
 
 		match self.get_attribute("positions") {
-			None => { return err },
+			None => { return None },
 			Some(attribute) =>{
 				match &attribute.data {
 					&BufferType::Vector3f32(ref data) => {
-						let mut normals = self._compute_vertex_normals(data, &self.indices.as_ref().unwrap() );
-						for e in normals.iter_mut() { e.normalize(); }
+						let mut normals = self._compute_face_normals(data, &self.indices.as_ref().unwrap() );
 						normals32 = Some(normals);
 					},
 					&BufferType::Vector3f64(ref data) => {
-						let mut normals = self._compute_vertex_normals(data, &self.indices.as_ref().unwrap() );
-						for e in normals.iter_mut() { e.normalize(); }
+						let mut normals = self._compute_face_normals(data, &self.indices.as_ref().unwrap() );
 						normals64 = Some(normals);
 					},
-					_ => { return err }
+					_ => { return None }
 				}
 			}
 		};
 
 		match normals32 {
 			Some(normals) => {
-				let buffer_attribute = self.create_buffer_attribute("normal".to_string(), BufferType::Vector3f32(normals), 3);
-				return Ok(buffer_attribute);
+				let buffer_attribute = self.create_buffer_attribute("face_normals".to_string(), BufferType::Vector3f32(normals), 3);
+				return Some(buffer_attribute);
 			},
 			_=>{}
 		}
 
 		match normals64 {
 			Some(normals) => {
-				let buffer_attribute = self.create_buffer_attribute("normal".to_string(), BufferType::Vector3f64(normals), 3);
-				return Ok(buffer_attribute);
+				let buffer_attribute = self.create_buffer_attribute("face_normals".to_string(), BufferType::Vector3f64(normals), 3);
+				return Some(buffer_attribute);
 			},
 			_=>{}
 		}
 
-		err
+		None
+	}
+
+
+	pub fn compute_vertex_normals(&mut self) -> Option<&BufferAttribute> {
+		let mut normals32 = None;
+		let mut normals64 = None;
+
+		{
+			let face_normals = self.get_attribute("face_normals").unwrap();
+
+			match face_normals.data {
+				BufferType::Vector3f32(ref normals) => {
+					let mut normals = self._compute_vertex_normals(normals, &self.indices.as_ref().unwrap() );
+					normals32 = Some(normals);
+				},
+				BufferType::Vector3f64(ref normals) => {
+					let mut normals = self._compute_vertex_normals(normals, &self.indices.as_ref().unwrap() );
+					normals64 = Some(normals);
+				},
+				_ => { return None }
+			}
+		}
+
+		match normals32 {
+			Some(normals) => {
+				let buffer_attribute = self.create_buffer_attribute("vertex_normals".to_string(), BufferType::Vector3f32(normals), 3);
+				return Some(buffer_attribute);
+			},
+			_=>{}
+		}
+
+		match normals64 {
+			Some(normals) => {
+				let buffer_attribute = self.create_buffer_attribute("vertex_normals".to_string(), BufferType::Vector3f64(normals), 3);
+				return Some(buffer_attribute);
+			},
+			_=>{}
+		}
+
+		None
 	}
 }
 

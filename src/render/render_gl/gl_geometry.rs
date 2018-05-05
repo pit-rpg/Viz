@@ -135,18 +135,7 @@ impl GLGeometry for BufferGeometry {
 			}
 		}
 
-		let _indices: Vec<i32>;
-		let indices;
-
-		match self.indices {
-			None => {
-				_indices = (0..len as i32).collect();
-				indices = &_indices;
-			}
-			Some(ref val) => {
-				indices = val;
-			},
-		}
+		let  indices: &Vec<i32> = self.indices.as_ref().unwrap();
 
 		let mut vertex_array = 0;
 		let mut array_buffer = 0;

@@ -50,6 +50,7 @@ where T: Nums {
     // fn clone(v: &Self) -> Self;
     fn new() -> Self;
     fn new_from(x: T,y: T,z: T) -> Self;
+    fn copy (&mut self, v: Self) -> &mut Self;
     fn multiply_scalar(&mut self, s: T) -> &mut Self;
     fn length(&self) -> T;
     fn length_sq(&self) -> T;
@@ -134,6 +135,10 @@ where T:Nums
 
             fn new_from(x: T,y: T,z: T) -> Self {
                 Self { x, y, z }
+            }
+
+            fn copy (&mut self, v: Self) -> &mut Self {
+                self.set(v.x, v.y, v.z)
             }
 
             fn multiply_scalar(&mut self, s: T) -> &mut Self {
