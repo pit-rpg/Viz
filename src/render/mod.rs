@@ -1,9 +1,9 @@
-pub mod render_gl;
+pub mod open_gl;
 
 
 
 pub trait Renderer {
 	fn new () -> Self;
-	fn render<N>(node: N);
-	fn clear();
+	fn render<N>(&self, node: N);
+	fn clear(&self);
 }

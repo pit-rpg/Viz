@@ -2,29 +2,27 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 
+// use std::ptr;
+// use std::str;
+use std::ffi::{CStr, CString};
+// use self::gl::types::*;
+use self::gl::GetString;
+use self::glutin::{EventsLoop, GlContext, GlWindow};
+use super::gl_geometry::VartexArraysIDs;
+use super::gl_material::GLMaterialIDs;
 use super::super::Renderer;
-use self::glutin::{
-	EventsLoop,
-	GlWindow,
-	GlContext,
-};
-use self::gl::{
-	GetString,
-};
-use std::ffi::{
-	CStr,
-	// CString,
-};
-
 
 #[allow(dead_code)]
 pub struct GLRenderer {
-	window: GlWindow,
-	events_loop: EventsLoop,
+	pub window: GlWindow,
+	pub events_loop: EventsLoop,
+	pub vartex_arrays_ids: VartexArraysIDs,
+	pub gl_material_ids: GLMaterialIDs,
 }
 
 
 impl Renderer for GLRenderer {
+
 	fn new() -> Self {
 		let events_loop = glutin::EventsLoop::new();
 		let window = glutin::WindowBuilder::new()
@@ -44,22 +42,27 @@ impl Renderer for GLRenderer {
 			gl::ClearColor(0.0, 0.2, 0.2, 1.0);
 		});
 
-		print_gl_version();
+		super::print_gl_version();
 
-		GLRenderer{
+		GLRenderer {
 			window: gl_window,
 			events_loop,
+            vartex_arrays_ids: VartexArraysIDs::new(),
+            gl_material_ids: GLMaterialIDs::new(),
 		}
 	}
 
-	fn render<N>(node: N) {}
-	fn clear() {}
-}
+
+	fn clear(&self) {
+		gl_call!({
+			gl::Clear(gl::COLOR_BUFFER_BIT);
+		});
+	}
 
 
-fn print_gl_version() {
-    gl_call!({
-        let version = GetString(gl::VERSION) as *const i8;
-        println!("{:?}", CStr::from_ptr(version));
-    });
+	fn render<N>(&self, node: N) {
+
+
+
+    }
 }

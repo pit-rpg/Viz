@@ -27,7 +27,7 @@ macro_rules! gl_call {
 
             #[cfg(not(feature="prod"))]
             {
-                use render::render_gl::macros;
+                use render::open_gl::macros;
                 macros::gl_check_error(stringify!($x));
             }
         }

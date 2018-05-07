@@ -16,8 +16,8 @@ impl <T> Color<T>{}
 
 pub trait ColorTrait <T> {
 	fn copy ( &mut self, color: &Self ) -> &mut Self;
-	fn new () -> Self;
-	fn new_from (r: T, g: T, b: T) -> Self;
+	fn new_zero () -> Self;
+	fn new (r: T, g: T, b: T) -> Self;
 	fn random () -> Self;
 	fn set_scalar (&mut self, scalar: T ) -> &mut Self;
 	fn lerp (  &mut self, color: &Self, alpha: T ) -> &mut Self;
@@ -36,11 +36,11 @@ where T: Nums
 		self
 	}
 
-	fn new () -> Self {
+	fn new_zero () -> Self {
 		Self {r:Nums::zero(), g:Nums::zero(), b:Nums::zero()}
 	}
 
-	fn new_from (r:T, g:T, b:T) -> Self {
+	fn new (r:T, g:T, b:T) -> Self {
 		Self {r, g, b}
 	}
 

@@ -13,12 +13,16 @@ use std::collections::HashMap;
 use self::uuid::Uuid;
 
 
+pub type VartexArraysIDs = HashMap<Uuid, Buffers>;
+
+
 #[derive(Debug)]
 pub struct Buffers {
 	vertex_array: GLuint,
 	array_buffer: GLuint,
 	element_array_buffer: GLuint,
 }
+
 
 impl Drop for Buffers {
 	fn drop(&mut self) {
@@ -30,6 +34,7 @@ impl Drop for Buffers {
 	}
 }
 
+
 impl Default for Buffers {
 	fn default() -> Self {
 		Buffers{
@@ -40,55 +45,21 @@ impl Default for Buffers {
 	}
 }
 
-pub type VartexArrays<'a> = HashMap<Uuid, Buffers>;
+
 
 
 #[allow(dead_code)]
 pub trait GLGeometry {
-	fn bind(&self, hash_map: &mut VartexArrays);
+	fn bind(&self, hash_map: &mut VartexArraysIDs);
 	fn un_bind(&self);
-	fn alloc_gl_gom(&self) -> Buffers;
-	fn elem_byte_len(attribute: &BufferAttribute) -> usize;
-}
 
-
-impl GLGeometry for BufferGeometry {
-
-	fn bind(&self, hash_map: &mut VartexArrays) {
-		match hash_map.get_mut(&self.uuid) {
-			None => {},
-			Some(ref buffers) => {
-				gl_call!({ gl::BindVertexArray(buffers.vertex_array); });
-				return;
-			}
-		}
-
-		let buffers = self.alloc_gl_gom();
-		hash_map.insert(self.uuid, buffers);
-
-		self.bind(hash_map);
-	}
-
-	fn un_bind(&self){
-		gl_call!({ gl::BindVertexArray(0); });
-	}
-
-	fn elem_byte_len(attribute: &BufferAttribute) -> usize {
-		match &attribute.data {
-			&BufferType::Vector3f32(_) 	=> { mem::size_of::<f32>() * 3 }
-			&BufferType::Vector3f64(_) 	=> { mem::size_of::<f64>() * 3 }
-			&BufferType::Colorf32(_) 	=> { mem::size_of::<f32>() * 3 }
-			&BufferType::Colorf64(_) 	=> { mem::size_of::<f64>() * 3 }
-		}
-	}
-
-	fn alloc_gl_gom(&self) -> Buffers {
-		let len = self.attributes.len();
+	fn alloc_gl_gom(geom: &BufferGeometry) -> Buffers {
+		let len = geom.attributes.len();
 		if len == 0 {
 			panic!("empty Geometry");
 		}
 
-		let buffer_size = self.attributes
+		let buffer_size = geom.attributes
 			.iter()
 			.map(|e| {
 				let size = Self::elem_byte_len(e);
@@ -96,7 +67,7 @@ impl GLGeometry for BufferGeometry {
 			})
 			.fold(0, |a,b| a+b);
 
-		let vertex_byte_len = self.attributes
+		let vertex_byte_len = geom.attributes
 			.iter()
 			.map(|e| {
 				Self::elem_byte_len(e)
@@ -106,10 +77,10 @@ impl GLGeometry for BufferGeometry {
 
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
-		let positionsLen = self.get_attribute("positions").unwrap().len();
+		let positions_len = geom.get_attribute("positions").unwrap().len();
 
-		for i in 0..positionsLen {
-			for buffer_data in self.attributes.iter() {
+		for i in 0..positions_len {
+			for buffer_data in geom.attributes.iter() {
 				match &buffer_data.data {
 					&BufferType::Vector3f32(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
@@ -135,7 +106,7 @@ impl GLGeometry for BufferGeometry {
 			}
 		}
 
-		let  indices: &Vec<i32> = self.indices.as_ref().unwrap();
+		let  indices: &Vec<i32> = geom.indices.as_ref().unwrap();
 
 		let mut vertex_array = 0;
 		let mut array_buffer = 0;
@@ -169,8 +140,8 @@ impl GLGeometry for BufferGeometry {
 		});
 
 		let mut byte_offset = 0;
-		for i in 0..self.attributes.len() {
-			let ref buffer_data = self.attributes[i];
+		for i in 0..geom.attributes.len() {
+			let ref buffer_data = geom.attributes[i];
 			let vals;
 			let val_type;
 
@@ -210,4 +181,35 @@ impl GLGeometry for BufferGeometry {
 		}
 	}
 
+	fn elem_byte_len(attribute: &BufferAttribute) -> usize {
+		match &attribute.data {
+			&BufferType::Vector3f32(_) 	=> { mem::size_of::<f32>() * 3 }
+			&BufferType::Vector3f64(_) 	=> { mem::size_of::<f64>() * 3 }
+			&BufferType::Colorf32(_) 	=> { mem::size_of::<f32>() * 3 }
+			&BufferType::Colorf64(_) 	=> { mem::size_of::<f64>() * 3 }
+		}
+	}
+}
+
+
+impl GLGeometry for BufferGeometry {
+
+	fn bind(&self, hash_map: &mut VartexArraysIDs) {
+		match hash_map.get_mut(&self.uuid) {
+			None => {},
+			Some(ref buffers) => {
+				gl_call!({ gl::BindVertexArray(buffers.vertex_array); });
+				return;
+			}
+		}
+
+		let buffers = Self::alloc_gl_gom(self);
+		hash_map.insert(self.uuid, buffers);
+
+		self.bind(hash_map);
+	}
+
+	fn un_bind(&self){
+		gl_call!({ gl::BindVertexArray(0); });
+	}
 }

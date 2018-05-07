@@ -9,24 +9,41 @@ pub trait Node {}
 
 
 #[allow(dead_code)]
-pub struct Mesh<M, N>
+pub struct Mesh<'a, M>
 where
-M: Material,
-N: Node
+M: Material+'a,
+// N: Node
 {
 	pub uuid: Uuid,
 	pub name: String,
-	pub geometry: BufferGeometry,
-	pub material: M,
-	pub children: Vec<N>,
+	pub geometry: &'a BufferGeometry,
+	pub material: &'a M,
+	// pub children: Vec<Node>,
 	// rotation
 	// position
 	// scale
 	// quaternion
 }
 
-impl <M, N> Node for Mesh<M, N>
+impl <'a, M> Node for Mesh<'a, M>
 where
 M: Material,
-N: Node
+// N: Node
 {}
+
+
+impl <'a, M> Mesh<'a, M>
+where
+M: Material,
+// N: Node
+{
+	pub fn new(geometry: &'a BufferGeometry, material: &'a M) -> Mesh<'a, M> {
+		Mesh {
+			uuid: Uuid::new_v4(),
+			name: "".to_string(),
+			material,
+			geometry,
+			// children: Vec::new(),
+		}
+	}
+}

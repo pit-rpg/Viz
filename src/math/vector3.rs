@@ -48,8 +48,8 @@ where T:Nums {
 pub trait Vector<T>
 where T: Nums {
     // fn clone(v: &Self) -> Self;
-    fn new() -> Self;
-    fn new_from(x: T,y: T,z: T) -> Self;
+    fn new_zero() -> Self;
+    fn new(x: T,y: T,z: T) -> Self;
     fn copy (&mut self, v: Self) -> &mut Self;
     fn multiply_scalar(&mut self, s: T) -> &mut Self;
     fn length(&self) -> T;
@@ -129,11 +129,11 @@ impl <T> Vector<T> for Vector3<T>
 where T:Nums
         {
 
-            fn new() -> Self {
+            fn new_zero() -> Self {
                 Self { x: T::zero(), y: T::zero(), z: T::zero() }
             }
 
-            fn new_from(x: T,y: T,z: T) -> Self {
+            fn new(x: T,y: T,z: T) -> Self {
                 Self { x, y, z }
             }
 
@@ -364,7 +364,7 @@ where T:Nums
 {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self {
-        let mut v = Vector3::new();
+        let mut v = Vector3::new_zero();
         v.sub_vectors(&self, &rhs);
         v
     }
@@ -376,7 +376,7 @@ where T:Nums
 {
     type Output = Vector3<T>;
     fn sub(self, rhs: &'a Vector3<T>) -> Vector3<T> {
-        let mut v = Vector3::new();
+        let mut v = Vector3::new_zero();
         v.sub_vectors(&self, &rhs);
         v
     }
