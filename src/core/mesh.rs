@@ -1,49 +1,37 @@
 extern crate uuid;
 
-use super::BufferGeometry;
+// use std::sync::RwLock;
+// use std::sync::{Arc, Mutex};
+
 use self::uuid::Uuid;
-use super::Material;
+// use super::BufferGeometry;
+use super::Component;
+// use super::Material;
+// use math::Vector3;
 
-
-pub trait Node {}
-
+// pub trait Mesh {}
 
 #[allow(dead_code)]
-pub struct Mesh<'a, M>
-where
-M: Material+'a,
-// N: Node
-{
+pub struct Mesh {
 	pub uuid: Uuid,
 	pub name: String,
-	pub geometry: &'a BufferGeometry,
-	pub material: &'a M,
-	// pub children: Vec<Node>,
-	// rotation
-	// position
-	// scale
+	// pub geometry: &'a BufferGeometry,
+	// pub material: &'a M,
+	// pub children: Vec<Node<T>>,
+	// pub attachment: A,
+	// pub children: Vec<Arc<Mutex<Node>>>,
+	// pub position: Vector3<T>,
+	// pub rotation: Vector3<T>,
+	// pub scale: Vector3<T>,
 	// quaternion
 }
 
-impl <'a, M> Node for Mesh<'a, M>
-where
-M: Material,
-// N: Node
-{}
+// impl <'a, M> Node for Mesh<'a, M>
+// where
+// M: Material,
+// // N: Node
+// {}
 
+// impl <'a, M> Mesh<'a, M>
 
-impl <'a, M> Mesh<'a, M>
-where
-M: Material,
-// N: Node
-{
-	pub fn new(geometry: &'a BufferGeometry, material: &'a M) -> Mesh<'a, M> {
-		Mesh {
-			uuid: Uuid::new_v4(),
-			name: "".to_string(),
-			material,
-			geometry,
-			// children: Vec::new(),
-		}
-	}
-}
+impl Component for Mesh {}

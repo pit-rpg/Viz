@@ -27,14 +27,14 @@ use self::gl::GetString;
 // use self::rand::Rng;
 use math::Color;
 use math::ColorTrait;
-use math::vector3::Vector3;
-use math::vector3::Vector;
+use math::Vector3;
+use math::Vector;
 
 use self::gl_geometry::VartexArraysIDs;
 use self::gl_geometry::GLGeometry;
 use core::BufferType;
 use core::BufferGeometry;
-use core::Mesh;
+// use core::Mesh;
 use core::Material;
 use core::MeshBasicMaterial;
 use render::Renderer;
@@ -90,10 +90,10 @@ pub fn test() {
 
     let material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
 
-    let mesh = Mesh::new(&geom, &material);
+    // let mesh = Mesh::new(&geom, &material);
 
-    mesh.material.bind(&mut test_gl_render.gl_material_ids);
-    mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
+    // mesh.material.bind(&mut test_gl_render.gl_material_ids);
+    // mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
 
     println!("{:?}", test_gl_render.gl_material_ids);
     println!("{:?}", test_gl_render.vartex_arrays_ids);
@@ -136,8 +136,10 @@ pub fn test() {
 
         test_gl_render.clear();
 
-        mesh.material.bind(&mut test_gl_render.gl_material_ids);
+        // mesh.material.bind(&mut test_gl_render.gl_material_ids);
         // mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
+        material.bind(&mut test_gl_render.gl_material_ids);
+        geom.bind(&mut test_gl_render.vartex_arrays_ids);
 
         gl_call!({
 

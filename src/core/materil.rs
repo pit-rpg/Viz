@@ -15,6 +15,7 @@ pub trait Material {
 	fn get_name(&self) -> &String;
 }
 
+#[allow(dead_code)]
 pub struct MeshNormalMaterial {
 	pub uuid: Uuid,
     pub name: String,

@@ -3,7 +3,7 @@ extern crate uuid;
 // extern crate byteorder;
 use self::uuid::Uuid;
 use std::vec::Vec;
-use math::vector3::{Vector3, Vector};
+use math::{Vector3, Vector};
 // use math::vector2::Vector2;
 use math::Color;
 use helpers::Nums;

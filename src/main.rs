@@ -7,7 +7,7 @@ mod helpers;
 use core::BufferGeometry;
 
 // use math::Vector_3::Vector3;
-use math::vector3::*;
+use math::*;
 // use math::vector::Vector;
 // // use math::Vector3;
 //

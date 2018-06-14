@@ -49,6 +49,7 @@ pub trait Vector<T>
 where T: Nums {
     // fn clone(v: &Self) -> Self;
     fn new_zero() -> Self;
+    fn new_one() -> Self;
     fn new(x: T,y: T,z: T) -> Self;
     fn copy (&mut self, v: Self) -> &mut Self;
     fn multiply_scalar(&mut self, s: T) -> &mut Self;
@@ -131,6 +132,10 @@ where T:Nums
 
             fn new_zero() -> Self {
                 Self { x: T::zero(), y: T::zero(), z: T::zero() }
+            }
+
+            fn new_one() -> Self {
+                Self { x: T::one(), y: T::one(), z: T::one() }
             }
 
             fn new(x: T,y: T,z: T) -> Self {
