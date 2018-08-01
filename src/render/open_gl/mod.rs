@@ -8,6 +8,7 @@ extern crate rand;
 #[macro_use]
 pub mod macros;
 mod gl_geometry;
+mod gl_mesh;
 mod gl_material;
 mod gl_render;
 
@@ -34,9 +35,10 @@ use self::gl_geometry::VartexArraysIDs;
 use self::gl_geometry::GLGeometry;
 use core::BufferType;
 use core::BufferGeometry;
-// use core::Mesh;
 use core::Material;
 use core::MeshBasicMaterial;
+use core::Node;
+use core::Mesh;
 use render::Renderer;
 use self::gl_render::GLRenderer;
 use self::gl_material::GLMaterial;
@@ -90,10 +92,14 @@ pub fn test() {
 
     let material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
 
-    // let mesh = Mesh::new(&geom, &material);
+    let mut node = Node::<f32>::new();
+
 
     // mesh.material.bind(&mut test_gl_render.gl_material_ids);
     // mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
+    let mesh = Mesh::new(geom, Box::from(material));
+
+    node.add_component(mesh);
 
     println!("{:?}", test_gl_render.gl_material_ids);
     println!("{:?}", test_gl_render.vartex_arrays_ids);
@@ -134,19 +140,22 @@ pub fn test() {
             gl::ClearColor(color_tmp.r, color_tmp.g, color_tmp.b, 1.0);
         });
 
+        test_gl_render.render(&mut node);
+
+
         test_gl_render.clear();
 
         // mesh.material.bind(&mut test_gl_render.gl_material_ids);
         // mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
-        material.bind(&mut test_gl_render.gl_material_ids);
-        geom.bind(&mut test_gl_render.vartex_arrays_ids);
+        // material.bind(&mut test_gl_render.gl_material_ids);
+        // geom.bind(&mut test_gl_render.vartex_arrays_ids);
 
         gl_call!({
 
             // geom.bind(&mut test_gl_render.vartex_arrays_ids);
             // gl::BindVertexArray(VAO);
             // gl::UseProgram(shader_id);
-            gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const c_void);
+            // gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const c_void);
 
             // gl::BindVertexArray(0);
         });

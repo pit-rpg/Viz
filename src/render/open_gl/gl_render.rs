@@ -3,12 +3,15 @@ extern crate glutin;
 extern crate rand;
 
 // use std::ptr;
+use core::Node;
+// use core::Mesh;
+use helpers::Nums;
 // use std::str;
 use std::ffi::{CStr, CString};
 // use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::{EventsLoop, GlContext, GlWindow};
-use super::gl_geometry::VartexArraysIDs;
+use super::gl_geometry::{VartexArraysIDs, GLGeometry};
 use super::gl_material::GLMaterialIDs;
 use super::super::Renderer;
 
@@ -60,9 +63,18 @@ impl Renderer for GLRenderer {
 	}
 
 
-	fn render<N>(&self, node: N) {
+	fn render<T:Nums>(&self, node: &mut Node<T>) {
 
+		node.traverse(|ref mut node|  {
+			for component in &node.components  {
+				match component {
+					// TODO render
+					// &RefCell<Box<Component>> =>{}
 
+					_ => {}
+				}
+			}
+		});
 
     }
 }

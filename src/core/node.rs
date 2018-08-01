@@ -1,6 +1,6 @@
 extern crate uuid;
 
-use std::cell::{ RefCell };
+use std::cell::{ RefCell, RefMut };
 // use std::cell::{Cell, RefCell};
 // use std::sync::{Arc, Mutex, RwLock};
 
@@ -8,7 +8,9 @@ use self::uuid::Uuid;
 use helpers::Nums;
 use math::{Vector3, Vector};
 
-pub trait Component {}
+pub trait Component
+// where Self: Sized
+{}
 
 #[allow(dead_code)]
 pub struct Node<T>
@@ -30,6 +32,7 @@ where
 impl<T> Node<T>
 where
 	T: Nums,
+	// Node<T>: 'a
 {
 	pub fn new() -> Node<T> {
 		Node {
@@ -40,6 +43,22 @@ where
 			position: Vector3::new_zero(),
 			rotation: Vector3::new_zero(),
 			scale: Vector3::new_one(),
+		}
+	}
+
+	pub fn add_component<C> (&mut self, component: C)
+	where
+		C: Component+'static,
+		Node<T>: 'static
+	{
+		self.components.push(RefCell::new(Box::new(component)));
+	}
+
+	pub fn traverse(&mut self, func: fn(node: &mut Self) ) {
+		func(self);
+
+		for node in &mut self.children {
+			node.traverse(func);
 		}
 	}
 }

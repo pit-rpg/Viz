@@ -4,9 +4,9 @@ extern crate uuid;
 // use std::sync::{Arc, Mutex};
 
 use self::uuid::Uuid;
-// use super::BufferGeometry;
+use super::BufferGeometry;
 use super::Component;
-// use super::Material;
+use super::Material;
 // use math::Vector3;
 
 // pub trait Mesh {}
@@ -15,6 +15,8 @@ use super::Component;
 pub struct Mesh {
 	pub uuid: Uuid,
 	pub name: String,
+	pub geometry: BufferGeometry,
+	pub material: Box<Material>,
 	// pub geometry: &'a BufferGeometry,
 	// pub material: &'a M,
 	// pub children: Vec<Node<T>>,
@@ -24,6 +26,19 @@ pub struct Mesh {
 	// pub rotation: Vector3<T>,
 	// pub scale: Vector3<T>,
 	// quaternion
+}
+
+impl Mesh {
+	pub fn new(geometry: BufferGeometry, material: Box<Material>) -> Mesh
+	where Material: 'static
+	{
+		Mesh {
+			uuid: Uuid::new_v4(),
+			name: "".to_string(),
+			geometry,
+			material,
+		}
+	}
 }
 
 // impl <'a, M> Node for Mesh<'a, M>

@@ -1,7 +1,7 @@
 extern crate uuid;
 extern crate gl;
 
-use core::MeshBasicMaterial;
+use core::{MeshBasicMaterial, Material};
 use std::collections::HashMap;
 use self::uuid::Uuid;
 use self::gl::types::*;
@@ -30,7 +30,7 @@ impl Drop for ShaderProgram {
 pub trait GLMaterial {
 	fn get_program(&self) -> ShaderProgram;
 	fn bind(&self, hash_map: &mut GLMaterialIDs);
-	fn unbind(&self);
+	fn un_bind(&self);
 
 	fn compile_shader_program(program: &mut ShaderProgram) {
 		let id;
@@ -100,6 +100,20 @@ pub trait GLMaterial {
 
 }
 
+impl GLMaterial for Material {
+	fn get_program(&self) -> ShaderProgram {
+		unimplemented!()
+	}
+
+	fn bind(&self, hash_map: &mut GLMaterialIDs){
+		unimplemented!()
+	}
+
+	fn un_bind(&self){
+		unimplemented!()
+	}
+}
+
 
 impl <T> GLMaterial for MeshBasicMaterial<T> {
 	fn get_program(&self) -> ShaderProgram {
@@ -128,7 +142,7 @@ impl <T> GLMaterial for MeshBasicMaterial<T> {
 		self.bind(hash_map);
 	}
 
-	fn unbind(&self){
+	fn un_bind(&self){
 		gl_call!({ gl::UseProgram(0); });
 	}
 }
