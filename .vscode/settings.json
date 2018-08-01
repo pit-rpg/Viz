@@ -1,2 +1,13 @@
 {
+	"cSpell.words": [
+		"byteorder",
+		"g",
+		"geometry",
+		"gl",
+		"glutin",
+		"lchar",
+		"lenum",
+		"repr",
+		"uuid"
+	]
 }

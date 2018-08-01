@@ -14,13 +14,13 @@ mod gl_render;
 
 
 
-use std::mem;
+// use std::mem;
 
 // use std::ptr;
-use std::str;
+// use std::str;
 use std::ffi::CStr;
-use std::ffi::CString;
-use std::os::raw::c_void;
+// use std::ffi::CString;
+// use std::os::raw::c_void;
 
 use self::glutin::GlContext;
 use self::gl::GetString;
@@ -31,7 +31,7 @@ use math::ColorTrait;
 use math::Vector3;
 use math::Vector;
 
-use self::gl_geometry::VartexArraysIDs;
+use self::gl_geometry::VertexArraysIDs;
 use self::gl_geometry::GLGeometry;
 use core::BufferType;
 use core::BufferGeometry;
@@ -96,13 +96,13 @@ pub fn test() {
 
 
     // mesh.material.bind(&mut test_gl_render.gl_material_ids);
-    // mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
+    // mesh.geometry.bind(&mut test_gl_render.vertex_arrays_ids);
     let mesh = Mesh::new(geom, Box::from(material));
 
     node.add_component(mesh);
 
     println!("{:?}", test_gl_render.gl_material_ids);
-    println!("{:?}", test_gl_render.vartex_arrays_ids);
+    println!("{:?}", test_gl_render.vertex_arrays_ids);
 
     while running {
 
@@ -146,13 +146,13 @@ pub fn test() {
         test_gl_render.clear();
 
         // mesh.material.bind(&mut test_gl_render.gl_material_ids);
-        // mesh.geometry.bind(&mut test_gl_render.vartex_arrays_ids);
+        // mesh.geometry.bind(&mut test_gl_render.vertex_arrays_ids);
         // material.bind(&mut test_gl_render.gl_material_ids);
-        // geom.bind(&mut test_gl_render.vartex_arrays_ids);
+        // geom.bind(&mut test_gl_render.vertex_arrays_ids);
 
         gl_call!({
 
-            // geom.bind(&mut test_gl_render.vartex_arrays_ids);
+            // geom.bind(&mut test_gl_render.vertex_arrays_ids);
             // gl::BindVertexArray(VAO);
             // gl::UseProgram(shader_id);
             // gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const c_void);

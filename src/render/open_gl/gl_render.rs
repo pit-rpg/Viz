@@ -7,11 +7,11 @@ use core::Node;
 // use core::Mesh;
 use helpers::Nums;
 // use std::str;
-use std::ffi::{CStr, CString};
+// use std::ffi::{CStr, CString};
 // use self::gl::types::*;
-use self::gl::GetString;
+// use self::gl::GetString;
 use self::glutin::{EventsLoop, GlContext, GlWindow};
-use super::gl_geometry::{VartexArraysIDs, GLGeometry};
+use super::gl_geometry::{VertexArraysIDs};
 use super::gl_material::GLMaterialIDs;
 use super::super::Renderer;
 
@@ -19,7 +19,7 @@ use super::super::Renderer;
 pub struct GLRenderer {
 	pub window: GlWindow,
 	pub events_loop: EventsLoop,
-	pub vartex_arrays_ids: VartexArraysIDs,
+	pub vertex_arrays_ids: VertexArraysIDs,
 	pub gl_material_ids: GLMaterialIDs,
 }
 
@@ -50,7 +50,7 @@ impl Renderer for GLRenderer {
 		GLRenderer {
 			window: gl_window,
 			events_loop,
-            vartex_arrays_ids: VartexArraysIDs::new(),
+            vertex_arrays_ids: VertexArraysIDs::new(),
             gl_material_ids: GLMaterialIDs::new(),
 		}
 	}

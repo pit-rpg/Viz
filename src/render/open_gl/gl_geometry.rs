@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use self::uuid::Uuid;
 
 
-pub type VartexArraysIDs = HashMap<Uuid, Buffers>;
+pub type VertexArraysIDs = HashMap<Uuid, Buffers>;
 
 
 #[derive(Debug)]
@@ -50,7 +50,7 @@ impl Default for Buffers {
 
 #[allow(dead_code)]
 pub trait GLGeometry {
-	fn bind(&self, hash_map: &mut VartexArraysIDs);
+	fn bind(&self, hash_map: &mut VertexArraysIDs);
 	fn un_bind(&self);
 
 	fn alloc_gl_gom(geom: &BufferGeometry) -> Buffers {
@@ -194,7 +194,7 @@ pub trait GLGeometry {
 
 impl GLGeometry for BufferGeometry {
 
-	fn bind(&self, hash_map: &mut VartexArraysIDs) {
+	fn bind(&self, hash_map: &mut VertexArraysIDs) {
 		match hash_map.get_mut(&self.uuid) {
 			None => {},
 			Some(ref buffers) => {

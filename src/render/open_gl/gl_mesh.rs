@@ -4,13 +4,14 @@ extern crate uuid;
 
 // #[macro_use]
 // use render::render_gl::macros;
-use self::byteorder::{BigEndian, LittleEndian, WriteBytesExt};
+// use self::byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use self::gl::types::*;
-use self::uuid::Uuid;
+// use self::uuid::Uuid;
 use super::{GLGeometry, GLMaterial, GLRenderer};
-use core::{BufferAttribute, BufferGeometry, BufferType, Material, Mesh};
-use std::collections::HashMap;
-use std::mem;
+use core::{Mesh};
+// use core::{BufferAttribute, BufferGeometry, BufferType, Material, Mesh};
+// use std::collections::HashMap;
+// use std::mem;
 use std::os::raw::c_void;
 
 pub trait GLMesh {
@@ -20,7 +21,7 @@ pub trait GLMesh {
 
 impl GLMesh for Mesh {
 	fn bind(&self, renderer: &mut GLRenderer) {
-		self.geometry.bind(&mut renderer.vartex_arrays_ids);
+		self.geometry.bind(&mut renderer.vertex_arrays_ids);
 		self.material.bind(&mut renderer.gl_material_ids);
 
 		match self.geometry.indices {
