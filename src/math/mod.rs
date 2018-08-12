@@ -3,7 +3,7 @@
 #[allow(non_snake_case)]
 // pub mod vector;
 mod vector;
-pub mod vector2;
+mod vector2;
 mod vector3;
 // mod matrix4;
 // mod matrix3;
@@ -17,6 +17,8 @@ mod color;
 pub use self::color::Color;
 pub use self::color::ColorTrait;
 pub use self::vector3::*;
+pub use self::vector2::*;
+pub use self::vector::*;
 
 // pub use self::Vector3 as Vector32;
 

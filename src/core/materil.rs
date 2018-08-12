@@ -24,6 +24,7 @@ where Self: Send
 
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct MeshNormalMaterial {
 	pub uuid: Uuid,
     pub name: String,
@@ -31,6 +32,7 @@ pub struct MeshNormalMaterial {
 	pub transparent: bool,
 }
 
+#[derive(Clone)]
 pub struct MeshBasicMaterial {
 	pub uuid: Uuid,
 	pub name: String,
@@ -62,7 +64,7 @@ impl MeshBasicMaterial {
 	}
 }
 
-
+#[derive(Clone)]
 pub enum Materials {
 	Normal(MeshNormalMaterial),
 	Basic(MeshBasicMaterial),
@@ -71,4 +73,18 @@ pub enum Materials {
 
 impl Component for Materials {
 	type Storage = VecStorage<Self>;
+}
+
+impl Materials {
+	pub fn duplicate(&self) -> Self {
+		let mut data = self.clone();
+
+		match data {
+			Materials::Basic(ref mut m) => { m.uuid = Uuid::new_v4(); }
+			Materials::Normal(ref mut m) => { m.uuid = Uuid::new_v4(); }
+			_ => {}
+		}
+
+		data
+	}
 }

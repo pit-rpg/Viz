@@ -4,11 +4,12 @@
 extern crate gl;
 extern crate glutin;
 extern crate rand;
+extern crate uuid;
 
 #[macro_use]
 pub mod macros;
 mod gl_geometry;
-mod gl_mesh;
+// mod gl_mesh;
 mod gl_material;
 mod gl_render;
 
@@ -21,6 +22,8 @@ mod gl_render;
 use std::ffi::CStr;
 // use std::ffi::CString;
 use std::os::raw::c_void;
+use self::uuid::Uuid;
+
 
 use self::glutin::GlContext;
 use self::gl::GetString;
@@ -39,7 +42,7 @@ use core::Material;
 use core::Materials;
 use core::MeshBasicMaterial;
 // use core::Node;
-use core::Mesh;
+// use core::Mesh;
 use render::Renderer;
 use self::gl_render::*;
 use self::gl_material::GLMaterial;
@@ -97,8 +100,26 @@ pub fn test() {
     geom.create_buffer_attribute("color".to_string(), BufferType::Color(col), 3);
     geom.set_indices(ind);
 
+    let mut geom2 = geom.duplicate();
+
+    {
+        let d = &mut(geom2.get_mut_attribute("positions").unwrap().data);
+        match d {
+            BufferType::Vector3f32(ref mut data) =>{
+                data
+                    .iter_mut()
+                    .for_each(|e| {
+                        e.x += 0.2;
+                        e.y += 0.2;
+                    });
+            },
+            _=>{},
+        }
+    }
+
     let material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
     let material = Materials::Basic( material );
+    let material2 = material.duplicate();
 
     // let mut node = Node::<f32>::new();
 
@@ -109,7 +130,15 @@ pub fn test() {
     world.add_resource(VertexArraysIDs::new());
     world.add_resource(GLMaterialIDs::new());
 
+    println!("{}", geom.uuid);
+    println!("{}", geom2.uuid);
+
+    // println!("{}", material.uuid);
+    // println!("{}", material2.uuid);
+
     world.create_entity().with(geom).with(material).build();
+    world.create_entity().with(geom2).with(material2).build();
+
 
     let mut render_system = self::RenderSystem;
 

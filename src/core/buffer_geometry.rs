@@ -12,6 +12,7 @@ use helpers::Nums;
 // use std::mem;
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub enum BufferType
 {
 	Vector3f32(Vec<Vector3<f32>>),
@@ -24,6 +25,7 @@ pub enum BufferType
 
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct BufferAttribute
 {
 	pub data: BufferType,
@@ -81,6 +83,7 @@ pub struct BufferGroup {
 
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct BufferGeometry
 {
 	pub uuid: Uuid,
@@ -180,6 +183,11 @@ impl BufferGeometry
 			.find(|e| e.name == name)
 	}
 
+	pub fn get_mut_attribute(&mut self, name: &str) -> Option<&mut BufferAttribute> {
+		self.attributes
+			.iter_mut()
+			.find(|e| e.name == name)
+	}
 
 	fn _compute_face_normals<T:Nums>(&self, positions: &Vec<Vector3<T>>, indices: &Vec<i32>) -> Vec<Vector3<T>> {
 		let len = indices.len()/3;
@@ -302,6 +310,12 @@ impl BufferGeometry
 		}
 
 		None
+	}
+
+	pub fn duplicate(&self ) -> Self {
+		let mut data = self.clone();
+		data.uuid = Uuid::new_v4();
+		data
 	}
 }
 
