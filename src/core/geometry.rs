@@ -9,6 +9,8 @@ use helpers::Nums;
 // use std::cmp::{ Eq, Ord, Ordering};
 use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 
+extern crate specs;
+use self::specs::{Component, VecStorage};
 
 // 	this.name = '';
 // 	this.type = 'Geometry';
@@ -107,7 +109,9 @@ where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAss
 }
 
 
-
+impl Component for Geometry {
+    type Storage = VecStorage<Self>;
+}
 
 
 

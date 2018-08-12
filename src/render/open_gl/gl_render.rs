@@ -3,17 +3,16 @@ extern crate glutin;
 extern crate rand;
 
 use std::cell::{ RefCell };
-
-
-enum Renderable {
-	Mesh(Mesh)
-}
-
 // use std::ptr;
-use core::Node;
-use core::Component;
+// use core::Node;
+// use core::Component;
+use core::BufferGeometry;
+use core::Materials;
 use core::Mesh;
 use helpers::Nums;
+use self::gl::types::*;
+use std::os::raw::c_void;
+
 // use std::str;
 // use std::ffi::{CStr, CString};
 // use self::gl::types::*;
@@ -23,6 +22,8 @@ use super::gl_geometry::{VertexArraysIDs};
 use super::gl_material::GLMaterialIDs;
 use super::gl_mesh::*;
 use super::super::Renderer;
+use super::GLMaterial;
+use super::GLGeometry;
 
 #[allow(dead_code)]
 pub struct GLRenderer {
@@ -31,6 +32,60 @@ pub struct GLRenderer {
 	pub vertex_arrays_ids: VertexArraysIDs,
 	pub gl_material_ids: GLMaterialIDs,
 }
+
+
+extern crate specs;
+use self::specs::{Write, Component, ReadStorage, System, VecStorage, World, RunNow};
+
+
+pub struct RenderSystem;
+
+
+
+
+impl<'a> System<'a> for RenderSystem {
+
+	type SystemData = (
+		ReadStorage<'a, BufferGeometry>,
+		ReadStorage<'a, Materials>,
+		Write<'a, VertexArraysIDs>,
+		Write<'a, GLMaterialIDs>,
+	);
+
+
+	fn run(&mut self, data: Self::SystemData) {
+        use self::specs::Join;
+
+		let (
+			geometry,
+			material,
+			mut vertex_arrays_ids,
+			mut gl_material_ids
+		) = data;
+
+        for (geometry, material) in ( &geometry, &material).join() {
+			// println!("1");
+			geometry.bind(&mut vertex_arrays_ids);
+			match material {
+				Materials::Basic(m) =>{  m.bind(&mut gl_material_ids); },
+				// Materials::Normal(m) =>{ m.bind(&mut gl_material_ids); },
+				_ => {}
+			}
+
+			match geometry.indices {
+				Some(ref indices) => {
+					let len = indices.len() as GLint;
+					gl_call!({
+						gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, 0 as *const c_void);
+					});
+				}
+				None => {}
+			}
+
+		}
+	}
+}
+
 
 
 impl Renderer for GLRenderer {
@@ -72,31 +127,34 @@ impl Renderer for GLRenderer {
 	}
 
 
-	fn render<T:Nums>(&self, node: &mut Node<T>)
-	// where Mesh: Component
-	{
+	fn render() {
 
-		node.traverse(|ref mut node|  {
-			for component in &node.components  {
-				// let a:&Component = component.deref();
-				let a = component;
-				// component.test();
-				match **component {
-					// Renderable::Mesh(m) =>{}
-				// match a {
-				// Mesh {geometry, material, uuid, name} => {}
-					// Component  => {}
-					// RefCell => {
+	}
+	// fn render<T:Nums>(&self, node: &mut Node<T>)
+	// // where Mesh: Component
+	// {
 
-						// !println!("{}", component);
-					// }
-					// TODO render
-					// &RefCell<Box<Component>> =>{}
+	// 	node.traverse(|ref mut node|  {
+	// 		for component in &node.components  {
+	// 			// let a:&Component = component.deref();
+	// 			let a = component;
+	// 			// component.test();
+	// 			match **component {
+	// 				// Renderable::Mesh(m) =>{}
+	// 			// match a {
+	// 			// Mesh {geometry, material, uuid, name} => {}
+	// 				// Component  => {}
+	// 				// RefCell => {
 
-					_ => {}
-				}
-			}
-		});
+	// 					// !println!("{}", component);
+	// 				// }
+	// 				// TODO render
+	// 				// &RefCell<Box<Component>> =>{}
 
-    }
+	// 				_ => {}
+	// 			}
+	// 		}
+	// 	});
+
+    // }
 }

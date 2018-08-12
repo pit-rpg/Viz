@@ -12,7 +12,7 @@ use core::{BufferGeometry, BufferType, BufferAttribute};
 use std::collections::HashMap;
 use self::uuid::Uuid;
 
-
+// #[derive(Debug)]
 pub type VertexArraysIDs = HashMap<Uuid, Buffers>;
 
 
@@ -92,15 +92,10 @@ pub trait GLGeometry {
 						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f64::<LittleEndian>(v[i].z).unwrap();
 					},
-					&BufferType::Colorf32(ref v) => {
+					&BufferType::Color(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].r).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].g).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].b).unwrap();
-					},
-					&BufferType::Colorf64(ref v) => {
-						buffer.write_f64::<LittleEndian>(v[i].r).unwrap();
-						buffer.write_f64::<LittleEndian>(v[i].g).unwrap();
-						buffer.write_f64::<LittleEndian>(v[i].b).unwrap();
 					},
 				}
 			}
@@ -154,13 +149,9 @@ pub trait GLGeometry {
 						vals = 3;
 						val_type = gl::DOUBLE;
 					},
-					BufferType::Colorf32(_) => {
+					BufferType::Color(_) => {
 						vals = 3;
 						val_type = gl::FLOAT;
-					},
-					BufferType::Colorf64(_) => {
-						vals = 3;
-						val_type = gl::DOUBLE;
 					},
 				}
 
@@ -185,8 +176,7 @@ pub trait GLGeometry {
 		match &attribute.data {
 			&BufferType::Vector3f32(_) 	=> { mem::size_of::<f32>() * 3 }
 			&BufferType::Vector3f64(_) 	=> { mem::size_of::<f64>() * 3 }
-			&BufferType::Colorf32(_) 	=> { mem::size_of::<f32>() * 3 }
-			&BufferType::Colorf64(_) 	=> { mem::size_of::<f64>() * 3 }
+			&BufferType::Color(_) 		=> { mem::size_of::<f32>() * 3 }
 		}
 	}
 }

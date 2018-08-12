@@ -4,29 +4,28 @@ use std::ops::{Add};
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
-pub struct Color <T> {
-	pub r: T,
-	pub g: T,
-	pub b: T,
+pub struct Color {
+	pub r: f32,
+	pub g: f32,
+	pub b: f32,
 }
 
 
 #[allow(dead_code)]
-impl <T> Color<T>{}
+impl Color{}
 
-pub trait ColorTrait <T> {
+pub trait ColorTrait {
 	fn copy ( &mut self, color: &Self ) -> &mut Self;
 	fn new_zero () -> Self;
-	fn new (r: T, g: T, b: T) -> Self;
+	fn new (r: f32, g: f32, b: f32) -> Self;
 	fn random () -> Self;
-	fn set_scalar (&mut self, scalar: T ) -> &mut Self;
-	fn lerp (  &mut self, color: &Self, alpha: T ) -> &mut Self;
-	fn set_rgb ( &mut self, r: T, g: T, b: T ) -> &mut Self;
+	fn set_scalar (&mut self, scalar: f32 ) -> &mut Self;
+	fn lerp (  &mut self, color: &Self, alpha: f32 ) -> &mut Self;
+	fn set_rgb ( &mut self, r: f32, g: f32, b: f32 ) -> &mut Self;
 }
 
 
-impl <T> ColorTrait<T> for Color<T>
-where T: Nums
+impl  ColorTrait for Color
 {
 
 	fn copy ( &mut self, color: &Self ) -> &mut Self {
@@ -40,15 +39,15 @@ where T: Nums
 		Self {r:Nums::zero(), g:Nums::zero(), b:Nums::zero()}
 	}
 
-	fn new (r:T, g:T, b:T) -> Self {
+	fn new (r:f32, g:f32, b:f32) -> Self {
 		Self {r, g, b}
 	}
 
 	fn random () -> Self {
-		 Color {r: rand::random::<T>(), g: rand::random::<T>(), b: rand::random::<T>()}
+		 Color {r: rand::random::<f32>(), g: rand::random::<f32>(), b: rand::random::<f32>()}
 	}
 
-	fn set_scalar (&mut self, scalar: T ) -> &mut Self {
+	fn set_scalar (&mut self, scalar: f32 ) -> &mut Self {
 	    self.r = scalar;
 	    self.g = scalar;
 	    self.b = scalar;
@@ -56,14 +55,14 @@ where T: Nums
 	}
 
 
-	fn lerp (  &mut self, color: &Self, alpha: T ) -> &mut Self {
+	fn lerp (  &mut self, color: &Self, alpha: f32 ) -> &mut Self {
 		self.r += ( color.r - self.r ) * alpha;
 		self.g += ( color.g - self.g ) * alpha;
 		self.b += ( color.b - self.b ) * alpha;
 		self
 	}
 
-	fn set_rgb ( &mut self, r: T, g: T, b: T ) -> &mut Self {
+	fn set_rgb ( &mut self, r: f32, g: f32, b: f32 ) -> &mut Self {
 		self.r = r;
 		self.g = g;
 		self.b = b;
@@ -71,12 +70,11 @@ where T: Nums
 	}
 }
 
-impl <T> Add for Color<T>
-	where T:  Add<Output = T>, {
+impl Add for Color
+{
+	type Output = Color;
 
-	type Output = Color<T>;
-
-	fn add(self, rhs: Color<T>) -> Color<T> {
+	fn add(self, rhs: Color) -> Color {
 		Color {
 			r: self.r + rhs.r,
 			g: self.g + rhs.g,

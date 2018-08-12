@@ -16,8 +16,7 @@ pub enum BufferType
 {
 	Vector3f32(Vec<Vector3<f32>>),
 	Vector3f64(Vec<Vector3<f64>>),
-	Colorf32(Vec<Color<f32>>),
-	Colorf64(Vec<Color<f64>>),
+	Color(Vec<Color>),
 	// Vector2(Vec<Vector2<T>>),
 	// F64(Vec<f64>),
 	// Usize(Vec<usize>),
@@ -50,8 +49,7 @@ impl BufferAttribute
 		match &self.data {
 			&BufferType::Vector3f32(ref a) 	=> a.len(),
 			&BufferType::Vector3f64(ref a) 	=> a.len(),
-			&BufferType::Colorf32(ref a) 	=> a.len(),
-			&BufferType::Colorf64(ref a) 	=> a.len(),
+			&BufferType::Color(ref a) 		=> a.len(),
 		}
 	}
 
@@ -92,6 +90,17 @@ pub struct BufferGeometry
 	pub attributes: Vec<BufferAttribute>,
 	callbacks: Vec<fn(&mut BufferGeometry)>
 }
+
+
+
+extern crate specs;
+use self::specs::{Component, VecStorage};
+
+impl Component for BufferGeometry {
+	type Storage = VecStorage<Self>;
+}
+
+
 
 
 #[allow(dead_code)]

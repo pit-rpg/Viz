@@ -20,7 +20,7 @@ mod gl_render;
 // use std::str;
 use std::ffi::CStr;
 // use std::ffi::CString;
-// use std::os::raw::c_void;
+use std::os::raw::c_void;
 
 use self::glutin::GlContext;
 use self::gl::GetString;
@@ -36,12 +36,14 @@ use self::gl_geometry::GLGeometry;
 use core::BufferType;
 use core::BufferGeometry;
 use core::Material;
+use core::Materials;
 use core::MeshBasicMaterial;
-use core::Node;
+// use core::Node;
 use core::Mesh;
 use render::Renderer;
 use self::gl_render::*;
 use self::gl_material::GLMaterial;
+use self::gl_material::GLMaterialIDs;
 // use core::BufferGroup;
 // use core::BufferAttribute;
 
@@ -58,12 +60,17 @@ fn print_gl_version() {
 
 
 
+extern crate specs;
+use self::specs::{Write, Component, ReadStorage, System, VecStorage, World, RunNow};
+
+
+
 pub fn test() {
     let mut test_gl_render = GLRenderer::new();
     let mut f_count = 0.0;
 
-    let mut color1 = Color::<f32>::random();
-    let mut color2 = Color::<f32>::random();
+    let mut color1 = Color::random();
+    let mut color2 = Color::random();
     let mut color_tmp = Color::new(color1.r, color1.g, color1.b);
 
     let mut running = true;
@@ -87,19 +94,30 @@ pub fn test() {
     ];
     let mut geom = BufferGeometry::new();
     geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3f32(pos), 3);
-    geom.create_buffer_attribute("color".to_string(), BufferType::Colorf32(col), 3);
+    geom.create_buffer_attribute("color".to_string(), BufferType::Color(col), 3);
     geom.set_indices(ind);
 
     let material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    let material = Materials::Basic( material );
 
-    let mut node = Node::<f32>::new();
+    // let mut node = Node::<f32>::new();
 
+
+    let mut world = World::new();
+    world.register::<BufferGeometry>();
+    world.register::<Materials>();
+    world.add_resource(VertexArraysIDs::new());
+    world.add_resource(GLMaterialIDs::new());
+
+    world.create_entity().with(geom).with(material).build();
+
+    let mut render_system = self::RenderSystem;
 
     // mesh.material.bind(&mut test_gl_render.gl_material_ids);
     // mesh.geometry.bind(&mut test_gl_render.vertex_arrays_ids);
-    let mesh = Mesh::new(geom, Box::from(material));
+    // let mesh = Mesh::new(geom, Box::from(material));
 
-    node.add_component(mesh);
+    // node.add_component(mesh);
 
     println!("{:?}", test_gl_render.gl_material_ids);
     println!("{:?}", test_gl_render.vertex_arrays_ids);
@@ -140,10 +158,12 @@ pub fn test() {
             gl::ClearColor(color_tmp.r, color_tmp.g, color_tmp.b, 1.0);
         });
 
-        test_gl_render.render(&mut node);
+        // test_gl_render.render(&mut node);
 
 
         test_gl_render.clear();
+
+        render_system.run_now(&world.res);
 
         // mesh.material.bind(&mut test_gl_render.gl_material_ids);
         // mesh.geometry.bind(&mut test_gl_render.vertex_arrays_ids);

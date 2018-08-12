@@ -115,7 +115,7 @@ impl GLMaterial for Material {
 }
 
 
-impl <T> GLMaterial for MeshBasicMaterial<T> {
+impl GLMaterial for MeshBasicMaterial {
 	fn get_program(&self) -> ShaderProgram {
 		ShaderProgram {
 			fs_source: String::from(FRAGMENT_SHADER_SOURCE),

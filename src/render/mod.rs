@@ -1,11 +1,11 @@
 pub mod open_gl;
 use helpers::Nums;
-use core::Node;
+// use core::Node;
 
 
 pub trait Renderer {
 	fn new () -> Self;
-	fn render<T:Nums>(&self, node: &mut Node<T>);
+	fn render();
 	fn clear(&self);
 }
 
