@@ -153,9 +153,12 @@ const VERTEX_SHADER_SOURCE: &str = r#"
     #version 330 core
     layout (location = 0) in vec3 aPos;
     layout (location = 1) in vec3 aColor;
+    layout (location = 2) in vec2 aUv;
     out vec4 color;
+    out vec2 uv;
     void main() {
         color = vec4(aColor.xyz, 1.0);
+        uv = aUv;
         gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
     }
 "#;
@@ -164,11 +167,13 @@ const VERTEX_SHADER_SOURCE: &str = r#"
 const FRAGMENT_SHADER_SOURCE: &str = r#"
     #version 330 core
     in vec4 color;
+    in vec2 uv;
     layout (location = 0) out vec4 FragColor;
     uniform vec4 u_Color;
 
     void main() {
         // FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        // FragColor = vec4(uv.x+uv.y, uv.x+uv.y, uv.x+uv.y, 1.0);
         FragColor = color;
     }
 "#;

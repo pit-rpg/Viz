@@ -32,6 +32,7 @@ use self::gl::GetString;
 use math::Color;
 use math::ColorTrait;
 use math::Vector3;
+use math::Vector2;
 use math::Vector;
 
 use self::gl_geometry::VertexArraysIDs;
@@ -85,6 +86,14 @@ pub fn test() {
             Vector3::<f32>::new(-0.5,   -0.5,   0.0),  // bottom left
             Vector3::<f32>::new(-0.5,   0.5,    0.0)   // top left
     ];
+
+    let uv = vec![
+            Vector2::<f32>::new(1.0,    1.0),  // top right
+            Vector2::<f32>::new(1.0,    0.0),  // bottom right
+            Vector2::<f32>::new(0.0,    0.0),  // bottom left
+            Vector2::<f32>::new(0.0,    1.0)   // top left
+    ];
+
     let col = vec![
         Color::new(1.0,    0.0,    0.0),  // top right
         Color::new(0.0,    1.0,    0.0),  // bottom right
@@ -98,6 +107,7 @@ pub fn test() {
     let mut geom = BufferGeometry::new();
     geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3f32(pos), 3);
     geom.create_buffer_attribute("color".to_string(), BufferType::Color(col), 3);
+    geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2f32(uv), 2);
     geom.set_indices(ind);
 
     let mut geom2 = geom.duplicate();

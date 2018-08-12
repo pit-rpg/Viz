@@ -92,6 +92,14 @@ pub trait GLGeometry {
 						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f64::<LittleEndian>(v[i].z).unwrap();
 					},
+					&BufferType::Vector2f32(ref v) => {
+						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
+					},
+					&BufferType::Vector2f64(ref v) => {
+						buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
+						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
+					},
 					&BufferType::Color(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].r).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].g).unwrap();
@@ -149,6 +157,14 @@ pub trait GLGeometry {
 						vals = 3;
 						val_type = gl::DOUBLE;
 					},
+					BufferType::Vector2f32(_) => {
+						vals = 2;
+						val_type = gl::FLOAT;
+					},
+					BufferType::Vector2f64(_) => {
+						vals = 2;
+						val_type = gl::DOUBLE;
+					},
 					BufferType::Color(_) => {
 						vals = 3;
 						val_type = gl::FLOAT;
@@ -176,6 +192,8 @@ pub trait GLGeometry {
 		match &attribute.data {
 			&BufferType::Vector3f32(_) 	=> { mem::size_of::<f32>() * 3 }
 			&BufferType::Vector3f64(_) 	=> { mem::size_of::<f64>() * 3 }
+			&BufferType::Vector2f32(_) 	=> { mem::size_of::<f32>() * 2 }
+			&BufferType::Vector2f64(_) 	=> { mem::size_of::<f64>() * 2 }
 			&BufferType::Color(_) 		=> { mem::size_of::<f32>() * 3 }
 		}
 	}
