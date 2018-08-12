@@ -2,9 +2,17 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 
+use std::cell::{ RefCell };
+
+
+enum Renderable {
+	Mesh(Mesh)
+}
+
 // use std::ptr;
 use core::Node;
-// use core::Mesh;
+use core::Component;
+use core::Mesh;
 use helpers::Nums;
 // use std::str;
 // use std::ffi::{CStr, CString};
@@ -13,6 +21,7 @@ use helpers::Nums;
 use self::glutin::{EventsLoop, GlContext, GlWindow};
 use super::gl_geometry::{VertexArraysIDs};
 use super::gl_material::GLMaterialIDs;
+use super::gl_mesh::*;
 use super::super::Renderer;
 
 #[allow(dead_code)]
@@ -63,11 +72,24 @@ impl Renderer for GLRenderer {
 	}
 
 
-	fn render<T:Nums>(&self, node: &mut Node<T>) {
+	fn render<T:Nums>(&self, node: &mut Node<T>)
+	// where Mesh: Component
+	{
 
 		node.traverse(|ref mut node|  {
 			for component in &node.components  {
-				match component {
+				// let a:&Component = component.deref();
+				let a = component;
+				// component.test();
+				match **component {
+					// Renderable::Mesh(m) =>{}
+				// match a {
+				// Mesh {geometry, material, uuid, name} => {}
+					// Component  => {}
+					// RefCell => {
+
+						// !println!("{}", component);
+					// }
 					// TODO render
 					// &RefCell<Box<Component>> =>{}
 

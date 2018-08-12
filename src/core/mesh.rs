@@ -28,6 +28,7 @@ pub struct Mesh {
 	// quaternion
 }
 
+
 impl Mesh {
 	pub fn new(geometry: BufferGeometry, material: Box<Material>) -> Mesh
 	where Material: 'static
@@ -49,4 +50,8 @@ impl Mesh {
 
 // impl <'a, M> Mesh<'a, M>
 
-impl Component for Mesh {}
+impl Component for Mesh {
+	fn test(&self){
+		println!("1")
+	}
+}

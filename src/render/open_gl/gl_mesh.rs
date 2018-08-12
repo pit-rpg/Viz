@@ -4,10 +4,11 @@ extern crate uuid;
 
 // #[macro_use]
 // use render::render_gl::macros;
+use render::Renderer;
 // use self::byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use self::gl::types::*;
 // use self::uuid::Uuid;
-use super::{GLGeometry, GLMaterial, GLRenderer};
+use super::{GLGeometry, GLMaterial, GLRenderer };
 use core::{Mesh};
 // use core::{BufferAttribute, BufferGeometry, BufferType, Material, Mesh};
 // use std::collections::HashMap;

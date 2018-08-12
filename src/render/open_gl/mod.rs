@@ -40,7 +40,7 @@ use core::MeshBasicMaterial;
 use core::Node;
 use core::Mesh;
 use render::Renderer;
-use self::gl_render::GLRenderer;
+use self::gl_render::*;
 use self::gl_material::GLMaterial;
 // use core::BufferGroup;
 // use core::BufferAttribute;

@@ -8,6 +8,7 @@ glutin = "*"
 gl = "*"
 rand = "*"
 num-traits = "*"
+specs = "0.11"
 uuid = { version = "0.5", features = ["v4"] }
 # features = ["secure-password", "civet", "prod"]
 byteorder = "1"
