@@ -4,14 +4,15 @@ version = "0.1.0"
 authors = ["Krovspey Stepan <pit-rpg@yandex.ua>"]
 
 [dependencies]
-glutin = "*"
-gl = "*"
-rand = "*"
-num-traits = "*"
+glutin = "0.18.0"
+gl = "0.10.0"
+rand = "0.5.5"
+# num-traits = "0.2.5"
 specs = "0.11"
+image = "0.19.0"
 uuid = { version = "0.5", features = ["v4"] }
 # features = ["secure-password", "civet", "prod"]
-byteorder = "1"
+byteorder = "1.2.4"
 
 [features]
 prod = []

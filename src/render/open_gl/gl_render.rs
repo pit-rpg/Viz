@@ -18,6 +18,7 @@ use std::os::raw::c_void;
 // use self::gl::types::*;
 // use self::gl::GetString;
 use self::glutin::{EventsLoop, GlContext, GlWindow};
+use self::glutin::dpi::*;
 use super::gl_geometry::{VertexArraysIDs};
 use super::gl_material::GLMaterialIDs;
 // use super::gl_mesh::*;
@@ -94,7 +95,7 @@ impl Renderer for GLRenderer {
 		let events_loop = glutin::EventsLoop::new();
 		let window = glutin::WindowBuilder::new()
 			.with_title("Hello, world!")
-			.with_dimensions(1024, 768);
+			.with_dimensions(LogicalSize::new(1024.0, 768.0));
 
 		let context = glutin::ContextBuilder::new().with_vsync(true);
 

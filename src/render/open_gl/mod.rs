@@ -5,6 +5,8 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 extern crate uuid;
+use std::path::Path;
+
 
 #[macro_use]
 pub mod macros;
@@ -12,8 +14,10 @@ mod gl_geometry;
 // mod gl_mesh;
 mod gl_material;
 mod gl_render;
+mod gl_texture;
 
-
+extern crate image;
+use self::image::GenericImage;
 
 // use std::mem;
 
@@ -46,6 +50,7 @@ use core::MeshBasicMaterial;
 // use core::Mesh;
 use render::Renderer;
 use self::gl_render::*;
+use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
 // use core::BufferGroup;
@@ -78,7 +83,6 @@ pub fn test() {
     let mut color_tmp = Color::new(color1.r, color1.g, color1.b);
 
     let mut running = true;
-
 
     let pos = vec![
             Vector3::<f32>::new(0.5,    0.5,    0.0),  // top right
@@ -170,8 +174,12 @@ pub fn test() {
             test_gl_render.events_loop.poll_events(|event| {
                 match event {
                     glutin::Event::WindowEvent{ event, .. } => match event {
-                        glutin::WindowEvent::Closed => running = false,
-                        glutin::WindowEvent::Resized(w, h) => window.resize(w, h),
+                        glutin::WindowEvent::CloseRequested => running = false,
+                        glutin::WindowEvent::Resized(logical_size) => {
+                            let dpi_factor = window.get_hidpi_factor();
+                            window.resize(logical_size.to_physical(dpi_factor));
+                        },
+                        // glutin::WindowEvent::Resized(w, h) => window.resize(w, h),
                         _ => ()
                     },
                     _ => ()

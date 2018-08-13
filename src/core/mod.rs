@@ -2,6 +2,7 @@
 mod buffer_geometry;
 mod mesh;
 mod materil;
+mod texture;
 // mod node;
 // mod face3;
 
@@ -10,4 +11,5 @@ pub use self::buffer_geometry::*;
 // pub use self::mesh::*;
 // pub use self::node::*;
 pub use self::materil::*;
+pub use self::texture::*;
 // pub use self::face3::Face3;
