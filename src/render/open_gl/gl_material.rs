@@ -9,6 +9,7 @@ use std::ptr;
 use std::str;
 use std::ffi::{CStr, CString};
 use self::gl::types::*;
+use super::gl_texture::{GLTextureIDs, GLTexture};
 
 pub type GLMaterialIDs = HashMap<Uuid, ShaderProgram>;
 
@@ -21,18 +22,15 @@ pub struct ShaderProgram {
 
 impl Drop for ShaderProgram {
 	fn drop(&mut self) {
+		println!("delete program");
 		gl_call!({
 			gl::DeleteProgram(self.id);
 		});
 	}
 }
 
-pub trait GLMaterial
-// where Self: Sized
-{
-	fn get_program(&self) -> ShaderProgram;
-	fn bind(&self, hash_map: &mut GLMaterialIDs);
-	fn un_bind(&self);
+
+impl ShaderProgram {
 
 	fn compile_shader_program(program: &mut ShaderProgram) {
 		let id;
@@ -64,6 +62,10 @@ pub trait GLMaterial
 			gl::DeleteShader(vs);
 			gl::DeleteShader(fs);
 		});
+
+		gl_call!({ gl::UseProgram(program.id); });
+
+
 
 		program.id = id;
 	}
@@ -99,57 +101,59 @@ pub trait GLMaterial
 
 		id
 	}
-
-}
-
-impl GLMaterial for Material {
-	fn get_program(&self) -> ShaderProgram {
-		unimplemented!()
-	}
-
-	fn bind(&self, hash_map: &mut GLMaterialIDs){
-		unimplemented!()
-	}
-
-	fn un_bind(&self){
-		unimplemented!()
-	}
 }
 
 
-impl GLMaterial for MeshBasicMaterial {
-	fn get_program(&self) -> ShaderProgram {
-		ShaderProgram {
-			fs_source: String::from(FRAGMENT_SHADER_SOURCE),
-			vs_source: String::from(VERTEX_SHADER_SOURCE),
-			id: 0,
-		}
-	}
+pub trait GLMaterial
+where Self: Material
+{
+	fn get_program(&self) -> ShaderProgram;
 
-	fn bind(&self, hash_map: &mut GLMaterialIDs){
-		match hash_map.get_mut(&self.uuid) {
+	fn bind(&self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs){
+		match mat_store.get_mut(&self.get_uuid()) {
 			None => {},
 			Some(ref program) => {
+				self
+					.get_textures()
+					.iter()
+					.for_each(|t| t.lock().unwrap().bind(texture_store) );
+
 				gl_call!({ gl::UseProgram(program.id); });
 				return;
 			}
 		}
 
 		let mut program = self.get_program();
-		Self::compile_shader_program(&mut program);
+		ShaderProgram::compile_shader_program(&mut program);
 
-		gl_call!({ gl::UseProgram(program.id); });
-		hash_map.insert(self.uuid, program);
+		mat_store.insert(*self.get_uuid(), program);
 
-		self.bind(hash_map);
+		self.bind(mat_store, texture_store);
 	}
 
-	fn un_bind(&self){
+	fn unbind(&self){
+		self
+			.get_textures()
+			.iter()
+			.for_each(|t| t.lock().unwrap().unbind() );
+
 		gl_call!({ gl::UseProgram(0); });
+	}
+
+
+}
+
+impl GLMaterial for MeshBasicMaterial {
+	fn get_program(&self) -> ShaderProgram {
+		ShaderProgram {
+			fs_source: String::from(BASIC_FRAGMENT_SHADER_SOURCE),
+			vs_source: String::from(BASIC_VERTEX_SHADER_SOURCE),
+			id: 0,
+		}
 	}
 }
 
-const VERTEX_SHADER_SOURCE: &str = r#"
+const BASIC_VERTEX_SHADER_SOURCE: &str = r#"
     #version 330 core
     layout (location = 0) in vec3 aPos;
     layout (location = 1) in vec3 aColor;
@@ -164,16 +168,19 @@ const VERTEX_SHADER_SOURCE: &str = r#"
 "#;
 
 
-const FRAGMENT_SHADER_SOURCE: &str = r#"
+const BASIC_FRAGMENT_SHADER_SOURCE: &str = r#"
     #version 330 core
     in vec4 color;
     in vec2 uv;
     layout (location = 0) out vec4 FragColor;
+
     uniform vec4 u_Color;
+	uniform sampler2D map_color;
 
     void main() {
         // FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         // FragColor = vec4(uv.x+uv.y, uv.x+uv.y, uv.x+uv.y, 1.0);
-        FragColor = color;
+        // FragColor = color;
+        FragColor = texture(map_color, uv);
     }
 "#;

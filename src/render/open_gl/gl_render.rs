@@ -21,6 +21,7 @@ use self::glutin::{EventsLoop, GlContext, GlWindow};
 use self::glutin::dpi::*;
 use super::gl_geometry::{VertexArraysIDs};
 use super::gl_material::GLMaterialIDs;
+use super::gl_texture::GLTextureIDs;
 // use super::gl_mesh::*;
 use super::super::Renderer;
 use super::GLMaterial;
@@ -51,6 +52,7 @@ impl<'a> System<'a> for RenderSystem {
 		ReadStorage<'a, Materials>,
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
+		Write<'a, GLTextureIDs>,
 	);
 
 
@@ -61,14 +63,18 @@ impl<'a> System<'a> for RenderSystem {
 			geometry,
 			material,
 			mut vertex_arrays_ids,
-			mut gl_material_ids
+			mut gl_material_ids,
+			mut gl_texture_ids,
 		) = data;
 
         for (geometry, material) in ( &geometry, &material).join() {
 			// println!("1");
 			geometry.bind(&mut vertex_arrays_ids);
 			match material {
-				Materials::Basic(m) =>{  m.bind(&mut gl_material_ids); },
+				Materials::Basic(m) =>{
+					m.bind(&mut gl_material_ids, &mut gl_texture_ids);
+					// println!("bind");
+				},
 				// Materials::Normal(m) =>{ m.bind(&mut gl_material_ids); },
 				_ => {}
 			}
@@ -79,10 +85,20 @@ impl<'a> System<'a> for RenderSystem {
 					gl_call!({
 						gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, 0 as *const c_void);
 					});
+					// println!("draw");
 				}
 				None => {}
 			}
 
+			geometry.unbind();
+			match material {
+				Materials::Basic(m) =>{
+					  m.unbind();
+					//   println!("unbind");
+				},
+				// Materials::Normal(m) =>{ m.bind(&mut gl_material_ids); },
+				_ => {}
+			}
 		}
 	}
 }

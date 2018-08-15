@@ -17,7 +17,7 @@ use std::os::raw::c_void;
 
 // pub trait GLMesh {
 // 	fn bind(&self, renderer: &mut GLRenderer);
-// 	fn un_bind(&self);
+// 	fn unbind(&self);
 // }
 
 // impl GLMesh for Mesh {
@@ -37,8 +37,8 @@ use std::os::raw::c_void;
 // 	}
 
 
-// 	fn un_bind(&self) {
-// 		self.geometry.un_bind();
-// 		self.material.un_bind();
+// 	fn unbind(&self) {
+// 		self.geometry.unbind();
+// 		self.material.unbind();
 // 	}
 // }

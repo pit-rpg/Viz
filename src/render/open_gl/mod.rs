@@ -27,6 +27,7 @@ use std::ffi::CStr;
 // use std::ffi::CString;
 use std::os::raw::c_void;
 use self::uuid::Uuid;
+use std::sync::{Arc, Mutex};
 
 
 use self::glutin::GlContext;
@@ -34,7 +35,6 @@ use self::gl::GetString;
 // use self::gl::types::*;
 // use self::rand::Rng;
 use math::Color;
-use math::ColorTrait;
 use math::Vector3;
 use math::Vector2;
 use math::Vector;
@@ -44,6 +44,7 @@ use self::gl_geometry::GLGeometry;
 use core::BufferType;
 use core::BufferGeometry;
 use core::Material;
+use core::Texture;
 use core::Materials;
 use core::MeshBasicMaterial;
 // use core::Node;
@@ -104,10 +105,12 @@ pub fn test() {
         Color::new(1.0,    1.0,    1.0),  // bottom left
         Color::new(0.0,    0.0,    1.0)  // top left
     ];
+
     let ind = vec![
             0, 1, 3,   // first triangle
             1, 2, 3    // second triangle
     ];
+
     let mut geom = BufferGeometry::new();
     geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3f32(pos), 3);
     geom.create_buffer_attribute("color".to_string(), BufferType::Color(col), 3);
@@ -131,9 +134,22 @@ pub fn test() {
         }
     }
 
-    let material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    let texture = Texture::new("tile", "images/tile.jpg");
+    let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
+    // let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
+    // load_textures(&texture).expect("lolo");
+
+
+    let mut material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    material.map_color = Some(Arc::new(Mutex::new(texture)));
+
     let material = Materials::Basic( material );
-    let material2 = material.duplicate();
+
+    let mut material2 = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
+
+    let material2 = Materials::Basic( material2 );
+
 
     // let mut node = Node::<f32>::new();
 
@@ -143,6 +159,7 @@ pub fn test() {
     world.register::<Materials>();
     world.add_resource(VertexArraysIDs::new());
     world.add_resource(GLMaterialIDs::new());
+    world.add_resource(GLTextureIDs::new());
 
     println!("{}", geom.uuid);
     println!("{}", geom2.uuid);

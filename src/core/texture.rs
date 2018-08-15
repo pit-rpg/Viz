@@ -5,17 +5,20 @@ use self::image::{GenericImage, ColorType};
 use self::uuid::Uuid;
 use std::path::Path;
 
+#[derive(Debug)]
 pub enum Wrapping {
 	Repeat,
 	MirroredRepeat,
 	ClampToEdge,
 }
 
+#[derive(Debug)]
 pub enum Filtering {
 	NEAREST,
 	LINEAR,
 }
 
+#[derive(Debug)]
 pub enum TextureColorType {
 	None,
 	Gray(u8),
@@ -25,59 +28,63 @@ pub enum TextureColorType {
 
 
 #[allow(dead_code)]
-pub struct RawTexture {
+#[derive(Debug)]
+pub struct Texture {
 	pub name: String,
 	pub path: String,
 	pub uuid: Uuid,
-	pub width: u32,
-	pub height: u32,
 	pub wrapping_x: Wrapping,
 	pub wrapping_y: Wrapping,
 	pub filtering: Filtering,
-	pub keep_data: bool,
-	pub color_type: TextureColorType,
-	pub data: Option<Vec<u8>>,
 }
 
-impl RawTexture {
+
+pub struct TextureData {
+	pub color_type: TextureColorType,
+	pub width: u32,
+	pub height: u32,
+	pub data: Vec<u8>, // TODO optional data for memory save
+}
+
+impl Texture {
 
 	pub fn new (name: &str, path: &str) -> Self {
 		Self {
 			name: name.to_string(),
 			path: path.to_string(),
 			uuid: Uuid::new_v4(),
-			width: 0,
-			height: 0,
-			keep_data: false,
-			color_type: TextureColorType::None,
 			wrapping_x: Wrapping::Repeat,
 			wrapping_y: Wrapping::Repeat,
 			filtering: Filtering::NEAREST,
-			data: None
 		}
 	}
 
-	pub fn new_and_load (name: &str, path: &str) -> Self {
-		let mut data = Self::new(name, path);
-		data.load();
-		data
-	}
+	pub fn load (&self) -> Result<TextureData, ()> {
 
-	pub fn load(&mut self) -> &Vec<u8> {
-		let img = image::open(&Path::new("images/tile.jpg")).expect("Failed to load texture");
+		let img =  match image::open(&Path::new(&self.path)) {
+			Ok(img) => { img }
+			Err(e) => {
+				println!("{}", e);
+				return Err(())
+			}
+		};
 
+		let color_type;
 		match img.color() {
-			ColorType::Gray(d) => { self.color_type = TextureColorType::Gray(d) },
-			ColorType::RGB(d) => { self.color_type = TextureColorType::RGB(d) },
-			ColorType::RGBA(d) => { self.color_type = TextureColorType::RGBA(d) },
-			_ =>{}
+			ColorType::Gray(d) => { color_type = TextureColorType::Gray(d) },
+			ColorType::RGB(d) =>  { color_type = TextureColorType::RGB(d) },
+			ColorType::RGBA(d) => { color_type = TextureColorType::RGBA(d) },
+			_ =>{ return Err(()) }
 		}
 
 		let data = img.raw_pixels();
 		let (width, height) = img.dimensions();
-		self.width = width;
-		self.height = height;
-		self.data = Some(data);
-		self.data.as_ref().unwrap()
+
+		Ok(TextureData {
+			data,
+			width,
+			height,
+			color_type,
+		})
 	}
 }

@@ -26,6 +26,7 @@ pub struct Buffers {
 
 impl Drop for Buffers {
 	fn drop(&mut self) {
+		println!("delete geometry");
 		gl_call!({
 			gl::DeleteVertexArrays(1, &self.vertex_array);
         	gl::DeleteBuffers(1, &self.array_buffer);
@@ -51,7 +52,7 @@ impl Default for Buffers {
 #[allow(dead_code)]
 pub trait GLGeometry {
 	fn bind(&self, hash_map: &mut VertexArraysIDs);
-	fn un_bind(&self);
+	fn unbind(&self);
 
 	fn alloc_gl_gom(geom: &BufferGeometry) -> Buffers {
 		let len = geom.attributes.len();
@@ -217,7 +218,7 @@ impl GLGeometry for BufferGeometry {
 		self.bind(hash_map);
 	}
 
-	fn un_bind(&self){
+	fn unbind(&self){
 		gl_call!({ gl::BindVertexArray(0); });
 	}
 }

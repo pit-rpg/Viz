@@ -11,43 +11,44 @@ pub struct Color {
 }
 
 
-#[allow(dead_code)]
-impl Color{}
+// #[allow(dead_code)]
+// impl Color {
 
-pub trait ColorTrait {
-	fn copy ( &mut self, color: &Self ) -> &mut Self;
-	fn new_zero () -> Self;
-	fn new (r: f32, g: f32, b: f32) -> Self;
-	fn random () -> Self;
-	fn set_scalar (&mut self, scalar: f32 ) -> &mut Self;
-	fn lerp (  &mut self, color: &Self, alpha: f32 ) -> &mut Self;
-	fn set_rgb ( &mut self, r: f32, g: f32, b: f32 ) -> &mut Self;
-}
+// }
+
+// pub trait ColorTrait {
+// 	fn copy ( &mut self, color: &Self ) -> &mut Self;
+// 	fn new_zero () -> Self;
+// 	fn new (r: f32, g: f32, b: f32) -> Self;
+// 	fn random () -> Self;
+// 	fn set_scalar (&mut self, scalar: f32 ) -> &mut Self;
+// 	fn lerp (  &mut self, color: &Self, alpha: f32 ) -> &mut Self;
+// 	fn set_rgb ( &mut self, r: f32, g: f32, b: f32 ) -> &mut Self;
+// }
 
 
-impl  ColorTrait for Color
-{
+impl Color {
 
-	fn copy ( &mut self, color: &Self ) -> &mut Self {
+	pub fn copy ( &mut self, color: &Self ) -> &mut Self {
 		self.r = color.r;
 		self.g = color.g;
 		self.b = color.b;
 		self
 	}
 
-	fn new_zero () -> Self {
+	pub fn new_zero () -> Self {
 		Self {r:Nums::zero(), g:Nums::zero(), b:Nums::zero()}
 	}
 
-	fn new (r:f32, g:f32, b:f32) -> Self {
+	pub fn new (r:f32, g:f32, b:f32) -> Self {
 		Self {r, g, b}
 	}
 
-	fn random () -> Self {
+	pub fn random () -> Self {
 		 Color {r: rand::random::<f32>(), g: rand::random::<f32>(), b: rand::random::<f32>()}
 	}
 
-	fn set_scalar (&mut self, scalar: f32 ) -> &mut Self {
+	pub fn set_scalar (&mut self, scalar: f32 ) -> &mut Self {
 	    self.r = scalar;
 	    self.g = scalar;
 	    self.b = scalar;
@@ -55,14 +56,14 @@ impl  ColorTrait for Color
 	}
 
 
-	fn lerp (  &mut self, color: &Self, alpha: f32 ) -> &mut Self {
+	pub fn lerp (  &mut self, color: &Self, alpha: f32 ) -> &mut Self {
 		self.r += ( color.r - self.r ) * alpha;
 		self.g += ( color.g - self.g ) * alpha;
 		self.b += ( color.b - self.b ) * alpha;
 		self
 	}
 
-	fn set_rgb ( &mut self, r: f32, g: f32, b: f32 ) -> &mut Self {
+	pub fn set_rgb ( &mut self, r: f32, g: f32, b: f32 ) -> &mut Self {
 		self.r = r;
 		self.g = g;
 		self.b = b;
