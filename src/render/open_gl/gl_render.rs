@@ -75,7 +75,9 @@ impl<'a> System<'a> for RenderSystem {
 					m.bind(&mut gl_material_ids, &mut gl_texture_ids);
 					// println!("bind");
 				},
-				// Materials::Normal(m) =>{ m.bind(&mut gl_material_ids); },
+				Materials::Normal(m) =>{
+					m.bind(&mut gl_material_ids, &mut gl_texture_ids);
+				},
 				_ => {}
 			}
 

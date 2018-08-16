@@ -30,7 +30,9 @@ where Self: Send
 {
 	fn get_uuid(&self) -> &Uuid;
 	fn get_name(&self) -> &String;
-	fn get_textures(&self) -> Vec<Arc<Mutex<Texture>>> ;
+	fn get_textures(&self, names: bool) -> [Option<(Option<String>, Arc<Mutex<Texture>>)>;16] {
+		[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+	}
 }
 
 
@@ -61,21 +63,24 @@ impl  Material for MeshBasicMaterial
 	fn get_uuid(&self) -> &Uuid{ &self.uuid }
 	fn get_name(&self) -> &String { &self.name }
 
-	fn get_textures(&self) -> Vec<Arc<Mutex<Texture>>> {
-		let mut data = Vec::new();
 
-		// self.map_color.map(|map| data.push(map.clone()) );
-		self.map_color.as_ref().map(|map| data.push(map.clone()));
+	fn get_textures(&self, names: bool) -> [Option<(Option<String>, Arc<Mutex<Texture>>)>;16] {
+		let mut data = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None];
+
+		self.map_color.iter()
+			.for_each(|map| data[0] = Some((if names {Some("map_color".to_string())} else {None}, map.clone())) );
 
 		data
 	}
 }
 
+
 impl Material for MeshNormalMaterial {
 	fn get_uuid(&self) -> &Uuid{ &self.uuid }
 	fn get_name(&self) -> &String { &self.name }
-	fn get_textures(&self) -> Vec<Arc<Mutex<Texture>>> { Vec::new() }
+	// fn get_textures(&self, names: bool) -> [Option<(Option<String>, Arc<Mutex<Texture>>)>;16] { Vec::new() }
 }
+
 
 impl MeshBasicMaterial {
 	pub fn new(color: Color) -> MeshBasicMaterial {
@@ -88,6 +93,18 @@ impl MeshBasicMaterial {
 			color,
 
 			map_color: None,
+		}
+	}
+}
+
+
+impl MeshNormalMaterial {
+	pub fn new(color: Color) -> Self {
+		Self {
+			uuid: Uuid::new_v4(),
+			name: "".to_string(),
+			opacity: 1.0,
+			transparent: false,
 		}
 	}
 }

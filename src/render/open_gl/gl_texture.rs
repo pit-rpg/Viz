@@ -11,10 +11,13 @@ use std::os::raw::c_void;
 pub type GLTextureIDs = HashMap<Uuid, TextureId>;
 
 
+
 #[derive(Debug)]
 pub struct TextureId {
-	id: GLuint,
+	pub id: GLuint,
+	pub gl_texture_dimensions: u32,
 }
+
 
 
 impl Drop for TextureId {
@@ -28,34 +31,28 @@ impl Drop for TextureId {
 }
 
 pub trait GLTexture {
-	fn bind(&self, hash_map: &mut GLTextureIDs) {}
-	fn unbind(&self) {}
+	fn bind(&self, hash_map: &GLTextureIDs);
+	// fn bind<'a>(&self, hash_map: &'a mut GLTextureIDs) -> &'a TextureId ;
+	fn unbind(&self);
 }
 
 
-impl GLTexture for Texture {
+// impl GLTexture for Texture {
 
-	fn bind(&self, hash_map: &mut GLTextureIDs) {
+// 	fn bind(&self, hash_map: &GLTextureIDs) {
 
-		match hash_map.get_mut(&self.uuid) {
-			None => {},
-			Some(ref program) => {
-				gl_call!({ gl::UseProgram(program.id); });
-				return;
-			}
-		}
+// 		let texture_id = hash_map.get(&self.uuid).unwrap();
 
-		let texture_id = load_texture(self).expect(&format!("cant load texture:{}", &self.path));
-		hash_map.insert(self.uuid, texture_id);
-
-		self.bind(hash_map);
-	}
+// 		gl_call!({
+// 			gl::BindTexture(texture_id.gl_texture_dimensions, texture_id.id);
+// 		});
+// 	}
 
 
-	fn unbind(&self) {
-		gl_call!({ gl::BindTexture(gl::TEXTURE_2D, 0); });
-	}
-}
+// 	fn unbind(&self) {
+// 		gl_call!({ gl::BindTexture(gl::TEXTURE_2D, 0); });
+// 	}
+// }
 
 
 fn to_gl_color_type (color_type: &TextureColorType) -> u32 {
@@ -69,12 +66,16 @@ fn to_gl_color_type (color_type: &TextureColorType) -> u32 {
 }
 
 
+// pub fn load_texture
+
+
 pub fn load_texture (texture: &Texture) -> Result<TextureId, ()> {
 
 	println!("_/ LOAD TEXTURE______________________________", );
 
 	let mut id: u32 = 0;
 	let texture_data = texture.load()?;
+	let gl_texture_dimensions = if texture_data.height == 1 {gl::TEXTURE_1D} else {gl::TEXTURE_2D};
 
 	// let data = &texture.data;
 	println!("{:?}", texture_data.color_type );
@@ -84,10 +85,10 @@ pub fn load_texture (texture: &Texture) -> Result<TextureId, ()> {
 
 	gl_call!({
 		gl::GenTextures(1, &mut id);
-		gl::BindTexture(gl::TEXTURE_2D, id);
+		gl::BindTexture(gl_texture_dimensions, id);
 
 		gl::TexImage2D(
-			gl::TEXTURE_2D,
+			gl_texture_dimensions,
 			0,
 			color_type as i32,
 			texture_data.width as i32,
@@ -98,10 +99,10 @@ pub fn load_texture (texture: &Texture) -> Result<TextureId, ()> {
 			&texture_data.data[0] as *const u8 as *const c_void
 		);
 		// gl::TexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		gl::GenerateMipmap(gl::TEXTURE_2D);
+		gl::GenerateMipmap(gl_texture_dimensions);
 	});
 
 	println!("__ LOAD TEXTURE______________________________", );
 
-	Ok( TextureId{id} )
+	Ok( TextureId{id, gl_texture_dimensions} )
 }

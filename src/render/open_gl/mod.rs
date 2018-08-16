@@ -46,7 +46,7 @@ use core::BufferGeometry;
 use core::Material;
 use core::Texture;
 use core::Materials;
-use core::MeshBasicMaterial;
+use core::{MeshBasicMaterial, MeshNormalMaterial};
 // use core::Node;
 // use core::Mesh;
 use render::Renderer;
@@ -141,14 +141,14 @@ pub fn test() {
 
 
     let mut material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
-    material.map_color = Some(Arc::new(Mutex::new(texture)));
+    // material.map_color = Some(Arc::new(Mutex::new(texture)));
 
     let material = Materials::Basic( material );
 
-    let mut material2 = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    let mut material2 = MeshNormalMaterial::new(Color::new(1.0, 0.0, 0.0));
     // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
 
-    let material2 = Materials::Basic( material2 );
+    let material2 = Materials::Normal( material2 );
 
 
     // let mut node = Node::<f32>::new();
