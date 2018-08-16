@@ -56,6 +56,7 @@ pub struct MeshBasicMaterial {
 	pub vertex_colors: MaterialVertexColors,
 
 	pub map_color: Option<Arc<Mutex<Texture>>>,
+	pub map_color2: Option<Arc<Mutex<Texture>>>,
 }
 
 impl  Material for MeshBasicMaterial
@@ -69,6 +70,9 @@ impl  Material for MeshBasicMaterial
 
 		self.map_color.iter()
 			.for_each(|map| data[0] = Some((if names {Some("map_color".to_string())} else {None}, map.clone())) );
+
+		self.map_color2.iter()
+			.for_each(|map| data[1] = Some((if names {Some("map_color2".to_string())} else {None}, map.clone())) );
 
 		data
 	}
@@ -93,6 +97,7 @@ impl MeshBasicMaterial {
 			color,
 
 			map_color: None,
+			map_color2: None,
 		}
 	}
 }

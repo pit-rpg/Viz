@@ -69,6 +69,8 @@ impl Texture {
 			}
 		};
 
+		let img = img.flipv();
+
 		let color_type;
 		match img.color() {
 			ColorType::Gray(d) => { color_type = TextureColorType::Gray(d) },

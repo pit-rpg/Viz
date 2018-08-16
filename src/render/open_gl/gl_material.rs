@@ -71,7 +71,7 @@ impl ShaderProgram {
 			let uniform_name = get_gl_uniform_name(&name[..], texture_id);
 			texture_uniforms.push_str(&uniform_name[..]);
 			// texture_data.push( name.clone() );
-			texture_data.push( (name.clone(), texture_id.id) );
+			texture_data.push( (name.clone(), texture_id.id, texture_id.gl_texture_dimensions) );
 		}
 
 		let id;
@@ -81,6 +81,7 @@ impl ShaderProgram {
 
 		gl_call!({
 			id = gl::CreateProgram();
+			program.id = id;
 
 			let vs = Self::compile_shader(gl::VERTEX_SHADER, &program.vs_source[..]);
 			let fs = Self::compile_shader(gl::FRAGMENT_SHADER, &fs_source[..]);
@@ -111,21 +112,28 @@ impl ShaderProgram {
 
 		let mut tex_loc;
 		let mut c_name;
-		for (i, (name, tid)) in texture_data.iter().enumerate() {
+
+		println!("{:?}", texture_data);
+
+		for (i, (name, tid, gl_texture_dimensions)) in texture_data.iter().enumerate() {
 		// for (name, t_id) in texture_data {
 			c_name = CString::new(name.as_bytes()).unwrap();
+
 			gl_call!({
-				tex_loc = gl::GetUniformLocation(id, c_name.as_ptr());
+				gl::BindTexture(*gl_texture_dimensions, *tid);
+			});
+
+
+			gl_call!({
+				tex_loc = gl::GetUniformLocation(program.id, c_name.as_ptr());
 			});
 
 			println!("->> {} : {} : {}", tex_loc, i, tid);
 
 			gl_call!({
-				gl::Uniform1i(tex_loc, *tid as i32);
+				gl::Uniform1i(tex_loc, i as i32);
 			});
 		}
-
-		program.id = id;
 	}
 
 
@@ -269,8 +277,16 @@ const BASIC_FRAGMENT_SHADER_SOURCE: &str = r#"
     void main() {
         // FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         // FragColor = vec4(uv.x+uv.y, uv.x+uv.y, uv.x+uv.y, 1.0);
-        FragColor = color;
-        // FragColor = texture(map_color, uv);
+        // FragColor = color;
+		vec4 col = texture(map_color2, uv);
+
+		if (col.r+col.g+col.b+col.a > 3.0) {
+			col = vec4(1.0, 1.0, 1.0, 1.0);
+		} else {
+			col = vec4(1.0, 0.0, 0.0, 1.0);
+		}
+
+        FragColor = texture(map_color, uv) * col * color;
     }
 "#;
 

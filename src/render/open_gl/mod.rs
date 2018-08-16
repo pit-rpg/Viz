@@ -135,13 +135,14 @@ pub fn test() {
     }
 
     let texture = Texture::new("tile", "images/tile.jpg");
-    let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
+    let texture2 = Texture::new("AWESOME_FACE", "images/awesomeface.png");
     // let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
     // load_textures(&texture).expect("lolo");
 
 
     let mut material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
-    // material.map_color = Some(Arc::new(Mutex::new(texture)));
+    material.map_color = Some(Arc::new(Mutex::new(texture)));
+    material.map_color2 = Some(Arc::new(Mutex::new(texture2)));
 
     let material = Materials::Basic( material );
 
@@ -167,8 +168,8 @@ pub fn test() {
     // println!("{}", material.uuid);
     // println!("{}", material2.uuid);
 
-    world.create_entity().with(geom).with(material).build();
     world.create_entity().with(geom2).with(material2).build();
+    world.create_entity().with(geom).with(material).build();
 
 
     let mut render_system = self::RenderSystem;
