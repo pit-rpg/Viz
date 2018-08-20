@@ -5,18 +5,22 @@
 mod vector;
 mod vector2;
 mod vector3;
-// mod matrix4;
+mod vector4;
+mod matrix4;
+mod quaternion;
 // mod matrix3;
 mod color;
 
 // pub use self::vector::Vector;
 // pub use self::vector2::Vector2;
 // pub use self::vector3::Vector3;
-// pub use self::matrix4::Matrix4;
+pub use self::matrix4::*;
 // pub use self::matrix3::Matrix3;
 pub use self::color::Color;
-pub use self::vector3::*;
 pub use self::vector2::*;
+pub use self::vector3::*;
+pub use self::vector4::*;
+pub use self::quaternion::*;
 pub use self::vector::*;
 
 // pub use self::Vector3 as Vector32;

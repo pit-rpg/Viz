@@ -252,13 +252,6 @@ where T:Nums
         Self{x: T::zero(), y: T::zero(), z: T::zero()}
     }
 
-    fn set(&mut self, x: T, y: T, z: T) -> &mut Self {
-        self.x = x;
-        self.y = y;
-        self.z = z;
-        self
-    }
-
     // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self {
     //     let i = index * 4;
     //     self.from_array( &m.elements[i..i*4] );

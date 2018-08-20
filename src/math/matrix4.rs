@@ -1,5 +1,4 @@
-use math::vector3::Vector3;
-use math::vector3::Vector;
+use super::{Vector, Vector3, Quaternion};
 use helpers::Nums;
 // use math::Vector;
 
@@ -14,10 +13,18 @@ pub struct Matrix4<T> {
     pub elements: [T; 16],
 }
 
+
+
+
+
 // static IDENTITY: [T; 16] = [	1.0, 0.0, 0.0, 0.0,
 //                                 0.0, 1.0, 0.0, 0.0,
 //                                 0.0, 0.0, 1.0, 0.0,
 //                                 0.0, 0.0, 0.0, 1.0];
+
+
+
+
 
 #[allow(dead_code)]
 impl <T> Matrix4<T>
@@ -178,7 +185,8 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-	pub fn function (&mut self, matrix: &Matrix4<T> ) -> bool {
+
+	pub fn equals (&mut self, matrix: &Matrix4<T> ) -> bool {
 		let te = self.elements;
 		let me = matrix.elements;
 
@@ -187,6 +195,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		}
 		true
 	}
+
 
 	pub fn make_perspective (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
 		let two:T = 2.0.into();
@@ -313,7 +322,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 
 		let mut te = self.elements;
 
-        z.subVectors( eye, target );
+        z.sub_vectors( eye, target );
 		if  z.length_sq() == Nums::zero()  {
 			// eye and target are in the same position
 			z.z = Nums::one();
@@ -354,7 +363,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-    pub fn determinant (&mut self) -> T {
+    pub fn determinant (&self) -> T {
 		let te = self.elements;
 		let n11 = te[ 0 ]; let n12 = te[ 4 ]; let n13 = te[ 8 ];  let n14 = te[ 12 ];
 		let n21 = te[ 1 ]; let n22 = te[ 5 ]; let n23 = te[ 9 ];  let n24 = te[ 13 ];
@@ -452,6 +461,90 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		let scale_zs_q = te[ 8 ] * te[ 8 ] + te[ 9 ] * te[ 9 ] + te[ 10 ] * te[ 10 ];
 
         return ( scale_xs_q.max(scale_ys_q).max(scale_zs_q) ).sqrt();
+	}
+
+	pub fn make_rotation_from_quaternion(&mut self, q: &Quaternion<T> ) -> &mut Self {
+		let mut te = self.elements;
+
+		let x = q.x; let y = q.y; let z = q.z; let w = q.w;
+		let x2 = x + x; let y2 = y + y; let z2 = z + z;
+		let xx = x * x2; let xy = x * y2; let xz = x * z2;
+		let yy = y * y2; let yz = y * z2; let zz = z * z2;
+		let wx = w * x2; let wy = w * y2; let wz = w * z2;
+
+		te[ 0 ] = T::one() - ( yy + zz );
+		te[ 4 ] = xy - wz;
+		te[ 8 ] = xz + wy;
+		te[ 1 ] = xy + wz;
+		te[ 5 ] = T::one() - ( xx + zz );
+		te[ 9 ] = yz - wx;
+		te[ 2 ] = xz - wy;
+		te[ 6 ] = yz + wx;
+		te[ 10 ] = T::one() - ( xx + yy );
+
+		// last column
+		te[ 3 ] = T::zero();
+		te[ 7 ] = T::zero();
+		te[ 11 ] = T::zero();
+
+		// bottom row
+		te[ 12 ] = T::zero();
+		te[ 13 ] = T::zero();
+		te[ 14 ] = T::zero();
+		te[ 15 ] = T::one();
+		self
+	}
+
+	pub fn compose(&mut self, position: &Vector3<T>, quaternion: &Quaternion<T>, scale: &Vector3<T>) -> &mut Self {
+		self.make_rotation_from_quaternion( quaternion );
+		self.scale( scale );
+		self.set_position( position );
+		self
+	}
+
+	pub fn decompose(&self, position: &mut Vector3<T>, quaternion: &mut Quaternion<T>, scale: &mut Vector3<T>) -> &Self {
+		let mut vector = Vector3::<T>::zero();
+		let mut matrix = Matrix4::new();
+
+			let te = self.elements;
+			let mut sx = vector.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
+			let sy = vector.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
+			let sz = vector.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
+
+			// if determine is negative, we need to invert one scale
+			let det = self.determinant();
+			if det < T::zero() {sx = - sx};
+			position.x = te[ 12 ];
+			position.y = te[ 13 ];
+			position.z = te[ 14 ];
+			// scale the rotation part
+			matrix.copy( self );
+			let invSX = T::one() / sx;
+			let invSY = T::one() / sy;
+			let invSZ = T::one() / sz;
+			matrix.elements[ 0 ] *= invSX;
+			matrix.elements[ 1 ] *= invSX;
+			matrix.elements[ 2 ] *= invSX;
+			matrix.elements[ 4 ] *= invSY;
+			matrix.elements[ 5 ] *= invSY;
+			matrix.elements[ 6 ] *= invSY;
+			matrix.elements[ 8 ] *= invSZ;
+			matrix.elements[ 9 ] *= invSZ;
+			matrix.elements[ 10 ] *= invSZ;
+			quaternion.set_from_rotation_matrix( matrix );
+			scale.x = sx;
+			scale.y = sy;
+			scale.z = sz;
+			self
+	}
+
+	pub fn copy(&mut self, m: &Self) -> &mut Self {
+		let mut te = self.elements;
+		let me = m.elements;
+		for i in 0..17  {
+			te[ i ] = me[ i ];
+		}
+		self
 	}
 }
 
@@ -573,33 +666,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 // 		te[ 15 ] = 1;
 // 		return this;
 // 	},
-// 	makeRotationFromQuaternion: function ( q ) {
-// 		var te = this.elements;
-// 		var x = q._x, y = q._y, z = q._z, w = q._w;
-// 		var x2 = x + x, y2 = y + y, z2 = z + z;
-// 		var xx = x * x2, xy = x * y2, xz = x * z2;
-// 		var yy = y * y2, yz = y * z2, zz = z * z2;
-// 		var wx = w * x2, wy = w * y2, wz = w * z2;
-// 		te[ 0 ] = 1 - ( yy + zz );
-// 		te[ 4 ] = xy - wz;
-// 		te[ 8 ] = xz + wy;
-// 		te[ 1 ] = xy + wz;
-// 		te[ 5 ] = 1 - ( xx + zz );
-// 		te[ 9 ] = yz - wx;
-// 		te[ 2 ] = xz - wy;
-// 		te[ 6 ] = yz + wx;
-// 		te[ 10 ] = 1 - ( xx + yy );
-// 		// last column
-// 		te[ 3 ] = 0;
-// 		te[ 7 ] = 0;
-// 		te[ 11 ] = 0;
-// 		// bottom row
-// 		te[ 12 ] = 0;
-// 		te[ 13 ] = 0;
-// 		te[ 14 ] = 0;
-// 		te[ 15 ] = 1;
-// 		return this;
-// 	},
+
 
 // 	applyToBufferAttribute: function () {
 // 		var v1 = new Vector3<T>();
@@ -618,47 +685,8 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 
 
 
-// 	compose: function ( position, quaternion, scale ) {
-// 		this.makeRotationFromQuaternion( quaternion );
-// 		this.scale( scale );
-// 		this.setPosition( position );
-// 		return this;
-// 	},
-// 	decompose: function () {
-// 		var vector = new Vector3<T>();
-// 		var matrix = new Matrix4();
-// 		return function decompose( position, quaternion, scale ) {
-// 			var te = this.elements;
-// 			var sx = vector.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
-// 			var sy = vector.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
-// 			var sz = vector.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
-// 			// if determine is negative, we need to invert one scale
-// 			var det = this.determinant();
-// 			if ( det < 0 ) sx = - sx;
-// 			position.x = te[ 12 ];
-// 			position.y = te[ 13 ];
-// 			position.z = te[ 14 ];
-// 			// scale the rotation part
-// 			matrix.copy( this );
-// 			var invSX = 1 / sx;
-// 			var invSY = 1 / sy;
-// 			var invSZ = 1 / sz;
-// 			matrix.elements[ 0 ] *= invSX;
-// 			matrix.elements[ 1 ] *= invSX;
-// 			matrix.elements[ 2 ] *= invSX;
-// 			matrix.elements[ 4 ] *= invSY;
-// 			matrix.elements[ 5 ] *= invSY;
-// 			matrix.elements[ 6 ] *= invSY;
-// 			matrix.elements[ 8 ] *= invSZ;
-// 			matrix.elements[ 9 ] *= invSZ;
-// 			matrix.elements[ 10 ] *= invSZ;
-// 			quaternion.setFromRotationMatrix( matrix );
-// 			scale.x = sx;
-// 			scale.y = sy;
-// 			scale.z = sz;
-// 			return this;
-// 		};
-// 	}(),
+
+
 
 
 // 	fromArray: function ( array, offset ) {

@@ -30,7 +30,6 @@ where T: Nums {
     fn clamp (&mut self, min: &Self, max: &Self )-> &mut Self;
     fn lerp (&mut self, v: &Self,  alpha:T )-> &mut Self;
     fn zero () -> Self;
-    fn set(&mut self, x: T, y: T, z: T) -> &mut Self;
     // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self;
     fn from_array (&mut self, array: &[T] ) -> &mut Self;
     // fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self;
