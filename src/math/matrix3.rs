@@ -10,26 +10,26 @@ use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg}
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
 pub struct Matrix3<T> {
-    pub elements: [T; 9],
+	pub elements: [T; 9],
 }
 
 
 #[allow(dead_code)]
 impl <T> Matrix3<T>
-where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Ord+Neg<Output=T>+Clone+Div<Output=T>+Into<T>+From<f64>+From<f32>
+where T:Nums
 {
-    pub fn new() -> Self {
-        Self {
-            elements: [
+	pub fn new() -> Self {
+		Self {
+			elements: [
 				Nums::one(), Nums::zero(), Nums::zero(),
 				Nums::zero(), Nums::one(), Nums::zero(),
 				Nums::zero(), Nums::zero(), Nums::one()
-		    ]
-        }
-    }
+			]
+		}
+	}
 
 	pub fn get_normal_matrix (&mut self, matrix4: &Matrix4<T> ) -> &mut Self {
-        let clone = &self.clone();
+		let clone = &self.clone();
 		self.set_from_matrix4( matrix4 ).get_inverse( clone, false ).unwrap().transpose()
 	}
 
@@ -70,7 +70,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		if  det == Nums::zero()  {
 
 			let msg = "THREE.Matrix3: .get_inverse() can't invert matrix, determinant is 0";
-            eprintln!("{}", msg);
+			eprintln!("{}", msg);
 
 			if throw_on_degenerate == true {
 				return Err(msg);
@@ -105,17 +105,17 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-    // 	transpose: function () {
-    //
-    // 		var tmp, m = this.elements;
-    //
-    // 		tmp = m[ 1 ]; m[ 1 ] = m[ 3 ]; m[ 3 ] = tmp;
-    // 		tmp = m[ 2 ]; m[ 2 ] = m[ 6 ]; m[ 6 ] = tmp;
-    // 		tmp = m[ 5 ]; m[ 5 ] = m[ 7 ]; m[ 7 ] = tmp;
-    //
-    // 		return this;
-    //
-    // 	},
+	// 	transpose: function () {
+	//
+	// 		var tmp, m = this.elements;
+	//
+	// 		tmp = m[ 1 ]; m[ 1 ] = m[ 3 ]; m[ 3 ] = tmp;
+	// 		tmp = m[ 2 ]; m[ 2 ] = m[ 6 ]; m[ 6 ] = tmp;
+	// 		tmp = m[ 5 ]; m[ 5 ] = m[ 7 ]; m[ 7 ] = tmp;
+	//
+	// 		return this;
+	//
+	// 	},
 
 	pub fn transpose (&mut self) -> &mut Self {
 		let mut tmp; let mut m = self.elements;
@@ -124,7 +124,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		tmp = m[ 2 ]; m[ 2 ] = m[ 6 ]; m[ 6 ] = tmp;
 		tmp = m[ 5 ]; m[ 5 ] = m[ 7 ]; m[ 7 ] = tmp;
 
-        self
+		self
 	}
 
 

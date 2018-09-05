@@ -8,6 +8,7 @@ mod vector3;
 mod vector4;
 mod matrix4;
 mod quaternion;
+mod euler;
 // mod matrix3;
 mod color;
 
@@ -22,6 +23,7 @@ pub use self::vector3::*;
 pub use self::vector4::*;
 pub use self::quaternion::*;
 pub use self::vector::*;
+pub use self::euler::*;
 
 // pub use self::Vector3 as Vector32;
 

@@ -8,6 +8,7 @@ use std::cell::{ RefCell };
 // use core::Component;
 use core::BufferGeometry;
 use core::Materials;
+use core::Transform;
 // use core::Mesh;
 use helpers::Nums;
 use self::gl::types::*;
@@ -45,9 +46,12 @@ pub struct RenderSystem;
 
 
 
-impl<'a> System<'a> for RenderSystem {
+impl<'a> System<'a> for RenderSystem
+	// where T:Nums
+{
 
 	type SystemData = (
+		ReadStorage<'a, Transform>,
 		ReadStorage<'a, BufferGeometry>,
 		ReadStorage<'a, Materials>,
 		Write<'a, VertexArraysIDs>,
@@ -60,6 +64,7 @@ impl<'a> System<'a> for RenderSystem {
         use self::specs::Join;
 
 		let (
+			transform,
 			geometry,
 			material,
 			mut vertex_arrays_ids,
@@ -67,7 +72,7 @@ impl<'a> System<'a> for RenderSystem {
 			mut gl_texture_ids,
 		) = data;
 
-        for (geometry, material) in ( &geometry, &material).join() {
+        for (transform, geometry, material) in (&transform, &geometry, &material).join() {
 			// println!("1");
 			geometry.bind(&mut vertex_arrays_ids);
 			match material {

@@ -23,9 +23,10 @@ pub struct TextureId {
 impl Drop for TextureId {
 	fn drop(&mut self) {
 		println!("delete texture");
+
+			gl::DeleteTextures(1, self.id);
 		gl_call!({
 			// TODO remove textures
-			unimplemented!()
 		});
 	}
 }

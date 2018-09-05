@@ -10,7 +10,7 @@ use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg}
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
 pub struct Matrix4<T> {
-    pub elements: [T; 16],
+	pub elements: [T; 16],
 }
 
 
@@ -18,9 +18,9 @@ pub struct Matrix4<T> {
 
 
 // static IDENTITY: [T; 16] = [	1.0, 0.0, 0.0, 0.0,
-//                                 0.0, 1.0, 0.0, 0.0,
-//                                 0.0, 0.0, 1.0, 0.0,
-//                                 0.0, 0.0, 0.0, 1.0];
+//								 0.0, 1.0, 0.0, 0.0,
+//								 0.0, 0.0, 1.0, 0.0,
+//								 0.0, 0.0, 0.0, 1.0];
 
 
 
@@ -28,28 +28,25 @@ pub struct Matrix4<T> {
 
 #[allow(dead_code)]
 impl <T> Matrix4<T>
-where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+Into<T>+From<f64>+From<f32>+PartialEq+PartialOrd
+where T:Nums
+{
+	pub fn new () -> Self {
+		Matrix4 {
+			elements: [			Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
+								Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
+								Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
+								Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()]
+		}
+	}
 
- {
-	// type float = T;
-
-    pub fn new () -> Self {
-        Matrix4 {
-            elements: [			Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
-                                Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
-                                Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
-                                Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()]
-        }
-    }
-
-    pub fn set ( &mut self, n11:T, n12:T, n13:T, n14:T, n21:T, n22:T, n23:T, n24:T, n31:T, n32:T, n33:T, n34:T, n41:T, n42:T, n43:T, n44:T ) -> &mut Self {
-    	let mut te = self.elements;
-    	te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14;
-    	te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24;
-    	te[ 2 ] = n31; te[ 6 ] = n32; te[ 10 ] = n33; te[ 14 ] = n34;
-    	te[ 3 ] = n41; te[ 7 ] = n42; te[ 11 ] = n43; te[ 15 ] = n44;
-        self
-    }
+	pub fn set ( &mut self, n11:T, n12:T, n13:T, n14:T, n21:T, n22:T, n23:T, n24:T, n31:T, n32:T, n33:T, n34:T, n41:T, n42:T, n43:T, n44:T ) -> &mut Self {
+		let mut te = self.elements;
+		te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14;
+		te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24;
+		te[ 2 ] = n31; te[ 6 ] = n32; te[ 10 ] = n33; te[ 14 ] = n34;
+		te[ 3 ] = n41; te[ 7 ] = n42; te[ 11 ] = n43; te[ 15 ] = n44;
+		self
+	}
 
 	pub fn identity ( &mut self ) ->  &mut Self {
 		self.set(
@@ -63,14 +60,14 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 
 	pub fn copy_position ( &mut self, m:Self  ) ->  &mut Self {
 		let mut te = self.elements;
-        let me = m.elements;
+		let me = m.elements;
 		te[ 12 ] = me[ 12 ];
 		te[ 13 ] = me[ 13 ];
 		te[ 14 ] = me[ 14 ];
 		self
 	}
 
-    pub fn make_basis ( &mut self, x: Vector3<T>, y: Vector3<T>, z: Vector3<T> ) -> &mut Self {
+	pub fn make_basis ( &mut self, x: Vector3<T>, y: Vector3<T>, z: Vector3<T> ) -> &mut Self {
 		self.set(
 			x.x, y.x, z.x, Nums::zero(),
 			x.y, y.y, z.y, Nums::zero(),
@@ -78,7 +75,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
 		);
 		self
-    }
+	}
 
 	// pub fn extract_basis (&self, x: &mut Vector3<T>, y: &mut Vector3<T>, z: &mut Vector3<T> ) -> &Self {
 	// 	x.set_from_matrix_column( self, 0 );
@@ -94,10 +91,10 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		let one:T = Nums::one();
 		let t = one - c;
 		let x = axis.x;
-        let y = axis.y;
-        let z = axis.z;
+		let y = axis.y;
+		let z = axis.z;
 		let tx = t * x;
-        let ty = t * y;
+		let ty = t * y;
 		self.set(
 			tx * x + c, tx * y - s * z, tx * z + s * y, Nums::zero(),
 			tx * y + s * z, ty * y + c, ty * z - s * x, Nums::zero(),
@@ -137,47 +134,47 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-    pub fn make_rotation_x(&mut self, theta: T ) -> &mut Self {
-    	let c =  theta.cos();
-        let s =  theta.sin();
-    	self.set(
-    		Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
-    		Nums::zero(), c, - s, Nums::zero(),
-    		Nums::zero(), s, c, Nums::zero(),
-    		Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
-    	);
-    	self
-    }
+	pub fn make_rotation_x(&mut self, theta: T ) -> &mut Self {
+		let c =  theta.cos();
+		let s =  theta.sin();
+		self.set(
+			Nums::one(), Nums::zero(), Nums::zero(), Nums::zero(),
+			Nums::zero(), c, - s, Nums::zero(),
+			Nums::zero(), s, c, Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
+		);
+		self
+	}
 
-    pub fn make_rotation_y(&mut self, theta: T ) -> &mut Self {
-    	let c =  theta.cos();
-        let s =  theta.sin();
-    	self.set(
-    		 c, Nums::zero(), s, Nums::zero(),
-    		 Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
-    		- s, Nums::zero(), c, Nums::zero(),
-    		 Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
-    	);
-    	self
-    }
+	pub fn make_rotation_y(&mut self, theta: T ) -> &mut Self {
+		let c =  theta.cos();
+		let s =  theta.sin();
+		self.set(
+			 c, Nums::zero(), s, Nums::zero(),
+			 Nums::zero(), Nums::one(), Nums::zero(), Nums::zero(),
+			- s, Nums::zero(), c, Nums::zero(),
+			 Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
+		);
+		self
+	}
 
-    pub fn make_rotation_z(&mut self, theta: T ) -> &mut Self {
-    	let c =  theta.cos();
-        let s =  theta.sin();
-    	self.set(
-    		c, - s, Nums::zero(), Nums::zero(),
-    		s, c, Nums::zero(), Nums::zero(),
-    		Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
-    		Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
-    	);
-    	self
-    }
+	pub fn make_rotation_z(&mut self, theta: T ) -> &mut Self {
+		let c =  theta.cos();
+		let s =  theta.sin();
+		self.set(
+			c, - s, Nums::zero(), Nums::zero(),
+			s, c, Nums::zero(), Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::one(), Nums::zero(),
+			Nums::zero(), Nums::zero(), Nums::zero(), Nums::one()
+		);
+		self
+	}
 
 	pub fn scale (&mut self, v: &Vector3<T> )-> &mut Self {
 		let mut te = self.elements;
 		let x = v.x;
-        let y = v.y;
-        let z = v.z;
+		let y = v.y;
+		let z = v.z;
 		te[ 0 ] *= x; te[ 4 ] *= y; te[ 8 ] *= z;
 		te[ 1 ] *= x; te[ 5 ] *= y; te[ 9 ] *= z;
 		te[ 2 ] *= x; te[ 6 ] *= y; te[ 10 ] *= z;
@@ -198,8 +195,8 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 
 
 	pub fn make_perspective (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
-		let two:T = 2.0.into();
-		let one:T = 1.0.into();
+		let two = T::two();
+		let one = T::one();
 		let mut te = self.elements;
 		let x = two * near / ( right - left );
 		let y = two * near / ( top - bottom );
@@ -214,9 +211,9 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-    pub fn make_orthographic (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
-		let two:T = 2.0.into();
-		let one:T = 2.0.into();
+	pub fn make_orthographic (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
+		let two = T::two();
+		let one = T::one();
 		let mut te = self.elements;
 		let w = one / ( right - left );
 		let h = one / ( top - bottom );
@@ -229,7 +226,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = - two * p;	te[ 14 ] = - z;
 		te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = Nums::zero();	te[ 15 ] = Nums::one();
 		self
-    }
+	}
 
 	pub fn transpose (&mut self) -> &mut Self {
 		let mut te = self.elements;
@@ -251,7 +248,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-    // pub fn	extract_rotation (&mut self, m: &Self) -> &mut Self {
+	// pub fn	extract_rotation (&mut self, m: &Self) -> &mut Self {
 	// 	let mut  v1 =  Vector3::zero();
 
 	// 	let mut te = self.elements;
@@ -268,25 +265,25 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 	// 	te[ 8 ] = me[ 8 ] * scale_z;
 	// 	te[ 9 ] = me[ 9 ] * scale_z;
 	// 	te[ 10 ] = me[ 10 ] * scale_z;
-    //     self
-    // }
+	//	 self
+	// }
 
 	pub fn multiply(&mut self,  m: &Self ) -> &mut Self {
-        let clone = &self.clone();
+		let clone = &self.clone();
 		self.multiply_matrices( clone, m )
 	}
 
-    pub fn premultiply (&mut self, m: &Self ) -> &mut Self {
-        let clone = &self.clone();
-    	self.multiply_matrices( m, clone )
-    }
+	pub fn premultiply (&mut self, m: &Self ) -> &mut Self {
+		let clone = &self.clone();
+		self.multiply_matrices( m, clone )
+	}
 
 	pub fn multiply_matrices (&mut self, a:&Self, b:&Self ) -> &mut Self {
 		let ae = a.elements;
 		let be = b.elements;
 		let mut te = self.elements;
 
-        let a11 = ae[ 0 ]; let a12 = ae[ 4 ]; let a13 = ae[ 8 ];  let a14 = ae[ 12 ];
+		let a11 = ae[ 0 ]; let a12 = ae[ 4 ]; let a13 = ae[ 8 ];  let a14 = ae[ 12 ];
 		let a21 = ae[ 1 ]; let a22 = ae[ 5 ]; let a23 = ae[ 9 ];  let a24 = ae[ 13 ];
 		let a31 = ae[ 2 ]; let a32 = ae[ 6 ]; let a33 = ae[ 10 ]; let a34 = ae[ 14 ];
 		let a41 = ae[ 3 ]; let a42 = ae[ 7 ]; let a43 = ae[ 11 ]; let a44 = ae[ 15 ];
@@ -295,7 +292,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		let b31 = be[ 2 ]; let b32 = be[ 6 ]; let b33 = be[ 10 ]; let b34 = be[ 14 ];
 		let b41 = be[ 3 ]; let b42 = be[ 7 ]; let b43 = be[ 11 ]; let b44 = be[ 15 ];
 
-        te[ 0 ] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
+		te[ 0 ] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
 		te[ 4 ] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
 		te[ 8 ] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
 		te[ 12 ] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
@@ -312,7 +309,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		te[ 11 ] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
 		te[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
 
-        self
+		self
 	}
 
 	pub fn look_at (&mut self, eye: &Vector3<T>, target: &Vector3<T>, up: &Vector3<T> ) -> &mut Self {
@@ -322,35 +319,35 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 
 		let mut te = self.elements;
 
-        z.sub_vectors( eye, target );
+		z.sub_vectors( eye, target );
 		if  z.length_sq() == Nums::zero()  {
 			// eye and target are in the same position
 			z.z = Nums::one();
 		}
 		z.normalize();
 
-        x.cross_vectors( up, &z );
+		x.cross_vectors( up, &z );
 
-        if  x.length_sq() == Nums::zero()  {
+		if  x.length_sq() == Nums::zero()  {
 			// up and z are parallel
 			if  up.z.abs() == Nums::one()  {
-				z.x += 0.0001.into();
+				z.x += T::from_f32(0.0001);
 			} else {
-				z.z += 0.0001.into();
+				z.z += T::from_f32(0.0001);
 			}
 
 			z.normalize();
 			x.cross_vectors( up, &z );
 		}
 
-        x.normalize();
+		x.normalize();
 		y.cross_vectors( &z, &x );
 
-        te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
+		te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
 		te[ 1 ] = x.y; te[ 5 ] = y.y; te[ 9 ] = z.y;
 		te[ 2 ] = x.z; te[ 6 ] = y.z; te[ 10 ] = z.z;
 
-        self
+		self
 	}
 
 
@@ -363,7 +360,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		self
 	}
 
-    pub fn determinant (&self) -> T {
+	pub fn determinant (&self) -> T {
 		let te = self.elements;
 		let n11 = te[ 0 ]; let n12 = te[ 4 ]; let n13 = te[ 8 ];  let n14 = te[ 12 ];
 		let n21 = te[ 1 ]; let n22 = te[ 5 ]; let n23 = te[ 9 ];  let n24 = te[ 13 ];
@@ -379,7 +376,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 			+ n12 * n24 * n33
 			+ n13 * n22 * n34
 			- n12 * n23 * n34
-        ) +
+		) +
 		n42 * (
 			  n11 * n23 * n34
 			 - n11 * n24 * n33
@@ -406,7 +403,7 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		)
 	}
 
-    pub fn get_inverse (&mut self, m: &Self, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
+	pub fn get_inverse (&mut self, m: &Self, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
 		// based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
 		let mut te = self.elements;
 		let	me = m.elements;
@@ -420,19 +417,19 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		let t14 = n14 * n23 * n32 - n13 * n24 * n32 - n14 * n22 * n33 + n12 * n24 * n33 + n13 * n22 * n34 - n12 * n23 * n34;
 		let det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
 
-        if det == Nums::zero() {
+		if det == Nums::zero() {
 			let msg = "THREE.Matrix4: .getInverse() can't invert matrix, determinant is 0";
-            eprintln!("{}", msg);
+			eprintln!("{}", msg);
 
-            if throw_on_degenerate == true {
-                return Err(msg);
+			if throw_on_degenerate == true {
+				return Err(msg);
 			}
 
-            return Ok(self.identity());
+			return Ok(self.identity());
 		}
 
 		let one:T = Nums::one();
-        let det_inv = one / det;
+		let det_inv = one / det;
 		te[ 0 ] = t11 * det_inv;
 		te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * det_inv;
 		te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * det_inv;
@@ -450,17 +447,17 @@ where T:Nums+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign
 		te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * det_inv;
 		te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * det_inv;
 
-        Ok(self)
+		Ok(self)
 	}
 
 	pub fn get_max_scale_on_axis (&self) -> T {
 		let te = self.elements;
 
-        let scale_xs_q = te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ];
+		let scale_xs_q = te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ];
 		let scale_ys_q = te[ 4 ] * te[ 4 ] + te[ 5 ] * te[ 5 ] + te[ 6 ] * te[ 6 ];
 		let scale_zs_q = te[ 8 ] * te[ 8 ] + te[ 9 ] * te[ 9 ] + te[ 10 ] * te[ 10 ];
 
-        return ( scale_xs_q.max(scale_ys_q).max(scale_zs_q) ).sqrt();
+		return ( scale_xs_q.max(scale_ys_q).max(scale_zs_q) ).sqrt();
 	}
 
 	pub fn make_rotation_from_quaternion(&mut self, q: &Quaternion<T> ) -> &mut Self {

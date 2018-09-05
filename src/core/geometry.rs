@@ -18,7 +18,7 @@ use self::specs::{Component, VecStorage};
 // #[derive(Clone, Debug, Copy)]
 #[derive(Clone, Debug)]
 pub struct Geometry<T>
-where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+From<f32>+From<f64>
+where T:Nums
 {
     pub uuid: Uuid,
     pub name: String,
@@ -36,7 +36,7 @@ where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAss
 
 #[allow(dead_code)]
 impl <T> Geometry<T>
-where T:Nums<T>+MulAssign+AddAssign+SubAssign+Mul<Output=T>+Add<Output=T>+DivAssign+Sub<Output=T>+Neg<Output=T>+Clone+Div<Output=T>+From<f32>+From<f64>
+where T:Nums
 {
     pub fn new() -> Geometry<T> {
         Geometry {

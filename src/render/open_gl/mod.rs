@@ -45,7 +45,9 @@ use core::BufferType;
 use core::BufferGeometry;
 use core::Material;
 use core::Texture;
-use core::Materials;
+use helpers::Nums;
+// use core::Materials;
+use core::Transform;
 use core::{MeshBasicMaterial, MeshNormalMaterial};
 // use core::Node;
 // use core::Mesh;
@@ -75,7 +77,9 @@ use self::specs::{Write, Component, ReadStorage, System, VecStorage, World, RunN
 
 
 
-pub fn test() {
+pub fn test()
+// where T:Nums+'static
+{
     let mut test_gl_render = GLRenderer::new();
     let mut f_count = 0.0;
 
@@ -134,22 +138,27 @@ pub fn test() {
         }
     }
 
-    let texture = Texture::new("tile", "images/tile.jpg");
+    let transform1 = Transform::default();
+    let transform2 = Transform::default();
+
+
+    let texture1 = Texture::new("tile", "images/tile.jpg");
     let texture2 = Texture::new("AWESOME_FACE", "images/awesomeface.png");
+
     // let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
     // load_textures(&texture).expect("lolo");
 
 
-    let mut material = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
-    material.map_color = Some(Arc::new(Mutex::new(texture)));
-    material.map_color2 = Some(Arc::new(Mutex::new(texture2)));
+    // let mut material1 = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    // material1.map_color = Some(Arc::new(Mutex::new(texture1)));
+    // material1.map_color2 = Some(Arc::new(Mutex::new(texture2)));
 
-    let material = Materials::Basic( material );
+    // let material1 = Materials::Basic( material1 );
 
-    let mut material2 = MeshNormalMaterial::new(Color::new(1.0, 0.0, 0.0));
+    // let mut material2 = MeshNormalMaterial::new(Color::new(1.0, 0.0, 0.0));
     // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
 
-    let material2 = Materials::Normal( material2 );
+    // let material2 = Materials::Normal( material2 );
 
 
     // let mut node = Node::<f32>::new();
@@ -157,7 +166,8 @@ pub fn test() {
 
     let mut world = World::new();
     world.register::<BufferGeometry>();
-    world.register::<Materials>();
+    // world.register::<Materials>();
+    world.register::<Transform>();
     world.add_resource(VertexArraysIDs::new());
     world.add_resource(GLMaterialIDs::new());
     world.add_resource(GLTextureIDs::new());
@@ -168,8 +178,19 @@ pub fn test() {
     // println!("{}", material.uuid);
     // println!("{}", material2.uuid);
 
-    world.create_entity().with(geom2).with(material2).build();
-    world.create_entity().with(geom).with(material).build();
+    world
+        .create_entity()
+        .with(geom2)
+        // .with(material2)
+        .with(transform2)
+        .build();
+
+    world
+        .create_entity()
+        .with(geom)
+        // .with(material1)
+        .with(transform1)
+        .build();
 
 
     let mut render_system = self::RenderSystem;

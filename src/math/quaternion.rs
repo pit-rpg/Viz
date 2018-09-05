@@ -76,7 +76,7 @@ where T: Nums
 		}
 
 		let sin_half_theta = sqr_sin_half_theta.sqrt();
-		let half_theta = sin_half_theta.atan2( cos_half_theta );
+		let half_theta = T::atan2(sin_half_theta,  cos_half_theta );
 
 		let ratio_a = ( ( T::one() - t ) * half_theta ).sin() / sin_half_theta;
 		let ratio_b = ( t * half_theta ).sin() / sin_half_theta;
