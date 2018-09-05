@@ -5,7 +5,6 @@ use self::uuid::Uuid;
 use std::vec::Vec;
 use math::{Vector3, Vector, Vector2};
 // use math::vector2::Vector2;
-use math::Color;
 use helpers::Nums;
 // use std::marker::PhantomData;
 // use std::process;
@@ -19,7 +18,6 @@ pub enum BufferType
 	Vector3f64(Vec<Vector3<f64>>),
 	Vector2f32(Vec<Vector2<f32>>),
 	Vector2f64(Vec<Vector2<f64>>),
-	Color(Vec<Color>),
 	// Vector2(Vec<Vector2<T>>),
 	// F64(Vec<f64>),
 	// Usize(Vec<usize>),
@@ -55,7 +53,6 @@ impl BufferAttribute
 			&BufferType::Vector3f64(ref a) 	=> a.len(),
 			&BufferType::Vector2f32(ref a) 	=> a.len(),
 			&BufferType::Vector2f64(ref a) 	=> a.len(),
-			&BufferType::Color(ref a) 		=> a.len(),
 		}
 	}
 

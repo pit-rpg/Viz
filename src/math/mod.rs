@@ -17,7 +17,7 @@ mod color;
 // pub use self::vector3::Vector3;
 pub use self::matrix4::*;
 // pub use self::matrix3::Matrix3;
-pub use self::color::Color;
+// pub use self::color::Color;
 pub use self::vector2::*;
 pub use self::vector3::*;
 pub use self::vector4::*;

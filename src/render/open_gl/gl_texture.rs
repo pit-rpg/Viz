@@ -24,9 +24,9 @@ impl Drop for TextureId {
 	fn drop(&mut self) {
 		println!("delete texture");
 
-			gl::DeleteTextures(1, self.id);
 		gl_call!({
 			// TODO remove textures
+			gl::DeleteTextures(1, self.id as *const u32);
 		});
 	}
 }

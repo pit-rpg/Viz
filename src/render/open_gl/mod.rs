@@ -34,7 +34,6 @@ use self::glutin::GlContext;
 use self::gl::GetString;
 // use self::gl::types::*;
 // use self::rand::Rng;
-use math::Color;
 use math::Vector3;
 use math::Vector2;
 use math::Vector;
@@ -48,7 +47,7 @@ use core::Texture;
 use helpers::Nums;
 // use core::Materials;
 use core::Transform;
-use core::{MeshBasicMaterial, MeshNormalMaterial};
+// use core::{MeshBasicMaterial, MeshNormalMaterial};
 // use core::Node;
 // use core::Mesh;
 use render::Renderer;
@@ -83,9 +82,9 @@ pub fn test()
     let mut test_gl_render = GLRenderer::new();
     let mut f_count = 0.0;
 
-    let mut color1 = Color::random();
-    let mut color2 = Color::random();
-    let mut color_tmp = Color::new(color1.r, color1.g, color1.b);
+    let mut color1 = Vector3::<f32>::random();
+    let mut color2 = Vector3::<f32>::random();
+    let mut color_tmp = Vector3::<f32>::new(color1.x, color1.y, color1.z);
 
     let mut running = true;
 
@@ -104,10 +103,10 @@ pub fn test()
     ];
 
     let col = vec![
-        Color::new(1.0,    0.0,    0.0),  // top right
-        Color::new(0.0,    1.0,    0.0),  // bottom right
-        Color::new(1.0,    1.0,    1.0),  // bottom left
-        Color::new(0.0,    0.0,    1.0)  // top left
+        Vector3::<f32>::new(1.0,    0.0,    0.0),  // top right
+        Vector3::<f32>::new(0.0,    1.0,    0.0),  // bottom right
+        Vector3::<f32>::new(1.0,    1.0,    1.0),  // bottom left
+        Vector3::<f32>::new(0.0,    0.0,    1.0)  // top left
     ];
 
     let ind = vec![
@@ -117,7 +116,7 @@ pub fn test()
 
     let mut geom = BufferGeometry::new();
     geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3f32(pos), 3);
-    geom.create_buffer_attribute("color".to_string(), BufferType::Color(col), 3);
+    geom.create_buffer_attribute("color".to_string(), BufferType::Vector3f32(col), 3);
     geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2f32(uv), 2);
     geom.set_indices(ind);
 
@@ -166,7 +165,7 @@ pub fn test()
 
     let mut world = World::new();
     world.register::<BufferGeometry>();
-    // world.register::<Materials>();
+    world.register::<Material>();
     world.register::<Transform>();
     world.add_resource(VertexArraysIDs::new());
     world.add_resource(GLMaterialIDs::new());
@@ -232,7 +231,7 @@ pub fn test()
 
         if f_count > 1.0 {
             color1.copy(&color2);
-            color2 = Color::random();
+            color2 = Vector3::random();
             f_count = 0.0;
         }
 
@@ -241,7 +240,7 @@ pub fn test()
         color_tmp.lerp(&color2, f_count);
 
         gl_call!({
-            gl::ClearColor(color_tmp.r, color_tmp.g, color_tmp.b, 1.0);
+            gl::ClearColor(color_tmp.x, color_tmp.y, color_tmp.z, 1.0);
         });
 
         // test_gl_render.render(&mut node);

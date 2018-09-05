@@ -1,7 +1,7 @@
 extern crate uuid;
 extern crate gl;
 
-use core::{MeshBasicMaterial, MeshNormalMaterial, Material, BufferType};
+use core::{Material, BufferType};
 use std::collections::HashMap;
 use self::uuid::Uuid;
 use self::gl::types::*;
@@ -49,15 +49,13 @@ fn get_gl_uniform_name(name: &str, texture_id: &TextureId) -> String {
 
 impl ShaderProgram {
 
-	fn compile_shader_program <M: Material> (material: &M, program: &mut ShaderProgram, texture_store: &mut GLTextureIDs) {
+	fn compile_shader_program (material: &Material, program: &mut ShaderProgram, texture_store: &mut GLTextureIDs) {
 
 		let mut texture_uniforms = String::new();
 		let mut texture_data = Vec::new();
 
-		for data in material.get_textures(true).iter().take_while(|e| e.is_some()) {
-			let (name, texture_mutex ) = data.as_ref().unwrap();
-
-			let name = name.as_ref().unwrap();
+		for data in material.get_textures() {
+			let (name, texture_mutex ) = data;
 			let texture = texture_mutex.lock().unwrap();
 
 			println!("<><><>{}", name);
@@ -171,45 +169,11 @@ impl ShaderProgram {
 
 
 pub trait GLMaterial
-where Self: Material+Sized
+where Self: Sized
 {
 	fn get_program(&self) -> ShaderProgram;
 
-	fn bind(&self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs){
-
-		match mat_store.get_mut(&self.get_uuid()) {
-			None => {},
-			Some(ref program) => {
-				gl_call!({ gl::UseProgram(program.id); });
-
-				self
-					.get_textures(false)
-					.iter()
-					.take_while(|e| e.is_some() )
-					.enumerate()
-					.for_each(|(i, e)| {
-						let (_, t) = e.as_ref().unwrap();
-						let texture = t.lock().unwrap();
-						let texture_id = texture_store.get(&texture.uuid).unwrap();
-
-						gl_call!({
-							gl::ActiveTexture(gl::TEXTURE0 + i as u32);
-							gl::BindTexture(texture_id.gl_texture_dimensions, texture_id.id);
-						});
-					});
-
-
-				return;
-			}
-		}
-
-		let mut program = self.get_program();
-		ShaderProgram::compile_shader_program(self, &mut program, texture_store);
-
-		mat_store.insert(*self.get_uuid(), program);
-
-		self.bind(mat_store, texture_store);
-	}
+	fn bind(&self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs);
 
 	fn unbind(&self){
 		// self
@@ -227,7 +191,7 @@ where Self: Material+Sized
 
 }
 
-impl GLMaterial for MeshBasicMaterial {
+impl GLMaterial for Material {
 	fn get_program(&self) -> ShaderProgram {
 		ShaderProgram {
 			fs_source: String::from(BASIC_FRAGMENT_SHADER_SOURCE),
@@ -235,17 +199,43 @@ impl GLMaterial for MeshBasicMaterial {
 			id: 0,
 		}
 	}
-}
 
-impl GLMaterial for MeshNormalMaterial {
-	fn get_program(&self) -> ShaderProgram {
-		ShaderProgram {
-			fs_source: String::from(NORMAL_FRAGMENT_SHADER_SOURCE),
-			vs_source: String::from(NORMAL_VERTEX_SHADER_SOURCE),
-			id: 0,
+	fn bind(&self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs) {
+
+		match mat_store.get_mut(&self.uuid) {
+			None => {},
+			Some(ref program) => {
+				gl_call!({ gl::UseProgram(program.id); });
+
+				self
+					.get_textures()
+					.iter()
+					.enumerate()
+					.for_each(|(i, e)| {
+						let (_, t) = e;
+						let texture = t.lock().unwrap();
+						let texture_id = texture_store.get(&texture.uuid).unwrap();
+
+						gl_call!({
+							gl::ActiveTexture(gl::TEXTURE0 + i as u32);
+							gl::BindTexture(texture_id.gl_texture_dimensions, texture_id.id);
+						});
+					});
+
+
+				return;
+			}
 		}
+
+		let mut program = self.get_program();
+		ShaderProgram::compile_shader_program(self, &mut program, texture_store);
+
+		mat_store.insert(self.uuid, program);
+
+		self.bind(mat_store, texture_store);
 	}
 }
+
 
 const BASIC_VERTEX_SHADER_SOURCE: &str = r#"
 	#version 330 core

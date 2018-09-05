@@ -1,6 +1,6 @@
 extern crate uuid;
 use self::uuid::Uuid;
-use math::Color;
+// use math::Color;
 
 extern crate specs;
 use self::specs::{Component, VecStorage};
@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::marker::Send;
 use math::*;
 
-#[derive(Debug, Copy)]
+#[derive(Debug, Clone)]
 pub enum Uniform {
 	Vector3f32(Vector3<f32>),
 	Vector3f64(Vector3<f64>),
@@ -20,13 +20,13 @@ pub enum Uniform {
 	// Texture(Texture),
 }
 
-#[derive(Debug)]
-struct UniformItem {
-	name: String,
-	vertex: bool,
-	fragment: bool,
-	need_update: bool,
-	uniform: Uniform,
+#[derive(Debug, Clone)]
+pub struct UniformItem {
+	pub name: String,
+	pub vertex: bool,
+	pub fragment: bool,
+	pub need_update: bool,
+	pub uniform: Uniform,
 }
 
 
@@ -48,27 +48,33 @@ struct UniformItem {
 #[derive(Clone)]
 pub struct Material {
 	// pub opacity: f32,
-	name: String,
+	pub name: String,
 	pub uuid: Uuid,
-	pub transparent: bool,
+	src: String,
 	textures: Vec<(String, Arc<Mutex<Texture>>)>,
-	uniforms: Vec<(String, UniformItem)>,
-	pub uniforms_need_update: bool,
-	pub uniform_need_update: bool,
+	uniforms: Vec<UniformItem>,
 	transform: Matrix4<f32>,
+	pub uniform_need_update: bool,
+	// pub transparent: bool,
 	// transform_need_update: bool,
 }
 
 
 impl Material {
-	pub fn new(name: &str) -> Self {
+	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem]) -> Self {
+		let uniforms = new_uniforms
+			.iter()
+			.map(|u| u.clone())
+			.collect();
+
 		Self {
-			uuid: Uuid::new_v4(),
 			name: name.to_string(),
-			transparent: false,
+			uuid: Uuid::new_v4(),
+			src: src.to_string(),
 			textures: Vec::new(),
-			uniforms: Vec::new(),
+			uniforms,
 			transform: Matrix4::new(),
+			uniform_need_update: true,
 		}
 	}
 
@@ -78,99 +84,83 @@ impl Material {
 	}
 
 
-	pub fn add_uniform(&mut self, name: &str, vertex:bool, fragment:bool, u: &Uniform) -> Result<(),()> {
-		let uniform = self.uniforms
-			.iter()
-			.find(|e| e.0 == name);
-
-		if uniform.is_some() { return Err(()); }
-
-		self.uniforms.push(UniformItem {
-			name: name.to_string(),
-			vertex,
-			fragment,
-			uniform: u.copy(),
-		});
-
-		self.uniforms_need_update = true;
-
-		Ok(())
-	}
-
-
-	pub fn set_uniform(&mut self, name: &str, u: &Uniform) -> Result<(),()> {
+	pub fn set_uniform(&mut self, name: &str, u: &Uniform) {
 		let uniform_item = self.uniforms
-			.iter()
-			.find(|e| e.0 == name)?;
+			.iter_mut()
+			.find(|e| *e.name == *name)
+			// .as_mut()
+			.unwrap();
 
-		match (uniform_item.uniform, u) {
-			(Uniform::Vector3f32(a), Uniform::Vector3f32(b)) => { uniform_item.uniform = b },
-			(Uniform::Vector3f64(a), Uniform::Vector3f64(b)) => { uniform_item.uniform = b },
-			(Uniform::Vector2f32(a), Uniform::Vector2f32(b)) => { uniform_item.uniform = b },
-			(Uniform::Vector2f64(a), Uniform::Vector2f64(b)) => { uniform_item.uniform = b },
-			(Uniform::Matrix4f32(a), Uniform::Matrix4f32(b)) => { uniform_item.uniform = b },
-			(Uniform::Matrix4f64(a), Uniform::Matrix4f64(b)) => { uniform_item.uniform = b },
-			_ => {return Err(());}
+		// let u = u.clone();
+
+		match (&mut uniform_item.uniform, u) {
+			(Uniform::Vector3f32(ref mut a), Uniform::Vector3f32(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Vector3f64(ref mut a), Uniform::Vector3f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Vector2f32(ref mut a), Uniform::Vector2f32(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Vector2f64(ref mut a), Uniform::Vector2f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Matrix4f32(ref mut a), Uniform::Matrix4f32(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Matrix4f64(ref mut a), Uniform::Matrix4f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			_ => {return panic!();}
 		};
 
 		self.uniform_need_update = true;
-
-		Ok(())
 	}
 
 
-	pub fn remove_uniform(&mut self, name: &str) {
-		self.uniforms = self.uniforms
-			.iter()
-			.filter(|e| e.0 != name)
-			.collect();
-
-		self.uniforms_need_update = true;
+	pub fn get_src(&self) -> &str {
+		&self.src[..]
 	}
 
 
-	pub fn get_name(&self) -> &str {
-		self.name[..]
-	}
+	pub fn set_texture(&mut self, name: &str, t: Option<Arc<Mutex<Texture>>>) {
+		match t {
+			Some (t) => {
+				{
+					let texture = self.textures
+						.iter_mut()
+						.find(|e| e.0 == name);
 
-
-	pub fn add_texture(&mut self, name: &str, t: Arc<Mutex<Texture>>) -> Result<(),()> {
-		let texture = self.textures
-			.iter()
-			.find(|e| e.0 == name);
-
-		if texture.is_some() { return Err(()); }
-
-		self.textures.push((name.to_string(), t));
-		Ok(())
-	}
-
-	pub fn remove_texture(&mut self, name: &str) {
-		self.textures = self.textures
-			.iter()
-			.filter(|e| e.0 != name)
-			.collect();
-	}
-
-	pub fn set_texture(&mut self, name: &str, t: Arc<Mutex<Texture>>) {
-		let texture = self.textures
-			.iter()
-			.find(|e| e.0 == name);
-
-		if texture.is_some() {
-			let texture = texture.unwrap();
-			texture.1 = t;
-		} else {
-			self.add_texture(name, t);
+					if texture.is_some() {
+						let texture = texture.unwrap();
+						texture.1 = t;
+						return;
+					}
+				}
+				self.textures.push((name.to_string(), t));
+			}
+			None => {
+				let textures = self.textures
+					.drain(..)
+					.filter(|e| e.0 != name)
+					.collect();
+				self.textures = textures;
+			}
 		}
 	}
 
+
 	pub fn get_textures(&self) -> &[(String, Arc<Mutex<Texture>>)] {
-		self.textures[..]
+		&self.textures[..]
 	}
 
-	pub fn get_uniforms(&self) -> &[(String, UniformItem)] {
-		self.uniforms[..]
+	pub fn get_uniforms(&self) -> &[UniformItem] {
+		&self.uniforms[..]
+	}
+
+	pub fn new_basic() -> Self {
+		Material::new("basic.glsl", "Basic", &[
+			UniformItem {
+				name: "color".to_string(),
+				vertex: false,
+				fragment: true,
+				need_update: true,
+				uniform: Uniform::Vector3f32(Vector3::<f32>::random()),
+			}
+		])
+	}
+
+	pub fn new_normal() -> Self {
+		Material::new("normal.glsl", "Normal", &[])
 	}
 }
 
@@ -275,9 +265,9 @@ impl Material {
 // }
 
 
-// impl Component for Materials {
-// 	type Storage = VecStorage<Self>;
-// }
+impl Component for Material {
+	type Storage = VecStorage<Self>;
+}
 
 // impl Materials {
 // 	pub fn duplicate(&self) -> Self {

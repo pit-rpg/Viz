@@ -41,7 +41,11 @@ where T:Nums
         Self { x: T::one(), y: T::one(), z: T::one(), w: T::one() }
     }
 
-    fn copy (&mut self, v: Self) -> &mut Self {
+    fn random() -> Self {
+        Self { x: T::random(), y: T::random(), z: T::random(), w: T::random() }
+    }
+
+    fn copy (&mut self, v: &Self) -> &mut Self {
         self.set(v.x, v.y, v.z, v.w)
     }
 

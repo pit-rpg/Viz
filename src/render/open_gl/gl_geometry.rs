@@ -101,11 +101,6 @@ pub trait GLGeometry {
 						buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
 					},
-					&BufferType::Color(ref v) => {
-						buffer.write_f32::<LittleEndian>(v[i].r).unwrap();
-						buffer.write_f32::<LittleEndian>(v[i].g).unwrap();
-						buffer.write_f32::<LittleEndian>(v[i].b).unwrap();
-					},
 				}
 			}
 		}
@@ -166,10 +161,6 @@ pub trait GLGeometry {
 						vals = 2;
 						val_type = gl::DOUBLE;
 					},
-					BufferType::Color(_) => {
-						vals = 3;
-						val_type = gl::FLOAT;
-					},
 				}
 
 			println!("=>VertexAttribPointer index:{}, vals:{}, val_type:{}, vertex_byte_len:{} byte_offset:{}", i,vals,val_type, vertex_byte_len, byte_offset );
@@ -195,7 +186,6 @@ pub trait GLGeometry {
 			&BufferType::Vector3f64(_) 	=> { mem::size_of::<f64>() * 3 }
 			&BufferType::Vector2f32(_) 	=> { mem::size_of::<f32>() * 2 }
 			&BufferType::Vector2f64(_) 	=> { mem::size_of::<f64>() * 2 }
-			&BufferType::Color(_) 		=> { mem::size_of::<f32>() * 3 }
 		}
 	}
 }

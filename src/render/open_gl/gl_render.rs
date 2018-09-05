@@ -7,7 +7,7 @@ use std::cell::{ RefCell };
 // use core::Node;
 // use core::Component;
 use core::BufferGeometry;
-use core::Materials;
+use core::Material;
 use core::Transform;
 // use core::Mesh;
 use helpers::Nums;
@@ -53,7 +53,7 @@ impl<'a> System<'a> for RenderSystem
 	type SystemData = (
 		ReadStorage<'a, Transform>,
 		ReadStorage<'a, BufferGeometry>,
-		ReadStorage<'a, Materials>,
+		ReadStorage<'a, Material>,
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
 		Write<'a, GLTextureIDs>,
@@ -75,16 +75,7 @@ impl<'a> System<'a> for RenderSystem
         for (transform, geometry, material) in (&transform, &geometry, &material).join() {
 			// println!("1");
 			geometry.bind(&mut vertex_arrays_ids);
-			match material {
-				Materials::Basic(m) =>{
-					m.bind(&mut gl_material_ids, &mut gl_texture_ids);
-					// println!("bind");
-				},
-				Materials::Normal(m) =>{
-					m.bind(&mut gl_material_ids, &mut gl_texture_ids);
-				},
-				_ => {}
-			}
+			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
 
 			match geometry.indices {
 				Some(ref indices) => {
@@ -98,14 +89,7 @@ impl<'a> System<'a> for RenderSystem
 			}
 
 			geometry.unbind();
-			match material {
-				Materials::Basic(m) =>{
-					  m.unbind();
-					//   println!("unbind");
-				},
-				// Materials::Normal(m) =>{ m.bind(&mut gl_material_ids); },
-				_ => {}
-			}
+			material.unbind();
 		}
 	}
 }

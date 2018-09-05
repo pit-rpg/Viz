@@ -40,6 +40,7 @@ Div<Output=Self>
 	fn zero() -> Self;
 	fn one() -> Self;
 	fn two() -> Self;
+	fn random() -> Self;
 	fn sqrt(&self) -> Self;
 	fn abs(&self) -> Self;
 	fn round(&self) -> Self;
@@ -64,6 +65,7 @@ impl Nums for f32 {
 	fn zero() -> Self { 0.0f32 }
 	fn one() -> Self { 1.0 }
 	fn two() -> Self { 2.0 }
+	fn random() -> Self { rand::random::<f32>() }
 	fn sqrt(&self) -> Self { f32::sqrt(*self) }
 	fn abs(&self) -> Self { f32::abs(*self) }
 	fn round(&self) -> Self { f32::round(*self) }
@@ -86,6 +88,7 @@ impl Nums for f64 {
 	fn zero() -> Self { 0.0 }
 	fn one() -> Self { 1.0 }
 	fn two() -> Self { 2.0 }
+	fn random() -> Self { rand::random::<f64>() }
 	fn sqrt(&self) -> Self { f64::sqrt(*self) }
 	fn abs(&self) -> Self { f64::abs(*self) }
 	fn round(&self) -> Self { f64::round(*self) }

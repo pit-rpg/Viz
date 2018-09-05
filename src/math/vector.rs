@@ -5,7 +5,8 @@ where T: Nums {
     // fn clone(v: &Self) -> Self;
     fn new_zero() -> Self;
     fn new_one() -> Self;
-    fn copy (&mut self, v: Self) -> &mut Self;
+    fn random() -> Self;
+    fn copy (&mut self, v: &Self) -> &mut Self;
     fn multiply_scalar(&mut self, s: T) -> &mut Self;
     fn length(&self) -> T;
     fn length_sq(&self) -> T;
