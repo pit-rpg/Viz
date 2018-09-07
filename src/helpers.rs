@@ -3,6 +3,8 @@
 extern crate rand;
 use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 use std::marker::{Sync, Send};
+use std::path::{Path, PathBuf};
+use std::fs::File;
 
 // pub fn concatenate_arrays<T: Clone>(x: &[T], y: &[T]) -> Vec<T> {
 // 	let mut concat: Vec<T> = vec![x[0].clone(); x.len()];
@@ -107,6 +109,16 @@ impl Nums for f64 {
 	fn from_f64(n: f64) -> Self { n }
 }
 
+
+pub fn find_file(dirs: &[&str], file: &str) -> Option<PathBuf>  {
+    for dir in dirs {
+        let p = Path::new(dir).join(file);
+        if p.exists() {
+            return Some(p);
+        }
+    }
+    None
+}
 
 // impl From<f64> for f32 {
 //     fn from(n: f64) -> Self {

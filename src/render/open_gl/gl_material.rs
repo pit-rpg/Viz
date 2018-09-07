@@ -9,10 +9,13 @@ use std::ptr;
 use std::str;
 use std::ffi::{CStr, CString};
 use self::gl::types::*;
+use helpers::find_file;
 // use self::gl;
 use super::gl_texture::{GLTextureIDs, load_texture, GLTexture, TextureId};
 // use std::ffi::CString;
 use std::os::raw::c_char;
+use std::fs::File;
+use std::io::Read;
 
 
 pub type GLMaterialIDs = HashMap<Uuid, ShaderProgram>;
@@ -193,7 +196,19 @@ where Self: Sized
 
 impl GLMaterial for Material {
 	fn get_program(&self) -> ShaderProgram {
-		ShaderProgram {
+        let p = find_file(&["src/render/open_gl/shaders"], self.get_src()).unwrap();
+
+        println!("{:?}", p);
+
+        let mut f = File::open(p).expect("file not found");
+
+    let mut contents = String::new();
+    f.read_to_string(&mut contents)
+        .expect("something went wrong reading the file");
+
+    println!("With text:\n{}", contents);
+
+        ShaderProgram {
 			fs_source: String::from(BASIC_FRAGMENT_SHADER_SOURCE),
 			vs_source: String::from(BASIC_VERTEX_SHADER_SOURCE),
 			id: 0,
