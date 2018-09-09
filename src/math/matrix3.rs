@@ -1,11 +1,7 @@
-use math::Matrix4;
 use helpers::Nums;
-// use math::Vector;
-
-use std::cmp::{Ord};
-// use std::cmp::{ Eq, Ord, Ordering};
-use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
-
+use math::Matrix4;
+use std::cmp::Ord;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[repr(C)]
 #[allow(dead_code)]
@@ -14,53 +10,85 @@ pub struct Matrix3<T> {
 	pub elements: [T; 9],
 }
 
-
 #[allow(dead_code)]
-impl <T> Matrix3<T>
-where T:Nums
+impl<T> Matrix3<T>
+where
+	T: Nums,
 {
 	pub fn new() -> Self {
 		Self {
 			elements: [
-				Nums::one(), Nums::zero(), Nums::zero(),
-				Nums::zero(), Nums::one(), Nums::zero(),
-				Nums::zero(), Nums::zero(), Nums::one()
-			]
+				Nums::one(),
+				Nums::zero(),
+				Nums::zero(),
+				Nums::zero(),
+				Nums::one(),
+				Nums::zero(),
+				Nums::zero(),
+				Nums::zero(),
+				Nums::one(),
+			],
 		}
 	}
 
-	pub fn get_normal_matrix (&mut self, matrix4: &Matrix4<T> ) -> &mut Self {
+	pub fn get_normal_matrix(&mut self, matrix4: &Matrix4<T>) -> &mut Self {
 		let clone = &self.clone();
-		self.set_from_matrix4( matrix4 ).get_inverse( clone, false ).unwrap().transpose()
+		self.set_from_matrix4(matrix4)
+			.get_inverse(clone, false)
+			.unwrap()
+			.transpose()
 	}
 
-
-	pub fn set_from_matrix4 (&mut self,  m: &Matrix4<T> ) -> &mut Self {
+	pub fn set_from_matrix4(&mut self, m: &Matrix4<T>) -> &mut Self {
 		let me = m.elements;
 		self.set(
-			me[ 0 ], me[ 4 ], me[ 8 ],
-			me[ 1 ], me[ 5 ], me[ 9 ],
-			me[ 2 ], me[ 6 ], me[ 10 ]
+			me[0], me[4], me[8], me[1], me[5], me[9], me[2], me[6], me[10],
 		);
 		self
 	}
 
-	pub fn set (&mut self, n11: T, n12: T, n13: T, n21: T, n22: T, n23: T, n31: T, n32: T, n33: T ) -> &mut Self {
+	pub fn set(
+		&mut self,
+		n11: T,
+		n12: T,
+		n13: T,
+		n21: T,
+		n22: T,
+		n23: T,
+		n31: T,
+		n32: T,
+		n33: T,
+	) -> &mut Self {
 		let mut te = self.elements;
-		te[ 0 ] = n11; te[ 1 ] = n21; te[ 2 ] = n31;
-		te[ 3 ] = n12; te[ 4 ] = n22; te[ 5 ] = n32;
-		te[ 6 ] = n13; te[ 7 ] = n23; te[ 8 ] = n33;
+		te[0] = n11;
+		te[1] = n21;
+		te[2] = n31;
+		te[3] = n12;
+		te[4] = n22;
+		te[5] = n32;
+		te[6] = n13;
+		te[7] = n23;
+		te[8] = n33;
 		self
 	}
 
-	pub fn get_inverse (&mut self, matrix: &Matrix3<T>, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
-
+	pub fn get_inverse(
+		&mut self,
+		matrix: &Matrix3<T>,
+		throw_on_degenerate: bool,
+	) -> Result<&mut Self, &str> {
 		let me = matrix.elements;
 		let mut te = self.elements;
 
-		let n11 = me[ 0 ]; let n21 = me[ 1 ]; let n31 = me[ 2 ];
-		let n12 = me[ 3 ]; let n22 = me[ 4 ]; let n32 = me[ 5 ];
-		let n13 = me[ 6 ]; let n23 = me[ 7 ]; let n33 = me[ 8 ];
+		let n11 = me[0];
+		let n21 = me[1];
+		let n31 = me[2];
+		let n12 = me[3];
+		let n22 = me[4];
+		let n32 = me[5];
+		let n13 = me[6];
+		let n23 = me[7];
+		let n33 = me[8];
 
 		let t11 = n33 * n22 - n32 * n23;
 		let t12 = n32 * n13 - n33 * n12;
@@ -68,8 +96,7 @@ where T:Nums
 
 		let det = n11 * t11 + n21 * t12 + n31 * t13;
 
-		if  det == Nums::zero()  {
-
+		if det == Nums::zero() {
 			let msg = "THREE.Matrix3: .get_inverse() can't invert matrix, determinant is 0";
 			eprintln!("{}", msg);
 
@@ -82,55 +109,52 @@ where T:Nums
 
 		let det_inv = Nums::one() / det;
 
-		te[ 0 ] = t11 * det_inv;
-		te[ 1 ] = ( n31 * n23 - n33 * n21 ) * det_inv;
-		te[ 2 ] = ( n32 * n21 - n31 * n22 ) * det_inv;
+		te[0] = t11 * det_inv;
+		te[1] = (n31 * n23 - n33 * n21) * det_inv;
+		te[2] = (n32 * n21 - n31 * n22) * det_inv;
 
-		te[ 3 ] = t12 * det_inv;
-		te[ 4 ] = ( n33 * n11 - n31 * n13 ) * det_inv;
-		te[ 5 ] = ( n31 * n12 - n32 * n11 ) * det_inv;
+		te[3] = t12 * det_inv;
+		te[4] = (n33 * n11 - n31 * n13) * det_inv;
+		te[5] = (n31 * n12 - n32 * n11) * det_inv;
 
-		te[ 6 ] = t13 * det_inv;
-		te[ 7 ] = ( n21 * n13 - n23 * n11 ) * det_inv;
-		te[ 8 ] = ( n22 * n11 - n21 * n12 ) * det_inv;
+		te[6] = t13 * det_inv;
+		te[7] = (n21 * n13 - n23 * n11) * det_inv;
+		te[8] = (n22 * n11 - n21 * n12) * det_inv;
 
 		Ok(self)
 	}
 
-	pub fn identity (&mut self) -> &mut Self {
+	pub fn identity(&mut self) -> &mut Self {
 		self.set(
-			Nums::one(), Nums::zero(), Nums::zero(),
-			Nums::zero(), Nums::one(), Nums::zero(),
-			Nums::zero(), Nums::zero(), Nums::one()
+			Nums::one(),
+			Nums::zero(),
+			Nums::zero(),
+			Nums::zero(),
+			Nums::one(),
+			Nums::zero(),
+			Nums::zero(),
+			Nums::zero(),
+			Nums::one(),
 		);
 		self
 	}
 
-	// 	transpose: function () {
-	//
-	// 		var tmp, m = this.elements;
-	//
-	// 		tmp = m[ 1 ]; m[ 1 ] = m[ 3 ]; m[ 3 ] = tmp;
-	// 		tmp = m[ 2 ]; m[ 2 ] = m[ 6 ]; m[ 6 ] = tmp;
-	// 		tmp = m[ 5 ]; m[ 5 ] = m[ 7 ]; m[ 7 ] = tmp;
-	//
-	// 		return this;
-	//
-	// 	},
+	pub fn transpose(&mut self) -> &mut Self {
+		let mut tmp;
+		let mut m = self.elements;
 
-	pub fn transpose (&mut self) -> &mut Self {
-		let mut tmp; let mut m = self.elements;
-
-		tmp = m[ 1 ]; m[ 1 ] = m[ 3 ]; m[ 3 ] = tmp;
-		tmp = m[ 2 ]; m[ 2 ] = m[ 6 ]; m[ 6 ] = tmp;
-		tmp = m[ 5 ]; m[ 5 ] = m[ 7 ]; m[ 7 ] = tmp;
+		tmp = m[1];
+		m[1] = m[3];
+		m[3] = tmp;
+		tmp = m[2];
+		m[2] = m[6];
+		m[6] = tmp;
+		tmp = m[5];
+		m[5] = m[7];
+		m[7] = tmp;
 
 		self
 	}
-
-
-
-
 }
 
 // import { Vector3 } from './Vector3.js';
@@ -164,7 +188,6 @@ where T:Nums
 //
 // 	isMatrix3: true,
 //
-
 
 // 	clone: function () {
 //

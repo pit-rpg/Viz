@@ -1,8 +1,8 @@
 use helpers::Nums;
 
 pub trait Vector<T>
+
 where T: Nums {
-    // fn clone(v: &Self) -> Self;
     fn new_zero() -> Self;
     fn new_one() -> Self;
     fn random() -> Self;

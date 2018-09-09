@@ -1,10 +1,7 @@
 use super::{Vector, Vector3, Quaternion};
 use helpers::Nums;
-// use math::Vector;
 
-use std::cmp::{ Eq, Ord, Ordering, PartialEq};
-use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
-// use std::convert::From;
+use std::ops::{ Mul, };
 
 
 #[repr(C)]
@@ -13,18 +10,6 @@ use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg}
 pub struct Matrix4<T> {
 	pub elements: [T; 16],
 }
-
-
-
-
-
-// static IDENTITY: [T; 16] = [	1.0, 0.0, 0.0, 0.0,
-//								 0.0, 1.0, 0.0, 0.0,
-//								 0.0, 0.0, 1.0, 0.0,
-//								 0.0, 0.0, 0.0, 1.0];
-
-
-
 
 
 #[allow(dead_code)]
@@ -523,18 +508,18 @@ where T:Nums
 			position.z = te[ 14 ];
 			// scale the rotation part
 			matrix.copy( self );
-			let invSX = T::one() / sx;
-			let invSY = T::one() / sy;
-			let invSZ = T::one() / sz;
-			matrix.elements[ 0 ] *= invSX;
-			matrix.elements[ 1 ] *= invSX;
-			matrix.elements[ 2 ] *= invSX;
-			matrix.elements[ 4 ] *= invSY;
-			matrix.elements[ 5 ] *= invSY;
-			matrix.elements[ 6 ] *= invSY;
-			matrix.elements[ 8 ] *= invSZ;
-			matrix.elements[ 9 ] *= invSZ;
-			matrix.elements[ 10 ] *= invSZ;
+			let inv_sx = T::one() / sx;
+			let inv_sy = T::one() / sy;
+			let inv_sz = T::one() / sz;
+			matrix.elements[ 0 ] *= inv_sx;
+			matrix.elements[ 1 ] *= inv_sx;
+			matrix.elements[ 2 ] *= inv_sx;
+			matrix.elements[ 4 ] *= inv_sy;
+			matrix.elements[ 5 ] *= inv_sy;
+			matrix.elements[ 6 ] *= inv_sy;
+			matrix.elements[ 8 ] *= inv_sz;
+			matrix.elements[ 9 ] *= inv_sz;
+			matrix.elements[ 10 ] *= inv_sz;
 			quaternion.set_from_rotation_matrix( matrix );
 			scale.x = sx;
 			scale.y = sy;

@@ -1,6 +1,4 @@
 pub mod open_gl;
-use helpers::Nums;
-// use core::Node;
 
 
 pub trait Renderer {
@@ -10,5 +8,5 @@ pub trait Renderer {
 }
 
 pub trait Render {
-	fn render<T:Renderer>(&self, Renderer: &mut T);
+	fn render<T:Renderer>(&self, renderer: &mut T);
 }

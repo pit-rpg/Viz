@@ -2,32 +2,21 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 
-use std::cell::{ RefCell };
-// use std::ptr;
-// use core::Node;
-// use core::Component;
+use self::gl::types::*;
 use core::BufferGeometry;
 use core::Material;
-use core::Uniform;
 use core::Transform;
-// use core::Mesh;
-use helpers::Nums;
-use self::gl::types::*;
+use core::Uniform;
 use std::os::raw::c_void;
 
-// use std::str;
-// use std::ffi::{CStr, CString};
-// use self::gl::types::*;
-// use self::gl::GetString;
-use self::glutin::{EventsLoop, GlContext, GlWindow};
 use self::glutin::dpi::*;
-use super::gl_geometry::{VertexArraysIDs};
+use self::glutin::{EventsLoop, GlContext, GlWindow};
+use super::super::Renderer;
+use super::gl_geometry::VertexArraysIDs;
 use super::gl_material::GLMaterialIDs;
 use super::gl_texture::GLTextureIDs;
-// use super::gl_mesh::*;
-use super::super::Renderer;
-use super::GLMaterial;
 use super::GLGeometry;
+use super::GLMaterial;
 
 #[allow(dead_code)]
 pub struct GLRenderer {
@@ -37,20 +26,13 @@ pub struct GLRenderer {
 	pub gl_material_ids: GLMaterialIDs,
 }
 
-
 extern crate specs;
-use self::specs::{Write, Component, ReadStorage, WriteStorage, System, VecStorage, World, RunNow};
-
+// use self::specs::{Component, ReadStorage, RunNow, System, VecStorage, World, Write, WriteStorage};
+use self::specs::{ReadStorage, System, Write, WriteStorage};
 
 pub struct RenderSystem;
 
-
-
-
-impl<'a> System<'a> for RenderSystem
-	// where T:Nums
-{
-
+impl<'a> System<'a> for RenderSystem {
 	type SystemData = (
 		ReadStorage<'a, Transform>,
 		ReadStorage<'a, BufferGeometry>,
@@ -60,9 +42,8 @@ impl<'a> System<'a> for RenderSystem
 		Write<'a, GLTextureIDs>,
 	);
 
-
 	fn run(&mut self, data: Self::SystemData) {
-        use self::specs::Join;
+		use self::specs::Join;
 
 		let (
 			transform,
@@ -73,10 +54,10 @@ impl<'a> System<'a> for RenderSystem
 			mut gl_texture_ids,
 		) = data;
 
-        for (transform, geometry, material) in (&transform, &geometry, &mut material).join() {
-			// println!("1");
-
-			material.set_uniform("transform", &Uniform::Matrix4(transform.matrix_view)).unwrap();
+		for (transform, geometry, material) in (&transform, &geometry, &mut material).join() {
+			material
+				.set_uniform("transform", &Uniform::Matrix4(transform.matrix_view))
+				.unwrap();
 
 			geometry.bind(&mut vertex_arrays_ids);
 			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
@@ -87,7 +68,6 @@ impl<'a> System<'a> for RenderSystem
 					gl_call!({
 						gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, 0 as *const c_void);
 					});
-					// println!("draw");
 				}
 				None => {}
 			}
@@ -98,10 +78,7 @@ impl<'a> System<'a> for RenderSystem
 	}
 }
 
-
-
 impl Renderer for GLRenderer {
-
 	fn new() -> Self {
 		let events_loop = glutin::EventsLoop::new();
 		let window = glutin::WindowBuilder::new()
@@ -126,11 +103,10 @@ impl Renderer for GLRenderer {
 		GLRenderer {
 			window: gl_window,
 			events_loop,
-            vertex_arrays_ids: VertexArraysIDs::new(),
-            gl_material_ids: GLMaterialIDs::new(),
+			vertex_arrays_ids: VertexArraysIDs::new(),
+			gl_material_ids: GLMaterialIDs::new(),
 		}
 	}
-
 
 	fn clear(&self) {
 		gl_call!({
@@ -138,35 +114,5 @@ impl Renderer for GLRenderer {
 		});
 	}
 
-
-	fn render() {
-
-	}
-	// fn render<T:Nums>(&self, node: &mut Node<T>)
-	// // where Mesh: Component
-	// {
-
-	// 	node.traverse(|ref mut node|  {
-	// 		for component in &node.components  {
-	// 			// let a:&Component = component.deref();
-	// 			let a = component;
-	// 			// component.test();
-	// 			match **component {
-	// 				// Renderable::Mesh(m) =>{}
-	// 			// match a {
-	// 			// Mesh {geometry, material, uuid, name} => {}
-	// 				// Component  => {}
-	// 				// RefCell => {
-
-	// 					// !println!("{}", component);
-	// 				// }
-	// 				// TODO render
-	// 				// &RefCell<Box<Component>> =>{}
-
-	// 				_ => {}
-	// 			}
-	// 		}
-	// 	});
-
-    // }
+	fn render() {}
 }

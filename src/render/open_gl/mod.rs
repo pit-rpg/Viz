@@ -5,35 +5,23 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 extern crate uuid;
-use std::path::Path;
 
 
 #[macro_use]
 pub mod macros;
 mod gl_geometry;
-// mod gl_mesh;
 mod gl_material;
 mod gl_render;
 mod gl_texture;
 
 extern crate image;
-use self::image::GenericImage;
 
-// use std::mem;
-
-// use std::ptr;
-// use std::str;
 use std::ffi::CStr;
-// use std::ffi::CString;
-use std::os::raw::c_void;
-use self::uuid::Uuid;
 use std::sync::{Arc, Mutex};
 
 
 use self::glutin::GlContext;
 use self::gl::GetString;
-// use self::gl::types::*;
-// use self::rand::Rng;
 use math::Vector3;
 use math::Vector2;
 use math::Vector;
@@ -45,19 +33,13 @@ use core::BufferGeometry;
 use core::Material;
 use core::ProgramType;
 use core::Texture;
-use helpers::Nums;
-// use core::Materials;
 use core::Transform;
-// use core::{MeshBasicMaterial, MeshNormalMaterial};
-// use core::Node;
-// use core::Mesh;
 use render::Renderer;
 use self::gl_render::*;
 use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
-// use core::BufferGroup;
-// use core::BufferAttribute;
+
 
 fn gl_clear_error() {
     while unsafe { gl::GetError() } != gl::NO_ERROR {}
@@ -73,7 +55,7 @@ fn print_gl_version() {
 
 
 extern crate specs;
-use self::specs::{Write, Component, ReadStorage, System, VecStorage, World, RunNow};
+use self::specs::{World, RunNow};
 
 
 

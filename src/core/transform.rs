@@ -1,14 +1,10 @@
-use helpers::Nums;
-use math::{Euler, Matrix4, Quaternion, Vector3, Vector};
+use math::{Euler, Matrix4, Quaternion, Vector, Vector3};
 
 extern crate specs;
 use self::specs::{Component, VecStorage};
 
 #[allow(dead_code)]
-pub struct Transform
-// where
-	// T: Nums,
-{
+pub struct Transform {
 	pub matrix_local: Matrix4<f32>,
 	pub matrix_global: Matrix4<f32>,
 	pub matrix_view: Matrix4<f32>,
@@ -18,20 +14,16 @@ pub struct Transform
 	pub quaternion: Quaternion<f32>,
 }
 
-
 impl Transform {
 	pub fn update(&mut self) {
 		self.quaternion.set_from_euler(&self.rotation);
-		self.matrix_local.compose(&self.position, &self.quaternion, &self.scale );
+		self.matrix_local
+			.compose(&self.position, &self.quaternion, &self.scale);
 		self.matrix_view = self.matrix_global * self.matrix_local;
 	}
 }
 
-
-impl Default for Transform
-// where
-// 	T: Nums,
-{
+impl Default for Transform {
 	fn default() -> Self {
 		Self {
 			matrix_local: Matrix4::new(),
@@ -45,10 +37,6 @@ impl Default for Transform
 	}
 }
 
-
-impl Component for Transform
-// where
-// 	T: Nums+'static, Self: Sized,
-{
+impl Component for Transform {
 	type Storage = VecStorage<Self>;
 }

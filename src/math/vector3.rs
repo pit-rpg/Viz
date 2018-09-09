@@ -1,15 +1,5 @@
-// mod vector;
-//
-// use math::Vector;
 
-// extern crate num_traits;
-// use math::Matrix4;
-// use math::Matrix3;
-// use std::cmp::{ Eq};
-// use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 use std::ops::{Sub};
-// use std::ops::{Div};
-// use self::num_traits::Float;
 use helpers::Nums;
 use super::Vector;
 
@@ -57,30 +47,6 @@ where T:Nums
     }
 
 }
-
-//
-// #[derive(Clone, Debug)]
-// pub struct Vector64 {
-//     pub x: f64,
-//     pub y: f64,
-//     pub z: f64,
-// }
-
-// pub trait FloatDefaults<T> {
-//     fn zero() -> T;
-//     fn one() -> T;
-// }
-//
-// impl FloatDefaults<f32> for f32 {
-//     fn zero() -> f32 { 0.0 }
-//     fn one() -> f32 { 1.0 }
-// }
-//
-// impl FloatDefaults<f64> for f64 {
-//     fn zero () -> f64 { 0.0 }
-//     fn one () -> f64 { 1.0 }
-// }
-
 
 
 impl <T> Vector<T> for Vector3<T>

@@ -1,25 +1,15 @@
-extern crate uuid;
 extern crate gl;
+extern crate uuid;
 
-use core::{Material, BufferType, ProgramType, Uniform, UniformItem};
-use std::collections::HashMap;
-use self::uuid::Uuid;
 use self::gl::types::*;
+use self::uuid::Uuid;
+use core::{Material, ProgramType, Uniform, UniformItem};
+use std::collections::HashMap;
+use std::ffi::{CString};
 use std::ptr;
 use std::str;
-use std::ffi::{CStr, CString};
-use self::gl::types::*;
 use helpers::{find_file, read_to_string};
-// use self::gl;
-use super::gl_texture::{GLTextureIDs, load_texture, GLTexture, TextureId};
-// use std::ffi::CString;
-use std::os::raw::c_char;
-use std::fs::File;
-use std::io::Read;
-use std::io::Write;
-use std::io;
-use std::os::raw::c_void;
-
+use super::gl_texture::{load_texture, GLTextureIDs, TextureId};
 
 pub type GLMaterialIDs = HashMap<Uuid, ShaderProgram>;
 
@@ -40,27 +30,26 @@ impl Drop for ShaderProgram {
 	}
 }
 
-
 fn get_gl_texture_uniform_name(name: &str, texture_id: &TextureId) -> String {
-	// uniform sampler2D map_color;
 	let u_type = match texture_id.gl_texture_dimensions {
-		gl::TEXTURE_1D => {"sampler1D"}
-		gl::TEXTURE_2D => {"sampler2D"}
-		gl::TEXTURE_3D => {"sampler3D"}
-		_=>{panic!();}
+		gl::TEXTURE_1D => "sampler1D",
+		gl::TEXTURE_2D => "sampler2D",
+		gl::TEXTURE_3D => "sampler3D",
+		_ => {
+			panic!();
+		}
 	};
 
 	format!("uniform {} {};\n", u_type, name)
 }
 
-
 fn get_gl_uniform_name(uniform_item: &UniformItem) -> String {
 	// uniform sampler2D map_color;
 	let u_type = match uniform_item.uniform {
-		Uniform::Vector4(_) => {"vec4"},
-		Uniform::Vector3(_) => {"vec3"},
-		Uniform::Vector2(_) => {"vec2"},
-		Uniform::Matrix4(_) => {"mat4"},
+		Uniform::Vector4(_) => "vec4",
+		Uniform::Vector3(_) => "vec3",
+		Uniform::Vector2(_) => "vec2",
+		Uniform::Matrix4(_) => "mat4",
 	};
 
 	format!("uniform {} {};\n", u_type, uniform_item.name)
@@ -70,24 +59,24 @@ pub fn set_uniform(u: &Uniform, loc: i32) {
 	match u {
 		Uniform::Vector2(data) => {
 			gl_call!({
-				gl::Uniform2fv(loc,1, &data.x as *const f32);
+				gl::Uniform2fv(loc, 1, &data.x as *const f32);
 			});
-		},
+		}
 		Uniform::Vector3(data) => {
 			gl_call!({
-				gl::Uniform3fv(loc,1, &data.x as *const f32);
+				gl::Uniform3fv(loc, 1, &data.x as *const f32);
 			});
-		},
+		}
 		Uniform::Vector4(data) => {
 			gl_call!({
-				gl::Uniform4fv(loc,1, &data.x as *const f32);
+				gl::Uniform4fv(loc, 1, &data.x as *const f32);
 			});
-		},
+		}
 		Uniform::Matrix4(data) => {
 			gl_call!({
-				gl::UniformMatrix4fv(loc,1, gl::FALSE, &data.elements[0] as *const f32);
+				gl::UniformMatrix4fv(loc, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
-		},
+		}
 	};
 }
 
@@ -95,25 +84,24 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &ShaderProgram
 	uniforms
 		.iter_mut()
 		.enumerate()
-		.filter(|(_, e)| e.need_update )
+		.filter(|(_, e)| e.need_update)
 		.for_each(|(i, uniform_i)| {
 			set_uniform(&uniform_i.uniform, shader_program.uniform_locations[i]);
 			uniform_i.need_update = false;
 		});
 }
 
-
 impl ShaderProgram {
-
-	fn compile_shader_program (material: &mut Material, program: &mut ShaderProgram, texture_store: &mut GLTextureIDs) {
-
+	fn compile_shader_program(
+		material: &mut Material,
+		program: &mut ShaderProgram,
+		texture_store: &mut GLTextureIDs,
+	) {
 		let mut texture_uniforms = String::new();
 		let mut texture_data = Vec::new();
 
 		for data in material.get_textures() {
 			let texture = data.texture.lock().unwrap();
-
-			println!("<><><>{}", data.name);
 
 			if texture_store.get(&texture.uuid).is_none() {
 				let id = load_texture(&*texture).unwrap();
@@ -123,15 +111,20 @@ impl ShaderProgram {
 			let texture_id = texture_store.get(&texture.uuid).unwrap();
 			let uniform_name = get_gl_texture_uniform_name(&data.name[..], texture_id);
 			texture_uniforms.push_str(&uniform_name[..]);
-			// texture_data.push( name.clone() );
-			texture_data.push( (data.name.clone(), texture_id.id, texture_id.gl_texture_dimensions) );
+			texture_data.push((
+				data.name.clone(),
+				texture_id.id,
+				texture_id.gl_texture_dimensions,
+			));
 		}
 
 		let id;
-		let fs_source = program.fs_source.replace("#<textures>", &texture_uniforms[..]);
+		let fs_source = program
+			.fs_source
+			.replace("#<textures>", &texture_uniforms[..]);
 
-		println!("{}", &program.vs_source);
-		println!("{}", fs_source);
+		// println!("{}", &program.vs_source);
+		// println!("{}", fs_source);
 
 		gl_call!({
 			id = gl::CreateProgram();
@@ -148,13 +141,19 @@ impl ShaderProgram {
 
 			let mut info_log = Vec::with_capacity(512);
 			info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
-			// gl::GetShaderInfoLog(id, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
-			// println!("{}", str::from_utf8(&info_log).unwrap());
 			let mut success = gl::FALSE as GLint;
 			gl::GetProgramiv(id, gl::LINK_STATUS, &mut success);
 			if success != gl::TRUE as GLint {
-				gl::GetProgramInfoLog(id, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
-				println!("ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n{}", str::from_utf8(&info_log).unwrap());
+				gl::GetProgramInfoLog(
+					id,
+					512,
+					ptr::null_mut(),
+					info_log.as_mut_ptr() as *mut GLchar,
+				);
+				println!(
+					"ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n{}",
+					str::from_utf8(&info_log).unwrap()
+				);
 			}
 
 			// TODO - releace remove shasers
@@ -162,27 +161,24 @@ impl ShaderProgram {
 			gl::DeleteShader(fs);
 		});
 
-		gl_call!({ gl::UseProgram(program.id); });
+		gl_call!({
+			gl::UseProgram(program.id);
+		});
 
 		let mut tex_loc;
 		let mut c_name;
 
-		println!("{:?}", texture_data);
+		// println!("{:?}", texture_data);
 
 		for (i, (name, tid, gl_texture_dimensions)) in texture_data.iter().enumerate() {
-		// for (name, t_id) in texture_data {
 			c_name = CString::new(name.as_bytes()).unwrap();
 
 			gl_call!({
 				gl::BindTexture(*gl_texture_dimensions, *tid);
 			});
-
-
 			gl_call!({
 				tex_loc = gl::GetUniformLocation(program.id, c_name.as_ptr());
 			});
-
-			println!("->> {} : {} : {}", tex_loc, i, tid);
 
 			gl_call!({
 				gl::Uniform1i(tex_loc, i as i32);
@@ -205,7 +201,6 @@ impl ShaderProgram {
 		set_uniforms(uniforms, program);
 	}
 
-
 	fn compile_shader(t: GLenum, src: &str) -> u32 {
 		let id;
 
@@ -223,11 +218,25 @@ impl ShaderProgram {
 			// check for shader compile errors
 			gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
 			if success != gl::TRUE as GLint {
-				gl::GetShaderInfoLog(id, 512, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
+				gl::GetShaderInfoLog(
+					id,
+					512,
+					ptr::null_mut(),
+					info_log.as_mut_ptr() as *mut GLchar,
+				);
 				match t {
-					gl::FRAGMENT_SHADER => println!("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{}", str::from_utf8(&info_log).unwrap()),
-					gl::VERTEX_SHADER => println!("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n{}", str::from_utf8(&info_log).unwrap()),
-					_ => println!("ERROR::SHADER::?::COMPILATION_FAILED\n{}", str::from_utf8(&info_log).unwrap()),
+					gl::FRAGMENT_SHADER => println!(
+						"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{}",
+						str::from_utf8(&info_log).unwrap()
+					),
+					gl::VERTEX_SHADER => println!(
+						"ERROR::SHADER::VERTEX::COMPILATION_FAILED\n{}",
+						str::from_utf8(&info_log).unwrap()
+					),
+					_ => println!(
+						"ERROR::SHADER::?::COMPILATION_FAILED\n{}",
+						str::from_utf8(&info_log).unwrap()
+					),
 				};
 				gl::DeleteShader(id);
 				panic!();
@@ -238,33 +247,23 @@ impl ShaderProgram {
 	}
 }
 
-
 pub trait GLMaterial
-where Self: Sized
+where
+	Self: Sized,
 {
 	fn get_program(&mut self) -> ShaderProgram;
 
 	fn bind(&mut self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs);
 
-	fn unbind(&self){
-		// self
-		// 	.get_textures(false)
-		// 	.iter()
-		// 	.take_while(|e| e.is_some() )
-		// 	.for_each(|e| {
-		// 		let (_, t) = e.as_ref().unwrap();
-		// 		t.lock().unwrap().unbind();
-		// 	});
-
-		gl_call!({ gl::UseProgram(0); });
+	fn unbind(&self) {
+		gl_call!({
+			gl::UseProgram(0);
+		});
 	}
-
-
 }
 
 impl GLMaterial for Material {
 	fn get_program(&mut self) -> ShaderProgram {
-
 		let p = find_file(&["src/render/open_gl/shaders"], self.get_src()).unwrap();
 		let code = read_to_string(&p);
 		let mut shader_program = ShaderProgram {
@@ -277,33 +276,43 @@ impl GLMaterial for Material {
 		let mut write_to_prog = ProgramType::None;
 
 		for line in code.lines() {
-			if line.starts_with("#<vertex>") { write_to_prog = ProgramType::Vertex; }
-			else if line.starts_with("#<fragment>") { write_to_prog = ProgramType::Fragment; }
-			else {
+			if line.starts_with("#<vertex>") {
+				write_to_prog = ProgramType::Vertex;
+			} else if line.starts_with("#<fragment>") {
+				write_to_prog = ProgramType::Fragment;
+			} else {
 				match write_to_prog {
-					ProgramType::Vertex 	=> { shader_program.vs_source += line; shader_program.vs_source += "\n"; },
-					ProgramType::Fragment 	=> { shader_program.fs_source += line; shader_program.fs_source += "\n"; },
-					_ => {},
+					ProgramType::Vertex => {
+						shader_program.vs_source += line;
+						shader_program.vs_source += "\n";
+					}
+					ProgramType::Fragment => {
+						shader_program.fs_source += line;
+						shader_program.fs_source += "\n";
+					}
+					_ => {}
 				}
 			}
 
 			if shader_program.vs_source.contains("#<uniforms>") {
-				let uniforms: String = self
-					.get_uniforms()
+				let uniforms: String = self.get_uniforms()
 					.iter()
-					.filter(|e| e.program_type == ProgramType::Vertex )
-					.map(|e| get_gl_uniform_name(e) + "\n" )
+					.filter(|e| e.program_type == ProgramType::Vertex)
+					.map(|e| get_gl_uniform_name(e) + "\n")
 					.collect();
-				shader_program.vs_source = shader_program.vs_source.replace("#<uniforms>", &uniforms[..])
+				shader_program.vs_source = shader_program
+					.vs_source
+					.replace("#<uniforms>", &uniforms[..])
 			}
 			if shader_program.fs_source.contains("#<uniforms>") {
-				let uniforms: String = self
-					.get_uniforms()
+				let uniforms: String = self.get_uniforms()
 					.iter()
-					.filter(|e| e.program_type == ProgramType::Fragment )
-					.map(|e| get_gl_uniform_name(e) + "\n" )
+					.filter(|e| e.program_type == ProgramType::Fragment)
+					.map(|e| get_gl_uniform_name(e) + "\n")
 					.collect();
-				shader_program.fs_source = shader_program.fs_source.replace("#<uniforms>", &uniforms[..])
+				shader_program.fs_source = shader_program
+					.fs_source
+					.replace("#<uniforms>", &uniforms[..])
 			}
 		}
 
@@ -313,14 +322,14 @@ impl GLMaterial for Material {
 	}
 
 	fn bind(&mut self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs) {
-
 		match mat_store.get_mut(&self.uuid) {
-			None => {},
+			None => {}
 			Some(ref program) => {
-				gl_call!({ gl::UseProgram(program.id); });
+				gl_call!({
+					gl::UseProgram(program.id);
+				});
 
-				self
-					.get_textures()
+				self.get_textures()
 					.iter()
 					.enumerate()
 					.for_each(|(i, data)| {
@@ -350,82 +359,3 @@ impl GLMaterial for Material {
 		self.bind(mat_store, texture_store);
 	}
 }
-
-
-const BASIC_VERTEX_SHADER_SOURCE: &str = r#"
-	#version 330 core
-	##BASIC_VERTEX_SHADER_SOURCE
-	layout (location = 0) in vec3 aPos;
-	layout (location = 1) in vec3 aColor;
-	layout (location = 2) in vec2 aUv;
-	out vec4 color;
-	out vec2 uv;
-	void main() {
-		color = vec4(aColor.xyz, 1.0);
-		uv = aUv;
-		gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-	}
-"#;
-
-
-const BASIC_FRAGMENT_SHADER_SOURCE: &str = r#"
-	#version 330 core
-	##BASIC_FRAGMENT_SHADER_SOURCE
-	in vec4 color;
-	in vec2 uv;
-	layout (location = 0) out vec4 FragColor;
-
-	uniform vec4 u_Color;
-	// uniform sampler2D map_color;
-	#REPLACE_TEXTURE_UNIFORMS
-
-	void main() {
-		// FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-		// FragColor = vec4(uv.x+uv.y, uv.x+uv.y, uv.x+uv.y, 1.0);
-		// FragColor = color;
-		vec4 col = texture(map_color2, uv);
-
-		if (col.r+col.g+col.b+col.a > 3.0) {
-			col = vec4(1.0, 1.0, 1.0, 1.0);
-		} else {
-			col = vec4(1.0, 0.0, 0.0, 1.0);
-		}
-
-		FragColor = texture(map_color, uv) * col * color;
-	}
-"#;
-
-const NORMAL_VERTEX_SHADER_SOURCE: &str = r#"
-	#version 330 core
-	##NORMAL_VERTEX_SHADER_SOURCE
-	layout (location = 0) in vec3 aPos;
-	layout (location = 1) in vec3 aColor;
-	layout (location = 2) in vec2 aUv;
-	out vec4 color;
-	out vec2 uv;
-	void main() {
-		color = vec4(aColor.xyz, 1.0);
-		uv = aUv;
-		gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-	}
-"#;
-
-
-const NORMAL_FRAGMENT_SHADER_SOURCE: &str = r#"
-	#version 330 core
-	##NORMAL_FRAGMENT_SHADER_SOURCE
-	in vec4 color;
-	in vec2 uv;
-	layout (location = 0) out vec4 FragColor;
-
-	uniform vec4 u_Color;
-	// uniform sampler2D map_color;
-	#REPLACE_TEXTURE_UNIFORMS
-
-	void main() {
-		FragColor = vec4(0.5, 0.5, 0.5, 1.0);
-		// FragColor = vec4(uv.x+uv.y, uv.x+uv.y, uv.x+uv.y, 1.0);
-		// FragColor = color;
-		// FragColor = texture(map_color, uv);
-	}
-"#;

@@ -5,6 +5,7 @@ use self::image::{GenericImage, ColorType};
 use self::uuid::Uuid;
 use std::path::Path;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Wrapping {
 	Repeat,
@@ -12,12 +13,14 @@ pub enum Wrapping {
 	ClampToEdge,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Filtering {
 	NEAREST,
 	LINEAR,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum TextureColorType {
 	None,

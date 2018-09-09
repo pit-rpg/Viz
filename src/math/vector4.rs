@@ -12,7 +12,7 @@ where T:Nums
     pub w: T,
 }
 
-
+#[allow(dead_code)]
 impl <T>Vector4<T>
 where T:Nums
 {

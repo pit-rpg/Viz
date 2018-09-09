@@ -1,5 +1,5 @@
 use helpers::Nums;
-use super::{Vector3, Vector, Matrix4, RotationOrders, Euler};
+use super::{Vector3, Matrix4, RotationOrders, Euler};
 
 #[derive(Clone, Debug)]
 pub struct Quaternion<T> {
@@ -9,7 +9,7 @@ pub struct Quaternion<T> {
 	pub w: T,
 }
 
-
+#[allow(dead_code)]
 impl <T> Quaternion<T>
 where T: Nums
 {
@@ -65,7 +65,7 @@ where T: Nums
 
 		let sqr_sin_half_theta = T::one() - cos_half_theta * cos_half_theta;
 
-		if sqr_sin_half_theta <= T::EPSILON() {
+		if sqr_sin_half_theta <= T::epsilon() {
 			let s = T::one() - t;
 			self.w = s * w + t * self.w;
 			self.x = s * x + t * self.x;
@@ -124,13 +124,13 @@ where T: Nums
 		// http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToQuaternion/index.htm
 
 		// assumes axis is normalized
-		let halfAngle = angle / T::two();
-		let s = halfAngle.sin();
+		let half_angle = angle / T::two();
+		let s = half_angle.sin();
 
 		self.x = axis.x * s;
 		self.y = axis.y * s;
 		self.z = axis.z * s;
-		self.w = halfAngle.cos();
+		self.w = half_angle.cos();
 		self
 	}
 
@@ -280,9 +280,6 @@ where T: Nums
 		}
 		self
 	}
-
-
-
 }
 
 

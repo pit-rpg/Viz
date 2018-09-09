@@ -1,20 +1,17 @@
+extern crate byteorder;
 extern crate gl;
 extern crate uuid;
-extern crate byteorder;
 
-// #[macro_use]
-// use render::render_gl::macros;
-use std::mem;
+use self::byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 use self::gl::types::*;
-use self::byteorder::{BigEndian, WriteBytesExt, LittleEndian};
-use std::os::raw::c_void;
-use core::{BufferGeometry, BufferType, BufferAttribute};
-use std::collections::HashMap;
 use self::uuid::Uuid;
+use core::{BufferAttribute, BufferGeometry, BufferType};
+use std::collections::HashMap;
+use std::mem;
+use std::os::raw::c_void;
 
 // #[derive(Debug)]
 pub type VertexArraysIDs = HashMap<Uuid, Buffers>;
-
 
 #[derive(Debug)]
 pub struct Buffers {
@@ -23,31 +20,26 @@ pub struct Buffers {
 	element_array_buffer: GLuint,
 }
 
-
 impl Drop for Buffers {
 	fn drop(&mut self) {
 		println!("delete geometry");
 		gl_call!({
 			gl::DeleteVertexArrays(1, &self.vertex_array);
-        	gl::DeleteBuffers(1, &self.array_buffer);
-        	gl::DeleteBuffers(1, &self.element_array_buffer);
+			gl::DeleteBuffers(1, &self.array_buffer);
+			gl::DeleteBuffers(1, &self.element_array_buffer);
 		});
 	}
 }
 
-
 impl Default for Buffers {
 	fn default() -> Self {
-		Buffers{
+		Buffers {
 			vertex_array: 0,
 			array_buffer: 0,
 			element_array_buffer: 0,
 		}
 	}
 }
-
-
-
 
 #[allow(dead_code)]
 pub trait GLGeometry {
@@ -66,15 +58,12 @@ pub trait GLGeometry {
 				let size = Self::elem_byte_len(e);
 				size * &e.len()
 			})
-			.fold(0, |a,b| a+b);
+			.fold(0, |a, b| a + b);
 
 		let vertex_byte_len = geom.attributes
 			.iter()
-			.map(|e| {
-				Self::elem_byte_len(e)
-			})
-			.fold(0, |a,b| a+b);
-
+			.map(|e| Self::elem_byte_len(e))
+			.fold(0, |a, b| a + b);
 
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
@@ -88,36 +77,26 @@ pub trait GLGeometry {
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].w).unwrap();
-					},
+					}
 					&BufferType::Vector3(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
-					},
-					// &BufferType::Vector3f64(ref v) => {
-					// 	buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
-					// 	buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
-					// 	buffer.write_f64::<LittleEndian>(v[i].z).unwrap();
-					// },
+					}
 					&BufferType::Vector2(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
-					},
-					// &BufferType::Vector2f64(ref v) => {
-					// 	buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
-					// 	buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
-					// },
+					}
 				}
 			}
 		}
 
-		let  indices: &Vec<i32> = geom.indices.as_ref().unwrap();
+		let indices: &Vec<i32> = geom.indices.as_ref().unwrap();
 
 		let mut vertex_array = 0;
 		let mut array_buffer = 0;
 		let mut element_array_buffer = 0;
 
-		// gl_call!({});
 		gl_call!({
 			gl::GenVertexArrays(1, &mut vertex_array);
 			gl::GenBuffers(1, &mut array_buffer);
@@ -133,14 +112,14 @@ pub trait GLGeometry {
 				gl::ARRAY_BUFFER,
 				buffer.len() as GLsizeiptr,
 				&buffer[0] as *const u8 as *const c_void,
-				gl::DYNAMIC_DRAW
+				gl::DYNAMIC_DRAW,
 			);
 
 			gl::BufferData(
 				gl::ELEMENT_ARRAY_BUFFER,
 				(mem::size_of::<GLint>() * indices.len()) as GLsizeiptr,
 				&indices[0] as *const i32 as *const c_void,
-				gl::STATIC_DRAW
+				gl::STATIC_DRAW,
 			);
 		});
 
@@ -151,33 +130,32 @@ pub trait GLGeometry {
 			let val_type;
 
 			match buffer_data.data {
-					BufferType::Vector3(_) => {
-						vals = 3;
-						val_type = gl::FLOAT;
-					},
-					BufferType::Vector4(_) => {
-						vals = 4;
-						val_type = gl::FLOAT;
-					},
-					// BufferType::Vector3f64(_) => {
-					// 	vals = 3;
-					// 	val_type = gl::DOUBLE;
-					// },
-					BufferType::Vector2(_) => {
-						vals = 2;
-						val_type = gl::FLOAT;
-					},
-					// BufferType::Vector2f64(_) => {
-					// 	vals = 2;
-					// 	val_type = gl::DOUBLE;
-					// },
+				BufferType::Vector3(_) => {
+					vals = 3;
+					val_type = gl::FLOAT;
 				}
+				BufferType::Vector4(_) => {
+					vals = 4;
+					val_type = gl::FLOAT;
+				}
+				BufferType::Vector2(_) => {
+					vals = 2;
+					val_type = gl::FLOAT;
+				}
+			}
 
 			println!("=>VertexAttribPointer index:{}, vals:{}, val_type:{}, vertex_byte_len:{} byte_offset:{}", i,vals,val_type, vertex_byte_len, byte_offset );
 			println!("Capacyty {}", buffer.len());
 			gl_call!({
-				gl::VertexAttribPointer( i as GLuint, vals, val_type, gl::FALSE, vertex_byte_len as GLsizei, byte_offset as *const c_void );
-				gl::EnableVertexAttribArray( i as GLuint );
+				gl::VertexAttribPointer(
+					i as GLuint,
+					vals,
+					val_type,
+					gl::FALSE,
+					vertex_byte_len as GLsizei,
+					byte_offset as *const c_void,
+				);
+				gl::EnableVertexAttribArray(i as GLuint);
 			});
 
 			byte_offset += Self::elem_byte_len(buffer_data);
@@ -192,23 +170,21 @@ pub trait GLGeometry {
 
 	fn elem_byte_len(attribute: &BufferAttribute) -> usize {
 		match &attribute.data {
-			&BufferType::Vector2(_) 	=> { mem::size_of::<f32>() * 2 }
-			&BufferType::Vector3(_) 	=> { mem::size_of::<f32>() * 3 }
-			&BufferType::Vector4(_) 	=> { mem::size_of::<f32>() * 4 }
-			// &BufferType::Vector3(_) 	=> { mem::size_of::<f64>() * 3 }
-			// &BufferType::Vector2f64(_) 	=> { mem::size_of::<f64>() * 2 }
+			&BufferType::Vector2(_) => mem::size_of::<f32>() * 2,
+			&BufferType::Vector3(_) => mem::size_of::<f32>() * 3,
+			&BufferType::Vector4(_) => mem::size_of::<f32>() * 4,
 		}
 	}
 }
 
-
 impl GLGeometry for BufferGeometry {
-
 	fn bind(&self, hash_map: &mut VertexArraysIDs) {
 		match hash_map.get_mut(&self.uuid) {
-			None => {},
+			None => {}
 			Some(ref buffers) => {
-				gl_call!({ gl::BindVertexArray(buffers.vertex_array); });
+				gl_call!({
+					gl::BindVertexArray(buffers.vertex_array);
+				});
 				return;
 			}
 		}
@@ -219,7 +195,9 @@ impl GLGeometry for BufferGeometry {
 		self.bind(hash_map);
 	}
 
-	fn unbind(&self){
-		gl_call!({ gl::BindVertexArray(0); });
+	fn unbind(&self) {
+		gl_call!({
+			gl::BindVertexArray(0);
+		});
 	}
 }

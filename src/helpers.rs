@@ -57,7 +57,7 @@ Div<Output=Self>
 	fn min(&self, other:Self) -> Self;
 	fn max(&self, other:Self) -> Self;
 	fn atan2(y:Self, x:Self) -> Self;
-	fn EPSILON() -> Self;
+	fn epsilon() -> Self;
 	fn clamp(&self, min: Self, max: Self) -> Self;
 	fn from_f32(n: f32) -> Self;
 	fn from_f64(n: f64) -> Self;
@@ -82,7 +82,7 @@ impl Nums for f32 {
 	fn min(&self, other:Self) -> Self { f32::min(*self, other) }
 	fn max(&self, other:Self) -> Self { f32::max(*self, other) }
 	fn atan2(y:Self, x:Self) -> Self { f32::atan2(y, x) }
-	fn EPSILON() -> Self { f32::EPSILON() }
+	fn epsilon() -> Self { use std::f32::EPSILON; EPSILON }
 	fn clamp(&self, min: Self, max: Self) -> Self { self.min(max).max(min) }
 	fn from_f32(n: f32) -> Self { n }
 	fn from_f64(n: f64) -> Self { n as f32 }
@@ -105,7 +105,7 @@ impl Nums for f64 {
 	fn min(&self, other:Self) -> Self { f64::min(*self, other) }
 	fn max(&self, other:Self) -> Self { f64::max(*self, other) }
 	fn atan2(y:Self, x:Self) -> Self { f64::atan2(y, x) }
-	fn EPSILON() -> Self { f64::EPSILON() }
+	fn epsilon() -> Self { use std::f64::EPSILON; EPSILON }
 	fn clamp(&self, min: Self, max: Self) -> Self { self.min(max).max(min) }
 	fn from_f32(n: f32) -> Self { n as f64 }
 	fn from_f64(n: f64) -> Self { n }
