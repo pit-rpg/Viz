@@ -30,7 +30,7 @@ impl Default for Transform {
 			matrix_global: Matrix4::new(),
 			matrix_view: Matrix4::new(),
 			position: Vector3::zero(),
-			scale: Vector3::zero(),
+			scale: Vector3::new_one(),
 			rotation: Euler::default(),
 			quaternion: Quaternion::new(),
 		}

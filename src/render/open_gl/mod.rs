@@ -105,23 +105,10 @@ pub fn test()
 
     let mut geom2 = geom.duplicate();
 
-    {
-        let d = &mut(geom2.get_mut_attribute("positions").unwrap().data);
-        match d {
-            BufferType::Vector3(ref mut data) =>{
-                data
-                    .iter_mut()
-                    .for_each(|e| {
-                        e.x += 0.2;
-                        e.y += 0.2;
-                    });
-            },
-            _=>{},
-        }
-    }
-
-    let transform1 = Transform::default();
+    let mut transform1 = Transform::default();
     let transform2 = Transform::default();
+    transform1.position.y -=0.2;
+    transform1.position.x -=0.2;
 
 
     let texture1 = Texture::new("tile", "images/tile.jpg");
@@ -234,12 +221,16 @@ pub fn test()
             let mut transform_store = world.write_storage::<Transform>();
             let transform = transform_store.get_mut(e2).unwrap();
             // transform.rotation.x += 0.1;
-            // transform.rotation.y += 0.1;
-            transform.rotation.z += 0.1;
-            // transform.position.x += 0.1;
-            // transform.position.y += 0.1;
+            // transform.rotation.y += 0.01;
+            transform.rotation.z += 0.01;
+            transform.position.x += 0.001;
+            transform.position.y += 0.001;
+            transform.scale.x -= 0.001;
+            transform.scale.y -= 0.001;
+            transform.scale.z -= 0.001;
             transform.update();
-            // println!("{:?}", transform.matrix_view);
+            println!("{:?}", transform.matrix_local);
+            println!("{:?}", transform.scale);
         }
 
 

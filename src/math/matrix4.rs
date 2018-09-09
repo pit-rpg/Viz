@@ -26,11 +26,13 @@ where T:Nums
 	}
 
 	pub fn set ( &mut self, n11:T, n12:T, n13:T, n14:T, n21:T, n22:T, n23:T, n24:T, n31:T, n32:T, n33:T, n34:T, n41:T, n42:T, n43:T, n44:T ) -> &mut Self {
-		let mut te = self.elements;
-		te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14;
-		te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24;
-		te[ 2 ] = n31; te[ 6 ] = n32; te[ 10 ] = n33; te[ 14 ] = n34;
-		te[ 3 ] = n41; te[ 7 ] = n42; te[ 11 ] = n43; te[ 15 ] = n44;
+		{
+			let te = &mut self.elements;
+			te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14;
+			te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24;
+			te[ 2 ] = n31; te[ 6 ] = n32; te[ 10 ] = n33; te[ 14 ] = n34;
+			te[ 3 ] = n41; te[ 7 ] = n42; te[ 11 ] = n43; te[ 15 ] = n44;
+		}
 		self
 	}
 
@@ -45,11 +47,13 @@ where T:Nums
 	}
 
 	pub fn copy_position ( &mut self, m:Self  ) ->  &mut Self {
-		let mut te = self.elements;
 		let me = m.elements;
-		te[ 12 ] = me[ 12 ];
-		te[ 13 ] = me[ 13 ];
-		te[ 14 ] = me[ 14 ];
+		{
+			let te = &mut self.elements;
+			te[ 12 ] = me[ 12 ];
+			te[ 13 ] = me[ 13 ];
+			te[ 14 ] = me[ 14 ];
+		}
 		self
 	}
 
@@ -157,25 +161,27 @@ where T:Nums
 	}
 
 	pub fn scale (&mut self, v: &Vector3<T> )-> &mut Self {
-		let mut te = self.elements;
-		let x = v.x;
-		let y = v.y;
-		let z = v.z;
-		te[ 0 ] *= x; te[ 4 ] *= y; te[ 8 ] *= z;
-		te[ 1 ] *= x; te[ 5 ] *= y; te[ 9 ] *= z;
-		te[ 2 ] *= x; te[ 6 ] *= y; te[ 10 ] *= z;
-		te[ 3 ] *= x; te[ 7 ] *= y; te[ 11 ] *= z;
+		{
+			let te = &mut self.elements;
+			let x = v.x;
+			let y = v.y;
+			let z = v.z;
+			te[ 0 ] *= x; te[ 4 ] *= y; te[ 8 ] *= z;
+			te[ 1 ] *= x; te[ 5 ] *= y; te[ 9 ] *= z;
+			te[ 2 ] *= x; te[ 6 ] *= y; te[ 10 ] *= z;
+			te[ 3 ] *= x; te[ 7 ] *= y; te[ 11 ] *= z;
+		}
 		self
 	}
 
 
-	pub fn equals (&mut self, matrix: &Matrix4<T> ) -> bool {
-		let te = self.elements;
+	pub fn equals (&self, matrix: &Matrix4<T> ) -> bool {
+		let te = & self.elements;
 		let me = matrix.elements;
-
 		for i in 0..17  {
 			if te[ i ] != me[ i ] {return false};
 		}
+
 		true
 	}
 
@@ -183,54 +189,62 @@ where T:Nums
 	pub fn make_perspective (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
 		let two = T::two();
 		let one = T::one();
-		let mut te = self.elements;
-		let x = two * near / ( right - left );
-		let y = two * near / ( top - bottom );
-		let a = ( right + left ) / ( right - left );
-		let b = ( top + bottom ) / ( top - bottom );
-		let c = - ( far + near ) / ( far - near );
-		let d:T = - two  * far * near / ( far - near );
-		te[ 0 ] = x;	te[ 4 ] = Nums::zero();	te[ 8 ] = a;	te[ 12 ] = Nums::zero();
-		te[ 1 ] = Nums::zero();	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = Nums::zero();
-		te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = c;	te[ 14 ] = d;
-		te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = - one;	te[ 15 ] = Nums::zero();
+		{
+			let te = &mut self.elements;
+			let x = two * near / ( right - left );
+			let y = two * near / ( top - bottom );
+			let a = ( right + left ) / ( right - left );
+			let b = ( top + bottom ) / ( top - bottom );
+			let c = - ( far + near ) / ( far - near );
+			let d:T = - two  * far * near / ( far - near );
+			te[ 0 ] = x;	te[ 4 ] = Nums::zero();	te[ 8 ] = a;	te[ 12 ] = Nums::zero();
+			te[ 1 ] = Nums::zero();	te[ 5 ] = y;	te[ 9 ] = b;	te[ 13 ] = Nums::zero();
+			te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = c;	te[ 14 ] = d;
+			te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = - one;	te[ 15 ] = Nums::zero();
+		}
 		self
 	}
 
 	pub fn make_orthographic (&mut self, left: T, right: T, top: T, bottom: T, near: T, far: T ) -> &mut Self {
 		let two = T::two();
 		let one = T::one();
-		let mut te = self.elements;
-		let w = one / ( right - left );
-		let h = one / ( top - bottom );
-		let p = one / ( far - near );
-		let x = ( right + left ) * w;
-		let y = ( top + bottom ) * h;
-		let z = ( far + near ) * p;
-		te[ 0 ] = two * w ;	te[ 4 ] = Nums::zero();	te[ 8 ] = Nums::zero();	te[ 12 ] = - x;
-		te[ 1 ] = Nums::zero();	te[ 5 ] = two * h;	te[ 9 ] = Nums::zero();	te[ 13 ] = - y;
-		te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = - two * p;	te[ 14 ] = - z;
-		te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = Nums::zero();	te[ 15 ] = Nums::one();
+		{
+			let te = &mut self.elements;
+			let w = one / ( right - left );
+			let h = one / ( top - bottom );
+			let p = one / ( far - near );
+			let x = ( right + left ) * w;
+			let y = ( top + bottom ) * h;
+			let z = ( far + near ) * p;
+			te[ 0 ] = two * w ;	te[ 4 ] = Nums::zero();	te[ 8 ] = Nums::zero();	te[ 12 ] = - x;
+			te[ 1 ] = Nums::zero();	te[ 5 ] = two * h;	te[ 9 ] = Nums::zero();	te[ 13 ] = - y;
+			te[ 2 ] = Nums::zero();	te[ 6 ] = Nums::zero();	te[ 10 ] = - two * p;	te[ 14 ] = - z;
+			te[ 3 ] = Nums::zero();	te[ 7 ] = Nums::zero();	te[ 11 ] = Nums::zero();	te[ 15 ] = Nums::one();
+		}
 		self
 	}
 
 	pub fn transpose (&mut self) -> &mut Self {
-		let mut te = self.elements;
-		let mut tmp;
-		tmp = te[ 1 ]; te[ 1 ] = te[ 4 ]; te[ 4 ] = tmp;
-		tmp = te[ 2 ]; te[ 2 ] = te[ 8 ]; te[ 8 ] = tmp;
-		tmp = te[ 6 ]; te[ 6 ] = te[ 9 ]; te[ 9 ] = tmp;
-		tmp = te[ 3 ]; te[ 3 ] = te[ 12 ]; te[ 12 ] = tmp;
-		tmp = te[ 7 ]; te[ 7 ] = te[ 13 ]; te[ 13 ] = tmp;
-		tmp = te[ 11 ]; te[ 11 ] = te[ 14 ]; te[ 14 ] = tmp;
+		{
+			let te = &mut self.elements;
+			let mut tmp;
+			tmp = te[ 1 ]; te[ 1 ] = te[ 4 ]; te[ 4 ] = tmp;
+			tmp = te[ 2 ]; te[ 2 ] = te[ 8 ]; te[ 8 ] = tmp;
+			tmp = te[ 6 ]; te[ 6 ] = te[ 9 ]; te[ 9 ] = tmp;
+			tmp = te[ 3 ]; te[ 3 ] = te[ 12 ]; te[ 12 ] = tmp;
+			tmp = te[ 7 ]; te[ 7 ] = te[ 13 ]; te[ 13 ] = tmp;
+			tmp = te[ 11 ]; te[ 11 ] = te[ 14 ]; te[ 14 ] = tmp;
+		}
 		self
 	}
 
 	pub fn set_position (&mut self, v: &Vector3<T> ) -> &mut Self {
-		let mut te = self.elements;
-		te[ 12 ] = v.x;
-		te[ 13 ] = v.y;
-		te[ 14 ] = v.z;
+		{
+			let te = &mut self.elements;
+			te[ 12 ] = v.x;
+			te[ 13 ] = v.y;
+			te[ 14 ] = v.z;
+		}
 		self
 	}
 
@@ -305,51 +319,55 @@ where T:Nums
 		let mut y = Vector3::zero();
 		let mut z = Vector3::zero();
 
-		let mut te = self.elements;
+		{
+			let te = &mut self.elements;
 
-		z.sub_vectors( eye, target );
-		if  z.length_sq() == Nums::zero()  {
-			// eye and target are in the same position
-			z.z = Nums::one();
-		}
-		z.normalize();
+			z.sub_vectors( eye, target );
+			if  z.length_sq() == Nums::zero()  {
+				// eye and target are in the same position
+				z.z = Nums::one();
+			}
+			z.normalize();
 
-		x.cross_vectors( up, &z );
+			x.cross_vectors( up, &z );
 
-		if  x.length_sq() == Nums::zero()  {
-			// up and z are parallel
-			if  up.z.abs() == Nums::one()  {
-				z.x += T::from_f32(0.0001);
-			} else {
-				z.z += T::from_f32(0.0001);
+			if  x.length_sq() == Nums::zero()  {
+				// up and z are parallel
+				if  up.z.abs() == Nums::one()  {
+					z.x += T::from_f32(0.0001);
+				} else {
+					z.z += T::from_f32(0.0001);
+				}
+
+				z.normalize();
+				x.cross_vectors( up, &z );
 			}
 
-			z.normalize();
-			x.cross_vectors( up, &z );
+			x.normalize();
+			y.cross_vectors( &z, &x );
+
+			te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
+			te[ 1 ] = x.y; te[ 5 ] = y.y; te[ 9 ] = z.y;
+			te[ 2 ] = x.z; te[ 6 ] = y.z; te[ 10 ] = z.z;
 		}
-
-		x.normalize();
-		y.cross_vectors( &z, &x );
-
-		te[ 0 ] = x.x; te[ 4 ] = y.x; te[ 8 ] = z.x;
-		te[ 1 ] = x.y; te[ 5 ] = y.y; te[ 9 ] = z.y;
-		te[ 2 ] = x.z; te[ 6 ] = y.z; te[ 10 ] = z.z;
 
 		self
 	}
 
 
 	pub fn multiply_scalar ( &mut self, s: T ) -> &mut Self {
-		let mut te = self.elements;
-		te[ 0 ] *= s; te[ 4 ] *= s; te[ 8 ] *= s; te[ 12 ] *= s;
-		te[ 1 ] *= s; te[ 5 ] *= s; te[ 9 ] *= s; te[ 13 ] *= s;
-		te[ 2 ] *= s; te[ 6 ] *= s; te[ 10 ] *= s; te[ 14 ] *= s;
-		te[ 3 ] *= s; te[ 7 ] *= s; te[ 11 ] *= s; te[ 15 ] *= s;
+		{
+			let te = &mut self.elements;
+			te[ 0 ] *= s; te[ 4 ] *= s; te[ 8 ] *= s; te[ 12 ] *= s;
+			te[ 1 ] *= s; te[ 5 ] *= s; te[ 9 ] *= s; te[ 13 ] *= s;
+			te[ 2 ] *= s; te[ 6 ] *= s; te[ 10 ] *= s; te[ 14 ] *= s;
+			te[ 3 ] *= s; te[ 7 ] *= s; te[ 11 ] *= s; te[ 15 ] *= s;
+		}
 		self
 	}
 
 	pub fn determinant (&self) -> T {
-		let te = self.elements;
+		let te = &self.elements;
 		let n11 = te[ 0 ]; let n12 = te[ 4 ]; let n13 = te[ 8 ];  let n14 = te[ 12 ];
 		let n21 = te[ 1 ]; let n22 = te[ 5 ]; let n23 = te[ 9 ];  let n24 = te[ 13 ];
 		let n31 = te[ 2 ]; let n32 = te[ 6 ]; let n33 = te[ 10 ]; let n34 = te[ 14 ];
@@ -393,7 +411,6 @@ where T:Nums
 
 	pub fn get_inverse (&mut self, m: &Self, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
 		// based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
-		let mut te = self.elements;
 		let	me = m.elements;
 		let n11 = me[ 0 ]; let n21 = me[ 1 ]; let n31 = me[ 2 ]; let n41 = me[ 3 ];
 		let n12 = me[ 4 ]; let n22 = me[ 5 ]; let n32 = me[ 6 ]; let n42 = me[ 7 ];
@@ -412,28 +429,30 @@ where T:Nums
 			if throw_on_degenerate == true {
 				return Err(msg);
 			}
-
 			return Ok(self.identity());
 		}
 
-		let one:T = Nums::one();
-		let det_inv = one / det;
-		te[ 0 ] = t11 * det_inv;
-		te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * det_inv;
-		te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * det_inv;
-		te[ 3 ] = ( n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43 ) * det_inv;
-		te[ 4 ] = t12 * det_inv;
-		te[ 5 ] = ( n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44 ) * det_inv;
-		te[ 6 ] = ( n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44 ) * det_inv;
-		te[ 7 ] = ( n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43 ) * det_inv;
-		te[ 8 ] = t13 * det_inv;
-		te[ 9 ] = ( n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44 ) * det_inv;
-		te[ 10 ] = ( n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44 ) * det_inv;
-		te[ 11 ] = ( n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43 ) * det_inv;
-		te[ 12 ] = t14 * det_inv;
-		te[ 13 ] = ( n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34 ) * det_inv;
-		te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * det_inv;
-		te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * det_inv;
+		{
+			let te = &mut self.elements;
+			let one:T = Nums::one();
+			let det_inv = one / det;
+			te[ 0 ] = t11 * det_inv;
+			te[ 1 ] = ( n24 * n33 * n41 - n23 * n34 * n41 - n24 * n31 * n43 + n21 * n34 * n43 + n23 * n31 * n44 - n21 * n33 * n44 ) * det_inv;
+			te[ 2 ] = ( n22 * n34 * n41 - n24 * n32 * n41 + n24 * n31 * n42 - n21 * n34 * n42 - n22 * n31 * n44 + n21 * n32 * n44 ) * det_inv;
+			te[ 3 ] = ( n23 * n32 * n41 - n22 * n33 * n41 - n23 * n31 * n42 + n21 * n33 * n42 + n22 * n31 * n43 - n21 * n32 * n43 ) * det_inv;
+			te[ 4 ] = t12 * det_inv;
+			te[ 5 ] = ( n13 * n34 * n41 - n14 * n33 * n41 + n14 * n31 * n43 - n11 * n34 * n43 - n13 * n31 * n44 + n11 * n33 * n44 ) * det_inv;
+			te[ 6 ] = ( n14 * n32 * n41 - n12 * n34 * n41 - n14 * n31 * n42 + n11 * n34 * n42 + n12 * n31 * n44 - n11 * n32 * n44 ) * det_inv;
+			te[ 7 ] = ( n12 * n33 * n41 - n13 * n32 * n41 + n13 * n31 * n42 - n11 * n33 * n42 - n12 * n31 * n43 + n11 * n32 * n43 ) * det_inv;
+			te[ 8 ] = t13 * det_inv;
+			te[ 9 ] = ( n14 * n23 * n41 - n13 * n24 * n41 - n14 * n21 * n43 + n11 * n24 * n43 + n13 * n21 * n44 - n11 * n23 * n44 ) * det_inv;
+			te[ 10 ] = ( n12 * n24 * n41 - n14 * n22 * n41 + n14 * n21 * n42 - n11 * n24 * n42 - n12 * n21 * n44 + n11 * n22 * n44 ) * det_inv;
+			te[ 11 ] = ( n13 * n22 * n41 - n12 * n23 * n41 - n13 * n21 * n42 + n11 * n23 * n42 + n12 * n21 * n43 - n11 * n22 * n43 ) * det_inv;
+			te[ 12 ] = t14 * det_inv;
+			te[ 13 ] = ( n13 * n24 * n31 - n14 * n23 * n31 + n14 * n21 * n33 - n11 * n24 * n33 - n13 * n21 * n34 + n11 * n23 * n34 ) * det_inv;
+			te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * det_inv;
+			te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * det_inv;
+		}
 
 		Ok(self)
 	}
