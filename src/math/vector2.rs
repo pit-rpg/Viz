@@ -2,6 +2,7 @@
 use helpers::Nums;
 use super::Vector;
 
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Vector2<T>
 where T: Nums

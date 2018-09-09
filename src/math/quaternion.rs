@@ -1,5 +1,5 @@
 use helpers::Nums;
-use super::{Vector3, Vector, Matrix4};
+use super::{Vector3, Vector, Matrix4, RotationOrders, Euler};
 
 #[derive(Clone, Debug)]
 pub struct Quaternion<T> {
@@ -221,6 +221,68 @@ where T: Nums
 		self
 	}
 
+
+	pub fn set_from_euler(&mut self, euler: &Euler<T> ) -> &mut Self {
+
+		// let {x,y,z,rotation_order} = euler;
+		let x = euler.x; let y = euler.y; let z = euler.z; let rotation_order = euler.rotation_order;
+
+
+		// http://www.mathworks.com/matlabcentral/fileexchange/
+		// 	20696-function-to-convert-between-dcm-euler-angles-quaternions-and-euler-vectors/
+		//	content/SpinCalc.m
+
+		let c1 = ( x / T::two() ).cos();
+		let c2 = ( y / T::two() ).cos();
+		let c3 = ( z / T::two() ).cos();
+
+		let s1 = ( x / T::two() ).sin();
+		let s2 = ( y / T::two() ).sin();
+		let s3 = ( z / T::two() ).sin();
+
+		match rotation_order {
+			RotationOrders::XYZ => {
+				self.x = s1 * c2 * c3 + c1 * s2 * s3;
+				self.y = c1 * s2 * c3 - s1 * c2 * s3;
+				self.z = c1 * c2 * s3 + s1 * s2 * c3;
+				self.w = c1 * c2 * c3 - s1 * s2 * s3;
+			}
+			RotationOrders::YXZ => {
+				self.x = s1 * c2 * c3 + c1 * s2 * s3;
+				self.y = c1 * s2 * c3 - s1 * c2 * s3;
+				self.z = c1 * c2 * s3 - s1 * s2 * c3;
+				self.w = c1 * c2 * c3 + s1 * s2 * s3;
+			}
+			RotationOrders::ZXY => {
+				self.x = s1 * c2 * c3 - c1 * s2 * s3;
+				self.y = c1 * s2 * c3 + s1 * c2 * s3;
+				self.z = c1 * c2 * s3 + s1 * s2 * c3;
+				self.w = c1 * c2 * c3 - s1 * s2 * s3;
+			}
+			RotationOrders::ZYX => {
+				self.x = s1 * c2 * c3 - c1 * s2 * s3;
+				self.y = c1 * s2 * c3 + s1 * c2 * s3;
+				self.z = c1 * c2 * s3 - s1 * s2 * c3;
+				self.w = c1 * c2 * c3 + s1 * s2 * s3;
+			}
+			RotationOrders::YZX => {
+				self.x = s1 * c2 * c3 + c1 * s2 * s3;
+				self.y = c1 * s2 * c3 + s1 * c2 * s3;
+				self.z = c1 * c2 * s3 - s1 * s2 * c3;
+				self.w = c1 * c2 * c3 - s1 * s2 * s3;
+			}
+			RotationOrders::XZY => {
+				self.x = s1 * c2 * c3 - c1 * s2 * s3;
+				self.y = c1 * s2 * c3 - s1 * c2 * s3;
+				self.z = c1 * c2 * s3 + s1 * s2 * c3;
+				self.w = c1 * c2 * c3 + s1 * s2 * s3;
+			}
+		}
+		self
+	}
+
+
+
 }
 
 
@@ -308,81 +370,6 @@ where T: Nums
 // } );
 
 
-
-// 	setFromEuler: function ( euler, update ) {
-
-// 		if ( ! ( euler && euler.isEuler ) ) {
-
-// 			throw new Error( 'THREE.Quaternion: .setFromEuler() now expects an Euler rotation rather than a Vector3 and order.' );
-
-// 		}
-
-// 		var x = euler._x, y = euler._y, z = euler._z, order = euler.order;
-
-// 		// http://www.mathworks.com/matlabcentral/fileexchange/
-// 		// 	20696-function-to-convert-between-dcm-euler-angles-quaternions-and-euler-vectors/
-// 		//	content/SpinCalc.m
-
-// 		var cos = Math.cos;
-// 		var sin = Math.sin;
-
-// 		var c1 = cos( x / 2 );
-// 		var c2 = cos( y / 2 );
-// 		var c3 = cos( z / 2 );
-
-// 		var s1 = sin( x / 2 );
-// 		var s2 = sin( y / 2 );
-// 		var s3 = sin( z / 2 );
-
-// 		if ( order === 'XYZ' ) {
-
-// 			this._x = s1 * c2 * c3 + c1 * s2 * s3;
-// 			this._y = c1 * s2 * c3 - s1 * c2 * s3;
-// 			this._z = c1 * c2 * s3 + s1 * s2 * c3;
-// 			this._w = c1 * c2 * c3 - s1 * s2 * s3;
-
-// 		} else if ( order === 'YXZ' ) {
-
-// 			this._x = s1 * c2 * c3 + c1 * s2 * s3;
-// 			this._y = c1 * s2 * c3 - s1 * c2 * s3;
-// 			this._z = c1 * c2 * s3 - s1 * s2 * c3;
-// 			this._w = c1 * c2 * c3 + s1 * s2 * s3;
-
-// 		} else if ( order === 'ZXY' ) {
-
-// 			this._x = s1 * c2 * c3 - c1 * s2 * s3;
-// 			this._y = c1 * s2 * c3 + s1 * c2 * s3;
-// 			this._z = c1 * c2 * s3 + s1 * s2 * c3;
-// 			this._w = c1 * c2 * c3 - s1 * s2 * s3;
-
-// 		} else if ( order === 'ZYX' ) {
-
-// 			this._x = s1 * c2 * c3 - c1 * s2 * s3;
-// 			this._y = c1 * s2 * c3 + s1 * c2 * s3;
-// 			this._z = c1 * c2 * s3 - s1 * s2 * c3;
-// 			this._w = c1 * c2 * c3 + s1 * s2 * s3;
-
-// 		} else if ( order === 'YZX' ) {
-
-// 			this._x = s1 * c2 * c3 + c1 * s2 * s3;
-// 			this._y = c1 * s2 * c3 + s1 * c2 * s3;
-// 			this._z = c1 * c2 * s3 - s1 * s2 * c3;
-// 			this._w = c1 * c2 * c3 - s1 * s2 * s3;
-
-// 		} else if ( order === 'XZY' ) {
-
-// 			this._x = s1 * c2 * c3 - c1 * s2 * s3;
-// 			this._y = c1 * s2 * c3 - s1 * c2 * s3;
-// 			this._z = c1 * c2 * s3 + s1 * s2 * c3;
-// 			this._w = c1 * c2 * c3 + s1 * s2 * s3;
-
-// 		}
-
-// 		if ( update !== false ) this.onChangeCallback();
-
-// 		return this;
-
-// 	},
 
 
 

@@ -11,24 +11,38 @@ use math::*;
 
 #[derive(Debug, Clone)]
 pub enum Uniform {
-	Vector3f32(Vector3<f32>),
-	Vector3f64(Vector3<f64>),
-	Vector2f32(Vector2<f32>),
-	Vector2f64(Vector2<f64>),
-	Matrix4f64(Matrix4<f64>),
-	Matrix4f32(Matrix4<f32>),
+	Vector4(Vector4<f32>),
+	Vector3(Vector3<f32>),
+	Vector2(Vector2<f32>),
+	Matrix4(Matrix4<f32>),
+	// vector3f64(Vector3<f64>),
+	// Vector2f64(Vector2<f64>),
+	// Matrix4f64(Matrix4<f64>),
 	// Texture(Texture),
 }
 
 #[derive(Debug, Clone)]
 pub struct UniformItem {
 	pub name: String,
-	pub vertex: bool,
-	pub fragment: bool,
+	pub program_type: ProgramType,
 	pub need_update: bool,
 	pub uniform: Uniform,
 }
 
+#[derive(Debug, Clone)]
+pub struct TextureItem {
+	pub name: String,
+	pub program_type: ProgramType,
+	pub texture: Arc<Mutex<Texture>>,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ProgramType {
+	None,
+	Vertex,
+	Fragment,
+}
 
 // #[allow(dead_code)]
 // pub struct Material {
@@ -51,9 +65,9 @@ pub struct Material {
 	pub name: String,
 	pub uuid: Uuid,
 	src: String,
-	textures: Vec<(String, Arc<Mutex<Texture>>)>,
+	textures: Vec<TextureItem>,
 	uniforms: Vec<UniformItem>,
-	transform: Matrix4<f32>,
+	// transform: Matrix4<f32>,
 	pub uniform_need_update: bool,
 	// pub transparent: bool,
 	// transform_need_update: bool,
@@ -73,18 +87,18 @@ impl Material {
 			src: src.to_string(),
 			textures: Vec::new(),
 			uniforms,
-			transform: Matrix4::new(),
+			// transform: Matrix4::new(),
 			uniform_need_update: true,
 		}
 	}
 
 
-	pub fn set_transform(&mut self, m: &Matrix4<f32>) {
-		self.transform.copy(m);
-	}
+	// pub fn set_transform(&mut self, m: &Matrix4<f32>) {
+	// 	self.transform.copy(m);
+	// }
 
 
-	pub fn set_uniform(&mut self, name: &str, u: &Uniform) {
+	pub fn set_uniform(&mut self, name: &str, u: &Uniform) -> Option<()> {
 		let uniform_item = self.uniforms
 			.iter_mut()
 			.find(|e| *e.name == *name)
@@ -94,16 +108,18 @@ impl Material {
 		// let u = u.clone();
 
 		match (&mut uniform_item.uniform, u) {
-			(Uniform::Vector3f32(ref mut a), Uniform::Vector3f32(b)) => { a.copy(&b); uniform_item.need_update = true; },
-			(Uniform::Vector3f64(ref mut a), Uniform::Vector3f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
-			(Uniform::Vector2f32(ref mut a), Uniform::Vector2f32(b)) => { a.copy(&b); uniform_item.need_update = true; },
-			(Uniform::Vector2f64(ref mut a), Uniform::Vector2f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
-			(Uniform::Matrix4f32(ref mut a), Uniform::Matrix4f32(b)) => { a.copy(&b); uniform_item.need_update = true; },
-			(Uniform::Matrix4f64(ref mut a), Uniform::Matrix4f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
-			_ => {return panic!();}
+			(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			(Uniform::Matrix4(ref mut a), Uniform::Matrix4(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			// (Uniform::Vector3f64(ref mut a), Uniform::Vector3f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			// (Uniform::Vector2f64(ref mut a), Uniform::Vector2f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			// (Uniform::Matrix4f64(ref mut a), Uniform::Matrix4f64(b)) => { a.copy(&b); uniform_item.need_update = true; },
+			_ => {return None;}
 		};
 
 		self.uniform_need_update = true;
+		Some(())
 	}
 
 
@@ -112,26 +128,33 @@ impl Material {
 	}
 
 
-	pub fn set_texture(&mut self, name: &str, t: Option<Arc<Mutex<Texture>>>) {
+	pub fn set_texture(&mut self, name: &str, t: Option<Arc<Mutex<Texture>>>, program_type: ProgramType) {
 		match t {
 			Some (t) => {
 				{
 					let texture = self.textures
 						.iter_mut()
-						.find(|e| e.0 == name);
+						.find(|e| e.name == name);
 
 					if texture.is_some() {
 						let texture = texture.unwrap();
-						texture.1 = t;
+						texture.texture = t;
+						texture.program_type = program_type;
 						return;
 					}
 				}
-				self.textures.push((name.to_string(), t));
+
+				self.textures.push(TextureItem {
+					name: name.to_string(),
+					texture: t,
+					program_type,
+				});
 			}
+
 			None => {
 				let textures = self.textures
 					.drain(..)
-					.filter(|e| e.0 != name)
+					.filter(|e| e.name != name)
 					.collect();
 				self.textures = textures;
 			}
@@ -139,22 +162,44 @@ impl Material {
 	}
 
 
-	pub fn get_textures(&self) -> &[(String, Arc<Mutex<Texture>>)] {
+	pub fn get_textures(&self) -> &[TextureItem] {
 		&self.textures[..]
 	}
 
-	pub fn get_uniforms(&self) -> &[UniformItem] {
-		&self.uniforms[..]
+	pub fn get_uniforms(&mut self) -> &mut [UniformItem] {
+		&mut self.uniforms[..]
 	}
 
-	pub fn new_basic() -> Self {
+	pub fn new_basic(color: &Vector3<f32>) -> Self {
 		Material::new("basic.glsl", "Basic", &[
 			UniformItem {
-				name: "color".to_string(),
-				vertex: false,
-				fragment: true,
+				name: "transform".to_string(),
+				program_type: ProgramType::Vertex,
 				need_update: true,
-				uniform: Uniform::Vector3f32(Vector3::<f32>::random()),
+				uniform: Uniform::Matrix4(Matrix4::new()),
+			},
+			UniformItem {
+				name: "color".to_string(),
+				program_type: ProgramType::Fragment,
+				need_update: true,
+				uniform: Uniform::Vector3(color.clone()),
+			}
+		])
+	}
+
+	pub fn new_basic_texture(color: &Vector3<f32>) -> Self {
+		Material::new("basic-texture.glsl", "Basic-Texture", &[
+			UniformItem {
+				name: "transform".to_string(),
+				program_type: ProgramType::Vertex,
+				need_update: true,
+				uniform: Uniform::Matrix4(Matrix4::new()),
+			},
+			UniformItem {
+				name: "color".to_string(),
+				program_type: ProgramType::Fragment,
+				need_update: true,
+				uniform: Uniform::Vector3(color.clone()),
 			}
 		])
 	}

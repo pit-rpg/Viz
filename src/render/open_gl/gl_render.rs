@@ -8,6 +8,7 @@ use std::cell::{ RefCell };
 // use core::Component;
 use core::BufferGeometry;
 use core::Material;
+use core::Uniform;
 use core::Transform;
 // use core::Mesh;
 use helpers::Nums;
@@ -38,7 +39,7 @@ pub struct GLRenderer {
 
 
 extern crate specs;
-use self::specs::{Write, Component, ReadStorage, System, VecStorage, World, RunNow};
+use self::specs::{Write, Component, ReadStorage, WriteStorage, System, VecStorage, World, RunNow};
 
 
 pub struct RenderSystem;
@@ -53,7 +54,7 @@ impl<'a> System<'a> for RenderSystem
 	type SystemData = (
 		ReadStorage<'a, Transform>,
 		ReadStorage<'a, BufferGeometry>,
-		ReadStorage<'a, Material>,
+		WriteStorage<'a, Material>,
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
 		Write<'a, GLTextureIDs>,
@@ -66,14 +67,17 @@ impl<'a> System<'a> for RenderSystem
 		let (
 			transform,
 			geometry,
-			material,
+			mut material,
 			mut vertex_arrays_ids,
 			mut gl_material_ids,
 			mut gl_texture_ids,
 		) = data;
 
-        for (transform, geometry, material) in (&transform, &geometry, &material).join() {
+        for (transform, geometry, material) in (&transform, &geometry, &mut material).join() {
 			// println!("1");
+
+			material.set_uniform("transform", &Uniform::Matrix4(transform.matrix_view)).unwrap();
+
 			geometry.bind(&mut vertex_arrays_ids);
 			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
 

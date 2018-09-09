@@ -7,6 +7,7 @@ use std::cmp::{Ord};
 use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 
 
+#[repr(C)]
 #[allow(dead_code)]
 #[derive(Clone, Debug, Copy)]
 pub struct Matrix3<T> {

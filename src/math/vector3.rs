@@ -13,7 +13,7 @@ use std::ops::{Sub};
 use helpers::Nums;
 use super::Vector;
 
-// #[repr(C)]
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Vector3<T>
 where T:Nums

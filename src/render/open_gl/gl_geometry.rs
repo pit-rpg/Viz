@@ -83,24 +83,30 @@ pub trait GLGeometry {
 		for i in 0..positions_len {
 			for buffer_data in geom.attributes.iter() {
 				match &buffer_data.data {
-					&BufferType::Vector3f32(ref v) => {
+					&BufferType::Vector4(ref v) => {
+						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i].w).unwrap();
+					},
+					&BufferType::Vector3(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
 					},
-					&BufferType::Vector3f64(ref v) => {
-						buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
-						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
-						buffer.write_f64::<LittleEndian>(v[i].z).unwrap();
-					},
-					&BufferType::Vector2f32(ref v) => {
+					// &BufferType::Vector3f64(ref v) => {
+					// 	buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
+					// 	buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
+					// 	buffer.write_f64::<LittleEndian>(v[i].z).unwrap();
+					// },
+					&BufferType::Vector2(ref v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
 					},
-					&BufferType::Vector2f64(ref v) => {
-						buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
-						buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
-					},
+					// &BufferType::Vector2f64(ref v) => {
+					// 	buffer.write_f64::<LittleEndian>(v[i].x).unwrap();
+					// 	buffer.write_f64::<LittleEndian>(v[i].y).unwrap();
+					// },
 				}
 			}
 		}
@@ -145,22 +151,26 @@ pub trait GLGeometry {
 			let val_type;
 
 			match buffer_data.data {
-					BufferType::Vector3f32(_) => {
+					BufferType::Vector3(_) => {
 						vals = 3;
 						val_type = gl::FLOAT;
 					},
-					BufferType::Vector3f64(_) => {
-						vals = 3;
-						val_type = gl::DOUBLE;
+					BufferType::Vector4(_) => {
+						vals = 4;
+						val_type = gl::FLOAT;
 					},
-					BufferType::Vector2f32(_) => {
+					// BufferType::Vector3f64(_) => {
+					// 	vals = 3;
+					// 	val_type = gl::DOUBLE;
+					// },
+					BufferType::Vector2(_) => {
 						vals = 2;
 						val_type = gl::FLOAT;
 					},
-					BufferType::Vector2f64(_) => {
-						vals = 2;
-						val_type = gl::DOUBLE;
-					},
+					// BufferType::Vector2f64(_) => {
+					// 	vals = 2;
+					// 	val_type = gl::DOUBLE;
+					// },
 				}
 
 			println!("=>VertexAttribPointer index:{}, vals:{}, val_type:{}, vertex_byte_len:{} byte_offset:{}", i,vals,val_type, vertex_byte_len, byte_offset );
@@ -182,10 +192,11 @@ pub trait GLGeometry {
 
 	fn elem_byte_len(attribute: &BufferAttribute) -> usize {
 		match &attribute.data {
-			&BufferType::Vector3f32(_) 	=> { mem::size_of::<f32>() * 3 }
-			&BufferType::Vector3f64(_) 	=> { mem::size_of::<f64>() * 3 }
-			&BufferType::Vector2f32(_) 	=> { mem::size_of::<f32>() * 2 }
-			&BufferType::Vector2f64(_) 	=> { mem::size_of::<f64>() * 2 }
+			&BufferType::Vector2(_) 	=> { mem::size_of::<f32>() * 2 }
+			&BufferType::Vector3(_) 	=> { mem::size_of::<f32>() * 3 }
+			&BufferType::Vector4(_) 	=> { mem::size_of::<f32>() * 4 }
+			// &BufferType::Vector3(_) 	=> { mem::size_of::<f64>() * 3 }
+			// &BufferType::Vector2f64(_) 	=> { mem::size_of::<f64>() * 2 }
 		}
 	}
 }

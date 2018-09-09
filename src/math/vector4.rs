@@ -1,6 +1,7 @@
 use helpers::Nums;
 use super::Vector;
 
+#[repr(C)]
 #[derive(Clone, Debug)]
 pub struct Vector4<T>
 where T:Nums

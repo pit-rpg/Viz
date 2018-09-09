@@ -43,6 +43,7 @@ use self::gl_geometry::GLGeometry;
 use core::BufferType;
 use core::BufferGeometry;
 use core::Material;
+use core::ProgramType;
 use core::Texture;
 use helpers::Nums;
 // use core::Materials;
@@ -115,9 +116,9 @@ pub fn test()
     ];
 
     let mut geom = BufferGeometry::new();
-    geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3f32(pos), 3);
-    geom.create_buffer_attribute("color".to_string(), BufferType::Vector3f32(col), 3);
-    geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2f32(uv), 2);
+    geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(pos), 3);
+    geom.create_buffer_attribute("color".to_string(), BufferType::Vector3(col), 3);
+    geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uv), 2);
     geom.set_indices(ind);
 
     let mut geom2 = geom.duplicate();
@@ -125,7 +126,7 @@ pub fn test()
     {
         let d = &mut(geom2.get_mut_attribute("positions").unwrap().data);
         match d {
-            BufferType::Vector3f32(ref mut data) =>{
+            BufferType::Vector3(ref mut data) =>{
                 data
                     .iter_mut()
                     .for_each(|e| {
@@ -148,13 +149,16 @@ pub fn test()
     // load_textures(&texture).expect("lolo");
 
 
-    // let mut material1 = MeshBasicMaterial::new(Color::new(1.0, 0.0, 0.0));
+    let mut material1 = Material::new_basic(&Vector3::new(1.0,0.0,0.0));
+    material1.get_program();
     // material1.map_color = Some(Arc::new(Mutex::new(texture1)));
     // material1.map_color2 = Some(Arc::new(Mutex::new(texture2)));
 
     // let material1 = Materials::Basic( material1 );
 
     // let mut material2 = MeshNormalMaterial::new(Color::new(1.0, 0.0, 0.0));
+    let mut material2 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
+    material2.set_texture("texture_color", Some(Arc::new(Mutex::new(texture2))), ProgramType::Fragment);
     // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
 
     // let material2 = Materials::Normal( material2 );
@@ -177,18 +181,18 @@ pub fn test()
     // println!("{}", material.uuid);
     // println!("{}", material2.uuid);
 
-    world
-        .create_entity()
-        .with(geom2)
-        // .with(material2)
-        .with(transform2)
-        .build();
-
-    world
+    let e1 = world
         .create_entity()
         .with(geom)
-        // .with(material1)
+        .with(material1)
         .with(transform1)
+        .build();
+
+    let e2 = world
+        .create_entity()
+        .with(geom2)
+        .with(material2)
+        .with(transform2)
         .build();
 
 
@@ -244,6 +248,18 @@ pub fn test()
         });
 
         // test_gl_render.render(&mut node);
+        {
+            let mut transform_store = world.write_storage::<Transform>();
+            let transform = transform_store.get_mut(e2).unwrap();
+            // transform.rotation.x += 0.1;
+            // transform.rotation.y += 0.1;
+            transform.rotation.z += 0.1;
+            // transform.position.x += 0.1;
+            // transform.position.y += 0.1;
+            transform.update();
+            // println!("{:?}", transform.matrix_view);
+        }
+
 
 
         test_gl_render.clear();
