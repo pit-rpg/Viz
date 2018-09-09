@@ -229,8 +229,8 @@ pub fn test()
             transform.scale.y -= 0.001;
             transform.scale.z -= 0.001;
             transform.update();
-            println!("{:?}", transform.matrix_local);
-            println!("{:?}", transform.scale);
+            // println!("{:?}", transform.matrix_local);
+            // println!("{:?}", transform.scale);
         }
 
 
