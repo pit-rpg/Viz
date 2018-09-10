@@ -1,25 +1,7 @@
-
-// use std::convert::From;
 extern crate rand;
 use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 use std::marker::{Sync, Send};
-use std::path::{Path, PathBuf};
-use std::fs::File;
 use std::fmt::Debug;
-use std::io::Read;
-// pub fn concatenate_arrays<T: Clone>(x: &[T], y: &[T]) -> Vec<T> {
-// 	let mut concat: Vec<T> = vec![x[0].clone(); x.len()];
-
-// 	concat.clone_from_slice(x);
-// 	concat.extend_from_slice(y);
-
-// 	concat
-// }
-
-// fn f64_as_f32(n: f64) -> f32 {
-// 	n as f32
-// }
-
 
 pub trait Nums
 where Self:
@@ -110,33 +92,3 @@ impl Nums for f64 {
 	fn from_f32(n: f32) -> Self { n as f64 }
 	fn from_f64(n: f64) -> Self { n }
 }
-
-
-pub fn find_file(dirs: &[&str], file: &str) -> Result<PathBuf, String>  {
-	for dir in dirs {
-		let p = Path::new(dir).join(file);
-		if p.exists() {
-			return Ok(p);
-		}
-	}
-	let mut err_str = "".to_string();
-	for dir in dirs {
-		let p = Path::new(dir).join(file);
-		err_str = format!("file not exist {};", p.to_str().unwrap());
-	}
-	Err(err_str)
-}
-
-
-pub fn read_to_string(p: &PathBuf) -> String {
-	let mut f = File::open(p).expect("file not found");
-	let mut contents = String::new();
-	f.read_to_string(&mut contents).expect("something went wrong reading the file");
-	contents
-}
-
-// impl From<f64> for f32 {
-//	 fn from(n: f64) -> Self {
-//		 n as f32
-//	 }
-// }

@@ -39,6 +39,7 @@ use self::gl_render::*;
 use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
+use helpers::sphere;
 
 
 fn gl_clear_error() {
@@ -98,15 +99,18 @@ pub fn test()
     ];
 
     let mut geom = BufferGeometry::new();
-    geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(pos), 3);
-    geom.create_buffer_attribute("color".to_string(), BufferType::Vector3(col), 3);
-    geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uv), 2);
+    geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(pos));
+    geom.create_buffer_attribute("color".to_string(), BufferType::Vector3(col));
+    geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uv));
     geom.set_indices(ind);
 
     let mut geom2 = geom.duplicate();
 
+    let mut geom3 = sphere(0.5, 12, 16);
+
     let mut transform1 = Transform::default();
     let transform2 = Transform::default();
+    let transform3 = Transform::default();
     transform1.position.y -=0.2;
     transform1.position.x -=0.2;
 
@@ -119,7 +123,7 @@ pub fn test()
 
 
     let mut material1 = Material::new_basic(&Vector3::new(1.0,0.0,0.0));
-    material1.get_program();
+    let mut material3 = Material::new_normal();
     // material1.map_color = Some(Arc::new(Mutex::new(texture1)));
     // material1.map_color2 = Some(Arc::new(Mutex::new(texture2)));
 
@@ -163,6 +167,13 @@ pub fn test()
         .with(material2)
         .with(transform2)
         .build();
+
+    // let e3 = world
+    //     .create_entity()
+    //     .with(geom3)
+    //     .with(material3)
+    //     .with(transform3)
+    //     .build();
 
 
     let mut render_system = self::RenderSystem;

@@ -13,7 +13,7 @@ out vec2 v_uv;
 void main() {
 	v_color = vec4(aColor.xyz, 1.0);
 	v_uv = aUv;
-	gl_Position = transform * vec4(aPos.x, aPos.y, aPos.z, 1.0);
+	gl_Position = transform * vec4(aPos.xyz, 1.0);
 }
 
 

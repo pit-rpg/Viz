@@ -17,7 +17,6 @@ pub enum BufferType {
 pub struct BufferAttribute {
 	pub data: BufferType,
 	pub name: String,
-	pub item_size: usize,
 	pub dynamic: bool,
 	pub normalized: bool,
 	pub version: usize,
@@ -27,7 +26,15 @@ pub struct BufferAttribute {
 impl BufferAttribute {
 	pub fn count(&self) -> usize {
 		let l = self.len();
-		l / self.item_size
+		l / self.item_size()
+	}
+
+	pub fn item_size(&self) -> usize {
+		match self.data {
+			BufferType::Vector3(_) => 3,
+			BufferType::Vector4(_) => 4,
+			BufferType::Vector2(_) => 2,
+		}
 	}
 
 	pub fn len(&self) -> usize {
@@ -142,12 +149,10 @@ impl BufferGeometry {
 		&mut self,
 		name: String,
 		data: BufferType,
-		item_size: usize,
 	) -> &mut BufferAttribute {
 		let bufferattribute = BufferAttribute {
 			name,
 			data,
-			item_size,
 			normalized: false,
 			dynamic: false,
 			version: 0,
@@ -248,7 +253,6 @@ impl BufferGeometry {
 				let buffer_attribute = self.create_buffer_attribute(
 					"face_normals".to_string(),
 					BufferType::Vector3(normals),
-					3,
 				);
 				return Some(buffer_attribute);
 			}
@@ -287,7 +291,6 @@ impl BufferGeometry {
 				let buffer_attribute = self.create_buffer_attribute(
 					"vertex_normals".to_string(),
 					BufferType::Vector3(normals),
-					3,
 				);
 				return Some(buffer_attribute);
 			}
