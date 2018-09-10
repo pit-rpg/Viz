@@ -117,13 +117,14 @@ pub fn test()
 
     let texture1 = Texture::new("tile", "images/tile.jpg");
     let texture2 = Texture::new("AWESOME_FACE", "images/awesomeface.png");
+    let m_texture2 = Arc::new(Mutex::new(texture2));
 
     // let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
     // load_textures(&texture).expect("lolo");
 
 
     let mut material1 = Material::new_basic(&Vector3::new(1.0,0.0,0.0));
-    let mut material3 = Material::new_normal();
+    // let mut material3 = Material::new_normal();
     // material1.map_color = Some(Arc::new(Mutex::new(texture1)));
     // material1.map_color2 = Some(Arc::new(Mutex::new(texture2)));
 
@@ -131,7 +132,10 @@ pub fn test()
 
     // let mut material2 = MeshNormalMaterial::new(Color::new(1.0, 0.0, 0.0));
     let mut material2 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
-    material2.set_texture("texture_color", Some(Arc::new(Mutex::new(texture2))), ProgramType::Fragment);
+    material2.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
+
+    let mut material3 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
+    material3.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
     // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
 
     // let material2 = Materials::Normal( material2 );
@@ -168,12 +172,12 @@ pub fn test()
         .with(transform2)
         .build();
 
-    // let e3 = world
-    //     .create_entity()
-    //     .with(geom3)
-    //     .with(material3)
-    //     .with(transform3)
-    //     .build();
+    let e3 = world
+        .create_entity()
+        .with(geom3)
+        .with(material3)
+        .with(transform3)
+        .build();
 
 
     let mut render_system = self::RenderSystem;
@@ -230,18 +234,25 @@ pub fn test()
         // test_gl_render.render(&mut node);
         {
             let mut transform_store = world.write_storage::<Transform>();
-            let transform = transform_store.get_mut(e2).unwrap();
-            // transform.rotation.x += 0.1;
-            // transform.rotation.y += 0.01;
-            transform.rotation.z += 0.01;
-            transform.position.x += 0.001;
-            transform.position.y += 0.001;
-            transform.scale.x -= 0.001;
-            transform.scale.y -= 0.001;
-            transform.scale.z -= 0.001;
-            transform.update();
-            // println!("{:?}", transform.matrix_local);
-            // println!("{:?}", transform.scale);
+            {
+                let transform = transform_store.get_mut(e2).unwrap();
+                // transform.rotation.x += 0.1;
+                transform.rotation.y += 0.001;
+                transform.rotation.z += 0.002;
+                transform.position.x += 0.0005;
+                transform.position.y += 0.0005;
+                transform.scale.x -= 0.0005;
+                transform.scale.y -= 0.0005;
+                transform.scale.z -= 0.0005;
+                transform.update();
+            }
+            {
+                let transform3 = transform_store.get_mut(e3).unwrap();
+                transform3.rotation.y += 0.002;
+                transform3.rotation.x += 0.001;
+                transform3.rotation.z += 0.003;
+                transform3.update();
+            }
         }
 
 

@@ -9,7 +9,11 @@ layout (location = 2) in vec2 aUv;
 out vec4 v_color;
 
 void main() {
-	v_color = vec4(aNormal+0.5, 1.0);
+    vec3 n = aNormal + 1;
+    n = normalize(n);
+	// v_color = vec4(aNormal+0.5, 1.0);
+	// v_color = vec4(n, 1.0);
+	v_color =  vec4(n, 1.0) * inverse(transform);
 	v_color.z = 1.0;
 	gl_Position = transform * vec4(aPos.xyz, 1.0);
 }

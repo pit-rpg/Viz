@@ -30,6 +30,7 @@ layout (location = 0) out vec4 FragColor;
 
 void main() {
 	FragColor = texture(texture_color, v_uv);
+    // FragColor.x *=v_uv.x;
 	// if (texture_color) {
 	// } else {
 	// 	FragColor = v_color;
