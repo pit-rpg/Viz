@@ -39,7 +39,7 @@ use self::gl_render::*;
 use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
-use helpers::sphere;
+use helpers::{sphere, box_geometry};
 
 
 fn gl_clear_error() {
@@ -104,7 +104,7 @@ pub fn test()
     geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uv));
     geom.set_indices(ind);
 
-    let mut geom2 = geom.duplicate();
+    let mut geom2 = box_geometry(1.0,1.0,1.0);
 
     let mut geom3 = sphere(0.5, 12, 16);
 
@@ -117,7 +117,9 @@ pub fn test()
 
     let texture1 = Texture::new("tile", "images/tile.jpg");
     let texture2 = Texture::new("AWESOME_FACE", "images/awesomeface.png");
+    let texture3 = Texture::new("AWESOME_FACE", "images/earth.jpg");
     let m_texture2 = Arc::new(Mutex::new(texture2));
+    let m_texture3 = Arc::new(Mutex::new(texture3));
 
     // let texture2 = Texture::new("AWESOME_FACE", "images/tile.jpg");
     // load_textures(&texture).expect("lolo");
@@ -135,7 +137,7 @@ pub fn test()
     material2.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
 
     let mut material3 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
-    material3.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
+    material3.set_texture("texture_color", Some(m_texture3.clone()), ProgramType::Fragment);
     // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
 
     // let material2 = Materials::Normal( material2 );
@@ -237,13 +239,13 @@ pub fn test()
             {
                 let transform = transform_store.get_mut(e2).unwrap();
                 // transform.rotation.x += 0.1;
-                transform.rotation.y += 0.001;
-                transform.rotation.z += 0.002;
-                transform.position.x += 0.0005;
-                transform.position.y += 0.0005;
-                transform.scale.x -= 0.0005;
-                transform.scale.y -= 0.0005;
-                transform.scale.z -= 0.0005;
+                transform.rotation.y += 0.01;
+                transform.rotation.z += 0.01;
+                transform.position.x += 0.001;
+                transform.position.y += 0.001;
+                transform.scale.x -= 0.001;
+                transform.scale.y -= 0.001;
+                transform.scale.z -= 0.001;
                 transform.update();
             }
             {

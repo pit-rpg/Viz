@@ -56,7 +56,7 @@ impl<'a> System<'a> for RenderSystem {
 
 		for (transform, geometry, material) in (&transform, &geometry, &mut material).join() {
 			material
-				.set_uniform("transform", &Uniform::Matrix4(transform.matrix_view))
+				.set_uniform("transform", &Uniform::Matrix4(transform.matrix_world * transform.matrix_local))
 				.unwrap();
 
 			geometry.bind(&mut vertex_arrays_ids);

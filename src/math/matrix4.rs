@@ -423,7 +423,7 @@ where T:Nums
 		let det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
 
 		if det == Nums::zero() {
-			let msg = "THREE.Matrix4: .getInverse() can't invert matrix, determinant is 0";
+			let msg = "THREE.Matrix4: .get_inverse() can't invert matrix, determinant is 0";
 			eprintln!("{}", msg);
 
 			if throw_on_degenerate == true {

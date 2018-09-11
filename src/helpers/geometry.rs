@@ -2,15 +2,15 @@ use core::{BufferGeometry, BufferType};
 use math::{Vector2, Vector3, Vector};
 use std::f32::consts::PI;
 
-
-pub fn param_sphere (radius: f32, widthSegments: i32, heightSegments: i32, phiStart: f32, phiLength: f32, thetaStart: f32, thetaLength: f32) -> BufferGeometry {
+#[allow(dead_code)]
+pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phiStart: f32, phiLength: f32, thetaStart: f32, thetaLength: f32) -> BufferGeometry {
 
 	let theta_end = thetaStart + thetaLength;
 
 	let mut index = 0;
 	let mut grid = Vec::new();
 
-	let len = (widthSegments * heightSegments) as usize;
+	let len = (width_segments * height_segments) as usize;
 
 	// buffers
 	let mut indices = Vec::<i32>::with_capacity(len);
@@ -19,15 +19,15 @@ pub fn param_sphere (radius: f32, widthSegments: i32, heightSegments: i32, phiSt
 	let mut uvs = Vec::with_capacity(len);
 
 	// generate vertices, normals and uvs
-	for iy in 0..heightSegments {
+	for iy in 0..=height_segments {
 
-		let mut vertices_row = Vec::with_capacity(widthSegments as usize);
+		let mut vertices_row = Vec::with_capacity(width_segments as usize);
 
-		let v = iy as f32  / heightSegments as f32;
+		let v = iy as f32  / height_segments as f32;
 
-		for ix in 0..widthSegments {
+		for ix in 0..=width_segments {
 
-			let u = ix as f32 / widthSegments as f32;
+			let u = ix as f32 / width_segments as f32;
 
 			let mut vertex = Vector3::new_zero();
 			let mut normal = Vector3::new_zero();
@@ -60,14 +60,15 @@ pub fn param_sphere (radius: f32, widthSegments: i32, heightSegments: i32, phiSt
 	println!("{:?}", grid[0].len());
 
 	// indices
-	for iy in 0..(heightSegments-1) {
+	for iy in 0..(height_segments) {
 
-		for ix in 0..(widthSegments-1) {
+		for ix in 0..(width_segments) {
 			let iy1 = iy as usize;
 			let ix1 = ix as usize;
 			println!("{}, {}", iy1, ix1);
 
 			if iy != 0 || thetaStart > 0.0 {
+				// println!("->1");
 				let a = grid[ iy1 ][ ix1 + 1 ];
 				let b = grid[ iy1 ][ ix1 ];
 				let d = grid[ iy1 + 1 ][ ix1 + 1 ];
@@ -76,7 +77,8 @@ pub fn param_sphere (radius: f32, widthSegments: i32, heightSegments: i32, phiSt
 				indices.push( d );
 			};
 
-			if iy != heightSegments - 1 || theta_end < PI {
+			if iy != height_segments - 1 || theta_end < PI {
+				// println!("->2");
 				let b = grid[ iy1 ][ ix1 ];
 				let c = grid[ iy1 + 1 ][ ix1 ];
 				let d = grid[ iy1 + 1 ][ ix1 + 1 ];
@@ -84,6 +86,14 @@ pub fn param_sphere (radius: f32, widthSegments: i32, heightSegments: i32, phiSt
 				indices.push( c );
 				indices.push( d );
 			};
+
+			if iy != 0 || thetaStart > 0.0 {
+
+			} else if iy != height_segments - 1 || theta_end < PI {
+
+			} else {
+				println!("===========");
+			}
 		}
 	}
 
@@ -99,6 +109,137 @@ pub fn param_sphere (radius: f32, widthSegments: i32, heightSegments: i32, phiSt
 	geom
 }
 
-pub fn sphere (radius: f32, widthSegments: i32, heightSegments: i32) -> BufferGeometry {
-	param_sphere(radius, widthSegments, heightSegments, 0.0, PI*2.0, 0.0, PI)
+
+#[allow(dead_code)]
+pub fn sphere (radius: f32, width_segments: i32, height_segments: i32) -> BufferGeometry {
+	param_sphere(radius, width_segments, height_segments, 0.0, PI*2.0, 0.0, PI)
+}
+
+
+#[allow(dead_code)]
+pub fn param_box(width: f32, height: f32, depth: f32, width_segments: u32, height_segments: u32, depth_segments: u32 ) -> BufferGeometry {
+
+	// buffers
+	let mut indices = Vec::<i32>::new();
+	let mut vertices = Vec::new();
+	let mut normals = Vec::new();
+	let mut uvs = Vec::new();
+
+	// helper variables
+	let mut number_of_vertices = 0;
+	let mut group_start = 0;
+
+	{
+		let mut build_plane = |u: char, v: char, w: char, udir: f32, vdir: f32, width: f32, height: f32, depth: f32, gridX: u32, gridY: u32, materialIndex: i32| {
+
+			let segment_width = width / gridX as f32;
+			let segment_height = height / gridY as f32;
+
+			let width_half = width / 2.0;
+			let height_half = height / 2.0;
+			let depth_half = depth / 2.0;
+
+			let grid_x1 = gridX + 1;
+			let grid_y1 = gridY + 1;
+
+			let mut vertex_counter = 0;
+			let mut group_count = 0;
+
+			// let ix; let iy;
+
+			// generate vertices, normals and uvs
+			for iy in 0..grid_y1 {
+
+				let y = iy as f32 * segment_height - height_half;
+
+				for ix in 0..grid_x1 {
+
+					let x = ix as f32 * segment_width - width_half;
+
+					let mut vector = Vector3::new_zero();
+					// set values to correct vector component
+					vector[ u ] = x * udir;
+					vector[ v ] = y * vdir;
+					vector[ w ] = depth_half;
+
+					// now apply vector to vertex buffer
+					vertices.push( vector.clone() );
+
+					// set values to correct vector component
+					vector[ u ] = 0.0;
+					vector[ v ] = 0.0;
+					vector[ w ] = if depth > 0.0 {1.0} else {- 1.0};
+
+					// now apply vector to normal buffer
+					normals.push( vector );
+
+					// uvs
+					uvs.push( Vector2::new(ix as f32/gridX as f32, 1.0-(iy as f32/gridY as f32)) );
+
+					// counters
+					vertex_counter += 1;
+				}
+
+			}
+
+			// indices
+
+			// 1. you need three indices to draw a single face
+			// 2. a single segment consists of two faces
+			// 3. so we need to generate six (2*3) indices per segment
+
+			for iy in 0..gridY {
+				for ix in 0..gridX {
+
+					let a = (number_of_vertices + ix + grid_x1 * iy) as i32;
+					let b = (number_of_vertices + ix + grid_x1 * ( iy + 1 )) as i32;
+					let c = (number_of_vertices + ( ix + 1 ) + grid_x1 * ( iy + 1 )) as i32;
+					let d = (number_of_vertices + ( ix + 1 ) + grid_x1 * iy) as i32;
+
+					// faces
+					indices.push( a );
+					indices.push( b );
+					indices.push( d );
+
+					indices.push( b );
+					indices.push( c );
+					indices.push( d );
+
+					// increase counter
+					group_count += 6;
+				}
+			}
+
+
+			// add a group to the geometry. this will ensure multi material support
+			// scope.addGroup( group_start, group_count, materialIndex );
+
+			// calculate new start value for groups
+			group_start += group_count;
+
+			// update total number of vertices
+			number_of_vertices += vertex_counter;
+		};
+
+		// build each side of the box geometry
+		build_plane( 'z', 'y', 'x', - 1.0, - 1.0, depth, height, width, depth_segments, height_segments, 0 ); // px
+		build_plane( 'z', 'y', 'x', 1.0, - 1.0, depth, height, - width, depth_segments, height_segments, 1 ); // nx
+		build_plane( 'x', 'z', 'y', 1.0, 1.0, width, depth, height, width_segments, depth_segments, 2 ); // py
+		build_plane( 'x', 'z', 'y', 1.0, - 1.0, width, depth, - height, width_segments, depth_segments, 3 ); // ny
+		build_plane( 'x', 'y', 'z', 1.0, - 1.0, width, height, depth, width_segments, height_segments, 4 ); // pz
+		build_plane( 'x', 'y', 'z', - 1.0, - 1.0, width, height, - depth, width_segments, height_segments, 5 ); // nz
+	}
+
+	let mut geom = BufferGeometry::new();
+	geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(vertices));
+	geom.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normals));
+	geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uvs));
+	geom.set_indices(indices);
+	geom
+}
+
+
+#[allow(dead_code)]
+pub fn box_geometry(width: f32, height: f32, depth: f32 ) -> BufferGeometry {
+	param_box(width, height, depth, 1, 1, 1 )
 }

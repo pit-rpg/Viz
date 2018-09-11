@@ -1,5 +1,5 @@
 
-use std::ops::{Sub};
+use std::ops::{Sub, Index, IndexMut};
 use helpers::Nums;
 use super::Vector;
 
@@ -284,6 +284,38 @@ where T:Nums
         v
     }
 }
+
+
+impl <T> Index<char> for Vector3<T>
+where T: Nums
+{
+    type Output = T;
+
+    fn index(&self, c: char) -> &T {
+        match c {
+            'x' => &self.x,
+            'y' => &self.y,
+            'z' => &self.z,
+            _   => panic!()
+        }
+    }
+}
+
+impl <T> IndexMut<char> for Vector3<T>
+where T: Nums
+{
+    // type Output = T;
+
+    fn index_mut(&mut self, c: char) -> &mut T {
+        match c {
+            'x' => &mut self.x,
+            'y' => &mut self.y,
+            'z' => &mut self.z,
+            _   => panic!()
+        }
+    }
+}
+
 
 // deriveVector!(Vector3_64, f64);
 

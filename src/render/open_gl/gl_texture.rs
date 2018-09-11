@@ -45,7 +45,7 @@ pub fn load_texture(texture: &Texture) -> Result<TextureId, ()> {
 	println!("_/ LOAD TEXTURE______________________________",);
 
 	let mut id: u32 = 0;
-	let texture_data = texture.load()?;
+	let texture_data = texture.load().expect(&format!("Error cant load texture: {}", texture.path));
 	let gl_texture_dimensions = if texture_data.height == 1 {
 		gl::TEXTURE_1D
 	} else {
