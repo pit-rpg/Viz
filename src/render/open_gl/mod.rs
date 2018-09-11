@@ -40,6 +40,7 @@ use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
 use helpers::{sphere, box_geometry};
+use std::f32::consts::PI;
 
 
 fn gl_clear_error() {
@@ -64,6 +65,10 @@ pub fn test()
 // where T:Nums+'static
 {
     let mut test_gl_render = GLRenderer::new();
+    gl_call!({
+        gl::Enable(gl::DEPTH_TEST);
+    });
+
     let mut f_count = 0.0;
 
     let mut color1 = Vector3::<f32>::random();
@@ -236,6 +241,18 @@ pub fn test()
         // test_gl_render.render(&mut node);
         {
             let mut transform_store = world.write_storage::<Transform>();
+            {
+                let transform = transform_store.get_mut(e1).unwrap();
+                // transform.rotation.x += 0.1;
+                // transform.rotation.y += 0.01;
+                transform.rotation.z = PI/4.0;
+                transform.position.x = -0.3;
+                transform.position.y = 0.6;
+                transform.scale.x = 0.4;
+                transform.scale.y = 0.4;
+                transform.scale.z = 0.4;
+                transform.update();
+            }
             {
                 let transform = transform_store.get_mut(e2).unwrap();
                 // transform.rotation.x += 0.1;

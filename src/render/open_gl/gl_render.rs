@@ -110,7 +110,7 @@ impl Renderer for GLRenderer {
 
 	fn clear(&self) {
 		gl_call!({
-			gl::Clear(gl::COLOR_BUFFER_BIT);
+			gl::Clear(gl::COLOR_BUFFER_BIT|gl::DEPTH_BUFFER_BIT);
 		});
 	}
 
