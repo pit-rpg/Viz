@@ -111,7 +111,7 @@ pub fn test()
 
     let mut geom2 = box_geometry(1.0,1.0,1.0);
 
-    let mut geom3 = sphere(0.5, 12, 16);
+    let mut geom3 = sphere(0.5, 32, 32);
 
     let mut transform1 = Transform::default();
     let transform2 = Transform::default();
@@ -137,15 +137,13 @@ pub fn test()
 
     // let material1 = Materials::Basic( material1 );
 
-    // let mut material2 = MeshNormalMaterial::new(Color::new(1.0, 0.0, 0.0));
     let mut material2 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
     material2.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
 
-    let mut material3 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
-    material3.set_texture("texture_color", Some(m_texture3.clone()), ProgramType::Fragment);
-    // material2.map_color = Some(Arc::new(Mutex::new(texture2)));
+    let mut material3 = Material::new_normal();
+    // let mut material3 = Material::new_basic_texture(&Vector3::new(1.0,0.0,0.0));
+    // material3.set_texture("texture_color", Some(m_texture3.clone()), ProgramType::Fragment);
 
-    // let material2 = Materials::Normal( material2 );
 
 
     // let mut node = Node::<f32>::new();
@@ -267,9 +265,9 @@ pub fn test()
             }
             {
                 let transform3 = transform_store.get_mut(e3).unwrap();
-                transform3.rotation.y += 0.002;
-                transform3.rotation.x += 0.001;
-                transform3.rotation.z += 0.003;
+                transform3.rotation.y += 0.01;
+                transform3.rotation.x += 0.01;
+                transform3.rotation.z += 0.01;
                 transform3.update();
             }
         }

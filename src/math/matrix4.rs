@@ -409,7 +409,7 @@ where T:Nums
 		)
 	}
 
-	pub fn get_inverse (&mut self, m: &Self, throw_on_degenerate: bool ) -> Result<&mut Self, &str> {
+	pub fn get_inverse (&mut self, m: &Self ) -> &mut Self {
 		// based on http://www.euclideanspace.com/maths/algebra/matrix/functions/inverse/fourD/index.htm
 		let	me = m.elements;
 		let n11 = me[ 0 ]; let n21 = me[ 1 ]; let n31 = me[ 2 ]; let n41 = me[ 3 ];
@@ -423,13 +423,7 @@ where T:Nums
 		let det = n11 * t11 + n21 * t12 + n31 * t13 + n41 * t14;
 
 		if det == Nums::zero() {
-			let msg = "THREE.Matrix4: .get_inverse() can't invert matrix, determinant is 0";
-			eprintln!("{}", msg);
-
-			if throw_on_degenerate == true {
-				return Err(msg);
-			}
-			return Ok(self.identity());
+			eprintln!(".get_inverse() can't invert matrix, determinant is 0");
 		}
 
 		{
@@ -453,9 +447,9 @@ where T:Nums
 			te[ 14 ] = ( n14 * n22 * n31 - n12 * n24 * n31 - n14 * n21 * n32 + n11 * n24 * n32 + n12 * n21 * n34 - n11 * n22 * n34 ) * det_inv;
 			te[ 15 ] = ( n12 * n23 * n31 - n13 * n22 * n31 + n13 * n21 * n32 - n11 * n23 * n32 - n12 * n21 * n33 + n11 * n22 * n33 ) * det_inv;
 		}
-
-		Ok(self)
+		self
 	}
+
 
 	pub fn get_max_scale_on_axis (&self) -> T {
 		let te = self.elements;

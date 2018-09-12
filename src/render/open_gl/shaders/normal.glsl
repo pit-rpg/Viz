@@ -13,8 +13,13 @@ void main() {
     n = normalize(n);
 	// v_color = vec4(aNormal+0.5, 1.0);
 	// v_color = vec4(n, 1.0);
-	v_color =  vec4(n, 1.0) * inverse(transform);
-	v_color.z = 1.0;
+	v_color = vec4(normalize((vec4(n, 1.0) * inverse(transform) * transform).rgb), 1.0);
+	// v_color = vec4(n, 1.0) * (transform * inverse( transform) ) ;
+	// v_color = vec4(n, 1.0) * inverse( transform) * transform ;
+	// v_color = normalize(v_color);
+	// v_color = vec4(n, 1.0) * transform * inverse( transform);
+	// v_color = vec4(normalize((vec4(n, 1.0) * transform).rgb), 1.0);
+	// v_color.z = 1.0;
 	gl_Position = transform * vec4(aPos.xyz, 1.0);
 }
 
