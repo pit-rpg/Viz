@@ -7,6 +7,8 @@ use core::BufferGeometry;
 use core::Material;
 use core::Transform;
 use core::Uniform;
+use core::PerspectiveCamera;
+use math::Matrix4;
 use std::os::raw::c_void;
 
 use self::glutin::dpi::*;
@@ -22,18 +24,27 @@ use super::GLMaterial;
 pub struct GLRenderer {
 	pub window: GlWindow,
 	pub events_loop: EventsLoop,
-	pub vertex_arrays_ids: VertexArraysIDs,
-	pub gl_material_ids: GLMaterialIDs,
 }
 
 extern crate specs;
 // use self::specs::{Component, ReadStorage, RunNow, System, VecStorage, World, Write, WriteStorage};
-use self::specs::{ReadStorage, System, Write, WriteStorage};
+use self::specs::{ReadStorage, System, Write, WriteStorage, Entity};
 
-pub struct RenderSystem;
+pub struct RenderSystem {
+	pub camera: Option<Entity>,
+}
+
+impl Default for RenderSystem {
+	fn default() -> Self {
+		Self {
+			camera: None,
+		}
+	}
+}
 
 impl<'a> System<'a> for RenderSystem {
 	type SystemData = (
+		ReadStorage<'a, PerspectiveCamera>,
 		ReadStorage<'a, Transform>,
 		ReadStorage<'a, BufferGeometry>,
 		WriteStorage<'a, Material>,
@@ -46,17 +57,30 @@ impl<'a> System<'a> for RenderSystem {
 		use self::specs::Join;
 
 		let (
-			transform,
-			geometry,
-			mut material,
+			camera_coll,
+			transform_coll,
+			geometry_coll,
+			mut material_coll,
 			mut vertex_arrays_ids,
 			mut gl_material_ids,
 			mut gl_texture_ids,
 		) = data;
 
-		for (transform, geometry, material) in (&transform, &geometry, &mut material).join() {
+		let mut view_matrix;
+
+		match self.camera {
+			None => {view_matrix = Matrix4::new();}
+			Some( ref cam ) => {
+				let cam_transform = transform_coll.get(*cam).unwrap();
+				let camera = camera_coll.get(*cam).unwrap();
+				view_matrix = Matrix4::new();
+				view_matrix.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local * camera.matrix_projection_inverse));
+			}
+		}
+
+		for (transform, geometry, material) in (&transform_coll, &geometry_coll, &mut material_coll).join() {
 			material
-				.set_uniform("transform", &Uniform::Matrix4(transform.matrix_world * transform.matrix_local))
+				.set_uniform("transform", &Uniform::Matrix4(view_matrix * transform.matrix_world * transform.matrix_local))
 				.unwrap();
 
 			geometry.bind(&mut vertex_arrays_ids);
@@ -103,8 +127,6 @@ impl Renderer for GLRenderer {
 		GLRenderer {
 			window: gl_window,
 			events_loop,
-			vertex_arrays_ids: VertexArraysIDs::new(),
-			gl_material_ids: GLMaterialIDs::new(),
 		}
 	}
 

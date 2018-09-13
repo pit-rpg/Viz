@@ -1,5 +1,9 @@
+extern crate specs;
+
 use math::{Matrix4};
 use std::f32::consts::PI;
+use self::specs::{Component, VecStorage};
+
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -14,14 +18,42 @@ pub struct PerspectiveCamera {
 	pub film_offset: f32,
 	pub matrix_projection: Matrix4<f32>,
 	pub matrix_projection_inverse: Matrix4<f32>,
-	// view = null;
+	pub view: CameraView,
+}
+
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct CameraView {
+	enabled: bool,
+	full_width: f32,
+	full_height: f32,
+	offset_x: f32,
+	offset_y: f32,
+	width: f32,
+	height: f32,
+}
+
+
+impl Default for CameraView {
+	fn default() -> Self {
+		Self {
+			enabled: true,
+			full_width: 1.0,
+			full_height: 1.0,
+			offset_x: 0.0,
+			offset_y: 0.0,
+			width: 1.0,
+			height: 1.0,
+		}
+	}
 }
 
 
 #[allow(dead_code)]
 impl PerspectiveCamera {
 	pub fn new() -> Self {
-		Self {
+		let mut cam = Self {
 			fov: 50.0,
 			zoom: 1.0,
 			near: 0.1,
@@ -34,14 +66,17 @@ impl PerspectiveCamera {
 
 			matrix_projection: Matrix4::new(),
 			matrix_projection_inverse: Matrix4::new(),
-		}
+			view: CameraView::default(),
+		};
+		cam.update_projection_matrix();
+		cam
 	}
 
-	pub fn set_focal_length (&mut self, focalLength: f32 ) {
+	pub fn set_focal_length (&mut self, focal_length: f32 ) -> &mut Self {
 		// see http://www.bobatkins.com/photography/technical/field_of_view.html
-		let v_extent_slope = 0.5 * self.get_film_height() / focalLength;
+		let v_extent_slope = 0.5 * self.get_film_height() / focal_length;
 		self.fov = (180.0/PI) * 2.0 * v_extent_slope.atan();
-		self.update_projection_matrix();
+		self.update_projection_matrix()
 	}
 
 	// /**
@@ -68,25 +103,25 @@ impl PerspectiveCamera {
 	}
 
 
-	pub fn update_projection_matrix(&mut self) {
+	pub fn update_projection_matrix(&mut self) -> &mut Self {
 		let near = self.near;
-		let top = near * ( (PI/180.0) * 0.5 * self.fov ).tan() / self.zoom;
-		let height = 2.0 * top;
-		let width = self.aspect * height;
+		let mut top = near * ( (PI/180.0) * 0.5 * self.fov ).tan() / self.zoom;
+		let mut height = 2.0 * top;
+		let mut width = self.aspect * height;
 		let mut left = - 0.5 * width;
 
-		// let view = self.view;
-		// if ( this.view !== null && this.view.enabled ) {
+		{
+			let view = &mut self.view;
+			if view.enabled {
+				let full_width = view.full_width;
+				let full_height = view.full_height;
 
-		// 	let fullWidth = view.fullWidth,
-		// 		fullHeight = view.fullHeight;
-
-		// 	left += view.offsetX * width / fullWidth;
-		// 	top -= view.offsetY * height / fullHeight;
-		// 	width *= view.width / fullWidth;
-		// 	height *= view.height / fullHeight;
-
-		// }
+				left += view.offset_x * width / full_width;
+				top -= view.offset_y * height / full_height;
+				width *= view.width / full_width;
+				height *= view.height / full_height;
+			}
+		}
 
 		let skew = self.film_offset;
 		if  skew != 0.0  {
@@ -95,36 +130,32 @@ impl PerspectiveCamera {
 
 		self.matrix_projection.make_perspective( left, left + width, top, top - height, near, self.far );
 		self.matrix_projection_inverse.get_inverse( &self.matrix_projection );
+		self
 	}
 
 
-	// setViewOffset: function ( fullWidth, fullHeight, x, y, width, height ) {
-	// 	this.aspect = fullWidth / fullHeight;
-	// 	if ( this.view === null ) {
-	// 		this.view = {
-	// 			enabled: true,
-	// 			fullWidth: 1,
-	// 			fullHeight: 1,
-	// 			offsetX: 0,
-	// 			offsetY: 0,
-	// 			width: 1,
-	// 			height: 1
-	// 		};
-	// 	}
-	// 	this.view.enabled = true;
-	// 	this.view.fullWidth = fullWidth;
-	// 	this.view.fullHeight = fullHeight;
-	// 	this.view.offsetX = x;
-	// 	this.view.offsetY = y;
-	// 	this.view.width = width;
-	// 	this.view.height = height;
-	// 	this.updateProjectionMatrix();
-	// },
-	// clearViewOffset: function () {
-	// 	if ( this.view !== null ) {
-	// 		this.view.enabled = false;
-	// 	}
-	// 	this.updateProjectionMatrix();
-	// },
+	pub fn set_view_offset (&mut self, full_width: f32, full_height: f32, x: f32, y: f32, width: f32, height: f32 ) -> &mut Self {
+		self.aspect = full_width / full_height;
+		{
+			let view = &mut self.view;
+			view.enabled = true;
+			view.full_width = full_width;
+			view.full_height = full_height;
+			view.offset_x = x;
+			view.offset_y = y;
+			view.width = width;
+			view.height = height;
+		}
+		self.update_projection_matrix()
+	}
 
+	pub fn clear_view_offset(&mut self) -> &mut Self {
+		self.view.enabled = false;
+		self.update_projection_matrix()
+	}
+
+}
+
+impl Component for PerspectiveCamera {
+	type Storage = VecStorage<Self>;
 }

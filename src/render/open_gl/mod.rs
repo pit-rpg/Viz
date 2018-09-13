@@ -33,6 +33,7 @@ use core::BufferGeometry;
 use core::Material;
 use core::ProgramType;
 use core::Texture;
+use core::PerspectiveCamera;
 use core::Transform;
 use render::Renderer;
 use self::gl_render::*;
@@ -110,14 +111,22 @@ pub fn test()
     geom.set_indices(ind);
 
     let mut geom2 = box_geometry(1.0,1.0,1.0);
-
     let mut geom3 = sphere(0.5, 32, 32);
 
+    let camera = PerspectiveCamera::new();
+
     let mut transform1 = Transform::default();
-    let transform2 = Transform::default();
-    let transform3 = Transform::default();
     transform1.position.y -=0.2;
     transform1.position.x -=0.2;
+    let transform2 = Transform::default();
+    let transform3 = Transform::default();
+    let mut transform4 = Transform::default();
+    transform4.position.z = 5.0;
+    // transform4.position.y = 1.0;
+    // transform4.scale.x = 0.00000001;
+    // transform4.scale.y = 0.00000001;
+    // transform4.scale.z = 0.00000001;
+    transform4.update();
 
 
     let texture1 = Texture::new("tile", "images/tile.jpg");
@@ -153,6 +162,7 @@ pub fn test()
     world.register::<BufferGeometry>();
     world.register::<Material>();
     world.register::<Transform>();
+    world.register::<PerspectiveCamera>();
     world.add_resource(VertexArraysIDs::new());
     world.add_resource(GLMaterialIDs::new());
     world.add_resource(GLTextureIDs::new());
@@ -184,17 +194,16 @@ pub fn test()
         .with(transform3)
         .build();
 
+    let e_cam = world
+        .create_entity()
+        .with(transform4)
+        .with(camera)
+        .build();
 
-    let mut render_system = self::RenderSystem;
 
-    // mesh.material.bind(&mut test_gl_render.gl_material_ids);
-    // mesh.geometry.bind(&mut test_gl_render.vertex_arrays_ids);
-    // let mesh = Mesh::new(geom, Box::from(material));
+    let mut render_system = self::RenderSystem::default();
 
-    // node.add_component(mesh);
-
-    println!("{:?}", test_gl_render.gl_material_ids);
-    println!("{:?}", test_gl_render.vertex_arrays_ids);
+    render_system.camera = Some(e_cam);
 
     while running {
 
@@ -258,9 +267,10 @@ pub fn test()
                 transform.rotation.z += 0.01;
                 transform.position.x += 0.001;
                 transform.position.y += 0.001;
-                transform.scale.x -= 0.001;
-                transform.scale.y -= 0.001;
-                transform.scale.z -= 0.001;
+                transform.position.z -= 0.01;
+                // transform.scale.x -= 0.001;
+                // transform.scale.y -= 0.001;
+                // transform.scale.z -= 0.001;
                 transform.update();
             }
             {

@@ -564,6 +564,17 @@ where T:Nums
     }
 }
 
+impl <'a, T> Mul<&'a Matrix4<T>> for &'a Matrix4<T>
+where T:Nums
+{
+    type Output = Matrix4<T>;
+    fn mul(self, rhs: Self) -> Matrix4<T> {
+        let mut m = Matrix4::new();
+        m.multiply_matrices(self, rhs);
+		m
+    }
+}
+
 
 // import { Vector3<T> } from './Vector3<T>.js';
 // /**

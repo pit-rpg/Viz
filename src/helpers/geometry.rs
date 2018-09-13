@@ -3,9 +3,9 @@ use math::{Vector2, Vector3, Vector};
 use std::f32::consts::PI;
 
 #[allow(dead_code)]
-pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phiStart: f32, phiLength: f32, thetaStart: f32, thetaLength: f32) -> BufferGeometry {
+pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phi_start: f32, phi_length: f32, theta_start: f32, theta_length: f32) -> BufferGeometry {
 
-	let theta_end = thetaStart + thetaLength;
+	let theta_end = theta_start + theta_length;
 
 	let mut index = 0;
 	let mut grid = Vec::new();
@@ -33,9 +33,9 @@ pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phi
 			let mut normal = Vector3::new_zero();
 
 			// vertex
-			vertex.x = - radius * ( phiStart + u * phiLength ).cos() * ( thetaStart + v * thetaLength ).sin();
-			vertex.y = radius * ( thetaStart + v * thetaLength ).cos();
-			vertex.z = radius * ( phiStart + u * phiLength ).sin() * ( thetaStart + v * thetaLength ).sin();
+			vertex.x = - radius * ( phi_start + u * phi_length ).cos() * ( theta_start + v * theta_length ).sin();
+			vertex.y = radius * ( theta_start + v * theta_length ).cos();
+			vertex.z = radius * ( phi_start + u * phi_length ).sin() * ( theta_start + v * theta_length ).sin();
 
 			// normal
 			normal.set( vertex.x, vertex.y, vertex.z ).normalize();
@@ -55,20 +55,14 @@ pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phi
 
 	}
 
-	println!("{:?}", grid);
-	println!("{:?}", grid.len());
-	println!("{:?}", grid[0].len());
-
 	// indices
 	for iy in 0..(height_segments) {
 
 		for ix in 0..(width_segments) {
 			let iy1 = iy as usize;
 			let ix1 = ix as usize;
-			println!("{}, {}", iy1, ix1);
 
-			if iy != 0 || thetaStart > 0.0 {
-				// println!("->1");
+			if iy != 0 || theta_start > 0.0 {
 				let a = grid[ iy1 ][ ix1 + 1 ];
 				let b = grid[ iy1 ][ ix1 ];
 				let d = grid[ iy1 + 1 ][ ix1 + 1 ];
@@ -78,7 +72,6 @@ pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phi
 			};
 
 			if iy != height_segments - 1 || theta_end < PI {
-				// println!("->2");
 				let b = grid[ iy1 ][ ix1 ];
 				let c = grid[ iy1 + 1 ][ ix1 ];
 				let d = grid[ iy1 + 1 ][ ix1 + 1 ];
@@ -86,19 +79,8 @@ pub fn param_sphere (radius: f32, width_segments: i32, height_segments: i32, phi
 				indices.push( c );
 				indices.push( d );
 			};
-
-			if iy != 0 || thetaStart > 0.0 {
-
-			} else if iy != height_segments - 1 || theta_end < PI {
-
-			} else {
-				println!("===========");
-			}
 		}
 	}
-
-	println!("=======================================");
-	println!("{:?}", vertices);
 
 	// build geometry
 	let mut geom = BufferGeometry::new();

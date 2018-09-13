@@ -133,7 +133,7 @@ impl BufferGeometry {
 			let prev_len = self.attributes[0].len();
 			if len != prev_len {
 				panic!(
-					"BufferGeometry: diffrent buffer length {}:{}, {}:{}",
+					"BufferGeometry: different buffer length {}:{}, {}:{}",
 					buffer_attribute.name, len, self.attributes[0].name, prev_len
 				);
 			}
@@ -150,7 +150,7 @@ impl BufferGeometry {
 		name: String,
 		data: BufferType,
 	) -> &mut BufferAttribute {
-		let bufferattribute = BufferAttribute {
+		let buffer_attribute = BufferAttribute {
 			name,
 			data,
 			normalized: false,
@@ -158,7 +158,7 @@ impl BufferGeometry {
 			version: 0,
 		};
 
-		self.add_buffer_attribute(bufferattribute)
+		self.add_buffer_attribute(buffer_attribute)
 	}
 
 	pub fn on_drop(&mut self, cb: fn(&mut BufferGeometry)) {
