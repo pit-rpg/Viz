@@ -533,7 +533,7 @@ where T:Nums
 			matrix.elements[ 8 ] *= inv_sz;
 			matrix.elements[ 9 ] *= inv_sz;
 			matrix.elements[ 10 ] *= inv_sz;
-			quaternion.set_from_rotation_matrix( matrix );
+			quaternion.set_from_rotation_matrix( &matrix );
 			scale.x = sx;
 			scale.y = sy;
 			scale.z = sz;

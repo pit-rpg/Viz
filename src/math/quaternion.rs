@@ -179,7 +179,7 @@ where T: Nums
 		T::two() * self.dot( q ).clamp(- T::one(), T::one()).abs().acos()
 	}
 
-	pub fn set_from_rotation_matrix(&mut self, m: Matrix4<T> ) -> &mut Self {
+	pub fn set_from_rotation_matrix(&mut self, m: &Matrix4<T> ) -> &mut Self {
 		// http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
 		// assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
 

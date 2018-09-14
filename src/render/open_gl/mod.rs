@@ -71,6 +71,10 @@ pub fn test()
     });
 
     let mut f_count = 0.0;
+    let up = Vector3::new(0.0, 1.0, 0.0);
+    let center = Vector3::new_zero();
+    let mut f_count2: f32 = 0.0;
+    let radius = 4.0;
 
     let mut color1 = Vector3::<f32>::random();
     let mut color2 = Vector3::<f32>::random();
@@ -247,6 +251,7 @@ pub fn test()
 
         // test_gl_render.render(&mut node);
         {
+            f_count2+=0.01;
             let mut transform_store = world.write_storage::<Transform>();
             {
                 let transform = transform_store.get_mut(e1).unwrap();
@@ -275,10 +280,18 @@ pub fn test()
             }
             {
                 let transform3 = transform_store.get_mut(e3).unwrap();
-                transform3.rotation.y += 0.01;
-                transform3.rotation.x += 0.01;
-                transform3.rotation.z += 0.01;
+                // transform3.rotation.y += 0.01;
+                // transform3.rotation.x += 0.01;
+                // transform3.rotation.z += 0.01;
                 transform3.update();
+            }
+            {
+                let transform4 = transform_store.get_mut(e_cam).unwrap();
+                let x = f_count2.sin() * radius;
+                let z = f_count2.cos() * radius;
+                transform4.position.x = x;
+                transform4.position.z = z;
+                transform4.look_at(&center, &up);
             }
         }
 
