@@ -50,6 +50,9 @@ fn get_gl_uniform_name(uniform_item: &UniformItem) -> String {
 		Uniform::Vector3(_) => "vec3",
 		Uniform::Vector2(_) => "vec2",
 		Uniform::Matrix4(_) => "mat4",
+		Uniform::Float(_) 	=> "float",
+		Uniform::Int(_) 	=> "int",
+		Uniform::UInt(_) 	=> "int",
 	};
 
 	format!("uniform {} {};\n", u_type, uniform_item.name)
@@ -77,6 +80,26 @@ pub fn set_uniform(u: &Uniform, loc: i32) {
 				gl::UniformMatrix4fv(loc, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
 		}
+		Uniform::Float(data) => {
+			gl_call!({
+				gl::Uniform1f(loc, *data);
+			});
+		}
+		Uniform::Int(data) => {
+			gl_call!({
+				gl::Uniform1i(loc, *data);
+			});
+		}
+		Uniform::UInt(data) => {
+			gl_call!({
+				gl::Uniform1ui(loc, *data);
+			});
+		}
+		// Uniform::Bool(data) => {
+		// 	gl_call!({
+		// 		gl::Uniformb(loc, *data);
+		// 	});
+		// }
 	};
 }
 

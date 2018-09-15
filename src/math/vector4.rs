@@ -1,5 +1,6 @@
 use helpers::Nums;
 use super::Vector;
+use super::Vector3;
 
 #[repr(C)]
 #[derive(Clone, Debug)]
@@ -24,6 +25,14 @@ where T:Nums
         self.x = x;
         self.y = y;
         self.z = z;
+        self.w = w;
+        self
+    }
+
+    pub fn from_vector3(&mut self, vec3: &Vector3<T>, w:T) -> &mut Self {
+        self.x = vec3.x;
+        self.y = vec3.y;
+        self.z = vec3.z;
         self.w = w;
         self
     }

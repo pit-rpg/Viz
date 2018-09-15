@@ -16,12 +16,10 @@ mod gl_texture;
 
 extern crate image;
 
-use std::ffi::CStr;
 use std::sync::{Arc, Mutex};
 
 
 use self::glutin::GlContext;
-use self::gl::GetString;
 use math::Vector3;
 use math::Vector2;
 use math::Vector;
@@ -44,16 +42,8 @@ use helpers::{sphere, box_geometry};
 use std::f32::consts::PI;
 
 
-fn gl_clear_error() {
-    while unsafe { gl::GetError() } != gl::NO_ERROR {}
-}
 
-fn print_gl_version() {
-	gl_call!({
-		let version = GetString(gl::VERSION) as *const i8;
-		println!("{:?}", CStr::from_ptr(version));
-	});
-}
+
 
 
 
@@ -65,7 +55,8 @@ use self::specs::{World, RunNow};
 pub fn test()
 // where T:Nums+'static
 {
-    let mut test_gl_render = GLRenderer::new();
+    let mut render_system = self::RenderSystem::default();
+
     gl_call!({
         gl::Enable(gl::DEPTH_TEST);
     });
@@ -205,17 +196,16 @@ pub fn test()
         .build();
 
 
-    let mut render_system = self::RenderSystem::default();
 
     render_system.camera = Some(e_cam);
 
     while running {
 
         {
-            let window = &test_gl_render.window;
+            let window = &render_system.window;
             // let mut events_loop = &test_gl_render.events_loop;
 
-            test_gl_render.events_loop.poll_events(|event| {
+            render_system.events_loop.poll_events(|event| {
                 match event {
                     glutin::Event::WindowEvent{ event, .. } => match event {
                         glutin::WindowEvent::CloseRequested => running = false,
@@ -231,7 +221,7 @@ pub fn test()
             });
         }
 
-        gl_clear_error();
+
 
         f_count += 0.01;
 
@@ -245,9 +235,7 @@ pub fn test()
         color_tmp.copy(&color1);
         color_tmp.lerp(&color2, f_count);
 
-        gl_call!({
-            gl::ClearColor(color_tmp.x, color_tmp.y, color_tmp.z, 1.0);
-        });
+        render_system.clear_color.from_vector3(&color_tmp, 1.0);
 
         // test_gl_render.render(&mut node);
         {
@@ -295,28 +283,8 @@ pub fn test()
             }
         }
 
-
-
-        test_gl_render.clear();
-
         render_system.run_now(&world.res);
 
-        // mesh.material.bind(&mut test_gl_render.gl_material_ids);
-        // mesh.geometry.bind(&mut test_gl_render.vertex_arrays_ids);
-        // material.bind(&mut test_gl_render.gl_material_ids);
-        // geom.bind(&mut test_gl_render.vertex_arrays_ids);
-
-        gl_call!({
-
-            // geom.bind(&mut test_gl_render.vertex_arrays_ids);
-            // gl::BindVertexArray(VAO);
-            // gl::UseProgram(shader_id);
-            // gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, 0 as *const c_void);
-
-            // gl::BindVertexArray(0);
-        });
-
-        test_gl_render.window.swap_buffers().unwrap();
     }
 
 }

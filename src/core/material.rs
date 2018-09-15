@@ -14,6 +14,9 @@ pub enum Uniform {
 	Vector3(Vector3<f32>),
 	Vector2(Vector2<f32>),
 	Matrix4(Matrix4<f32>),
+	Float(f32),
+	Int(i32),
+	UInt(u32),
 }
 
 #[derive(Debug, Clone)]
@@ -65,30 +68,44 @@ impl Material {
 	}
 
 	pub fn set_uniform(&mut self, name: &str, u: &Uniform) -> Option<()> {
-		let uniform_item = self.uniforms.iter_mut().find(|e| *e.name == *name).unwrap();
+		let res = self.uniforms.iter_mut().find(|e| *e.name == *name);
 
-		match (&mut uniform_item.uniform, u) {
-			(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) => {
-				a.copy(&b);
-				uniform_item.need_update = true;
+		match res {
+			None => return None,
+			Some(uniform_item) => {
+				match (&mut uniform_item.uniform, u) {
+					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) => {
+						a.copy(&b);
+						uniform_item.need_update = true;
+					}
+					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) => {
+						a.copy(&b);
+						uniform_item.need_update = true;
+					}
+					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) => {
+						a.copy(&b);
+						uniform_item.need_update = true;
+					}
+					(Uniform::Matrix4(ref mut a), Uniform::Matrix4(b)) => {
+						a.copy(&b);
+						uniform_item.need_update = true;
+					}
+					(Uniform::Float(ref mut a), Uniform::Float(b)) => {
+						*a = *b;
+						uniform_item.need_update = true;
+					}
+					(Uniform::Int(ref mut a), Uniform::Int(b)) => {
+						*a = *b;
+						uniform_item.need_update = true;
+					}
+					(Uniform::UInt(ref mut a), Uniform::UInt(b)) => {
+						*a = *b;
+						uniform_item.need_update = true;
+					}
+					_ => return None,
+				};
 			}
-			(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) => {
-				a.copy(&b);
-				uniform_item.need_update = true;
-			}
-			(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) => {
-				a.copy(&b);
-				uniform_item.need_update = true;
-			}
-			(Uniform::Matrix4(ref mut a), Uniform::Matrix4(b)) => {
-				a.copy(&b);
-				uniform_item.need_update = true;
-			}
-			_ => {
-				return None;
-			}
-		};
-
+		}
 		self.uniform_need_update = true;
 		Some(())
 	}
@@ -184,12 +201,20 @@ impl Material {
 		Material::new(
 			"normal.glsl",
 			"Normal",
-			&[UniformItem {
-				name: "transform".to_string(),
-				program_type: ProgramType::Vertex,
-				need_update: true,
-				uniform: Uniform::Matrix4(Matrix4::new()),
-			}],
+			&[
+				UniformItem {
+					name: "transform".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4(Matrix4::new()),
+				},
+				UniformItem {
+					name: "time".to_string(),
+					program_type: ProgramType::Fragment,
+					need_update: true,
+					uniform: Uniform::Float(0.0),
+				}
+			],
 		)
 	}
 }

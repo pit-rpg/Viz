@@ -1,18 +1,27 @@
+#![feature(box_syntax)]
+
 extern crate gl;
 extern crate glutin;
 extern crate rand;
+extern crate specs;
 
-use self::gl::types::*;
+use std::time::{Instant, Duration};
+use std::os::raw::c_void;
+use std::ffi::CStr;
+
 use core::BufferGeometry;
 use core::Material;
 use core::Transform;
 use core::Uniform;
 use core::PerspectiveCamera;
-use math::Matrix4;
-use std::os::raw::c_void;
 
+use self::gl::types::*;
+use self::gl::GetString;
 use self::glutin::dpi::*;
-use self::glutin::{EventsLoop, GlContext, GlWindow};
+use self::glutin::{EventsLoop, GlContext, GlWindow, ContextError};
+use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join};
+
+use math::{Matrix4, Vector4, Vector};
 use super::super::Renderer;
 use super::gl_geometry::VertexArraysIDs;
 use super::gl_material::GLMaterialIDs;
@@ -20,27 +29,96 @@ use super::gl_texture::GLTextureIDs;
 use super::GLGeometry;
 use super::GLMaterial;
 
-#[allow(dead_code)]
-pub struct GLRenderer {
-	pub window: GlWindow,
-	pub events_loop: EventsLoop,
-}
+// #[allow(dead_code)]
+// pub struct GLRenderer {
+// 	pub window: GlWindow,
+// 	pub events_loop: EventsLoop,
+// }
 
-extern crate specs;
 // use self::specs::{Component, ReadStorage, RunNow, System, VecStorage, World, Write, WriteStorage};
-use self::specs::{ReadStorage, System, Write, WriteStorage, Entity};
 
 pub struct RenderSystem {
 	pub camera: Option<Entity>,
+	pub window: GlWindow,
+	pub events_loop: EventsLoop,
+	pub timer: Instant,
+	pub time: Duration,
+	pub delta_time: Duration,
+	pub delta_max: Option<Duration>,
+	pub clear_color: Vector4<f32>,
+	pub clear_color_need_update: bool,
+
 }
+
 
 impl Default for RenderSystem {
 	fn default() -> Self {
-		Self {
-			camera: None,
-		}
+		Self::new()
 	}
 }
+
+
+impl RenderSystem {
+	pub fn new() -> Self {
+		let events_loop = glutin::EventsLoop::new();
+		let window = glutin::WindowBuilder::new()
+			.with_title("Hello, world!")
+			.with_dimensions(LogicalSize::new(1024.0, 768.0));
+
+		let context = glutin::ContextBuilder::new().with_vsync(true);
+
+		let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
+
+		unsafe {
+			gl_window.make_current().unwrap();
+		}
+
+		gl_call!({
+			gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
+			gl::ClearColor(0.0, 0.2, 0.2, 1.0);
+		});
+
+		RenderSystem::print_gl_version();
+
+		Self {
+			camera: None,
+			window: gl_window,
+			events_loop,
+			timer: Instant::now(),
+			time: Duration::new(0,0),
+			delta_time: Duration::new(0,0),
+			delta_max: None,
+			clear_color: Vector4::new_zero(),
+			clear_color_need_update: true,
+		}
+	}
+
+	pub fn clear(&self) {
+		gl_call!({
+			gl::Clear(gl::COLOR_BUFFER_BIT|gl::DEPTH_BUFFER_BIT);
+		});
+	}
+
+	pub fn swap_buffers(&self) -> Result<(), ContextError> {
+		self.window.swap_buffers()
+	}
+
+	pub fn gl_clear_error() {
+		while unsafe { gl::GetError() } != gl::NO_ERROR {}
+	}
+
+	pub fn print_gl_version() {
+		gl_call!({
+			let version = GetString(gl::VERSION) as *const i8;
+			println!("{:?}", CStr::from_ptr(version));
+		});
+	}
+
+	pub fn get_duration(&self) -> f32 {
+		self.time.as_secs() as f32 + self.time.subsec_nanos() as f32 * 1e-9
+	}
+}
+
 
 impl<'a> System<'a> for RenderSystem {
 	type SystemData = (
@@ -54,7 +132,31 @@ impl<'a> System<'a> for RenderSystem {
 	);
 
 	fn run(&mut self, data: Self::SystemData) {
-		use self::specs::Join;
+		Self::gl_clear_error();
+
+		if self.clear_color_need_update {
+			gl_call!({
+				gl::ClearColor(self.clear_color.x, self.clear_color.y, self.clear_color.z, self.clear_color.w);
+			});
+			self.clear_color_need_update = false;
+		}
+		self.clear();
+
+		// Time
+		let new_now = Instant::now();
+		let mut delta = new_now.duration_since(self.timer);
+		self.timer = new_now;
+		match self.delta_max {
+			None => {}
+			Some(ref mut max) => {
+				if delta > *max {delta = max.clone()}
+			}
+		}
+		self.time += delta;
+		let time = self.get_duration();
+		// /Time
+
+		println!("{:?}", time);
 
 		let (
 			camera_coll,
@@ -79,9 +181,13 @@ impl<'a> System<'a> for RenderSystem {
 		}
 
 		for (transform, geometry, material) in (&transform_coll, &geometry_coll, &mut material_coll).join() {
+
 			material
 				.set_uniform("transform", &Uniform::Matrix4(view_matrix * transform.matrix_world * transform.matrix_local))
 				.unwrap();
+
+			material
+				.set_uniform("time", &Uniform::Float(time));
 
 			geometry.bind(&mut vertex_arrays_ids);
 			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
@@ -99,42 +205,7 @@ impl<'a> System<'a> for RenderSystem {
 			geometry.unbind();
 			material.unbind();
 		}
+
+		self.swap_buffers().unwrap();
 	}
-}
-
-impl Renderer for GLRenderer {
-	fn new() -> Self {
-		let events_loop = glutin::EventsLoop::new();
-		let window = glutin::WindowBuilder::new()
-			.with_title("Hello, world!")
-			.with_dimensions(LogicalSize::new(1024.0, 768.0));
-
-		let context = glutin::ContextBuilder::new().with_vsync(true);
-
-		let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
-
-		unsafe {
-			gl_window.make_current().unwrap();
-		}
-
-		gl_call!({
-			gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
-			gl::ClearColor(0.0, 0.2, 0.2, 1.0);
-		});
-
-		super::print_gl_version();
-
-		GLRenderer {
-			window: gl_window,
-			events_loop,
-		}
-	}
-
-	fn clear(&self) {
-		gl_call!({
-			gl::Clear(gl::COLOR_BUFFER_BIT|gl::DEPTH_BUFFER_BIT);
-		});
-	}
-
-	fn render() {}
 }

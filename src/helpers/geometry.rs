@@ -112,17 +112,17 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: u32, heigh
 	let mut group_start = 0;
 
 	{
-		let mut build_plane = |u: char, v: char, w: char, udir: f32, vdir: f32, width: f32, height: f32, depth: f32, gridX: u32, gridY: u32, materialIndex: i32| {
+		let mut build_plane = |u: char, v: char, w: char, udir: f32, vdir: f32, width: f32, height: f32, depth: f32, grid_x: u32, grid_y: u32, material_index: i32| {
 
-			let segment_width = width / gridX as f32;
-			let segment_height = height / gridY as f32;
+			let segment_width = width / grid_x as f32;
+			let segment_height = height / grid_y as f32;
 
 			let width_half = width / 2.0;
 			let height_half = height / 2.0;
 			let depth_half = depth / 2.0;
 
-			let grid_x1 = gridX + 1;
-			let grid_y1 = gridY + 1;
+			let grid_x1 = grid_x + 1;
+			let grid_y1 = grid_y + 1;
 
 			let mut vertex_counter = 0;
 			let mut group_count = 0;
@@ -156,7 +156,7 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: u32, heigh
 					normals.push( vector );
 
 					// uvs
-					uvs.push( Vector2::new(ix as f32/gridX as f32, 1.0-(iy as f32/gridY as f32)) );
+					uvs.push( Vector2::new(ix as f32/grid_x as f32, 1.0-(iy as f32/grid_y as f32)) );
 
 					// counters
 					vertex_counter += 1;
@@ -170,8 +170,8 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: u32, heigh
 			// 2. a single segment consists of two faces
 			// 3. so we need to generate six (2*3) indices per segment
 
-			for iy in 0..gridY {
-				for ix in 0..gridX {
+			for iy in 0..grid_y {
+				for ix in 0..grid_x {
 
 					let a = (number_of_vertices + ix + grid_x1 * iy) as i32;
 					let b = (number_of_vertices + ix + grid_x1 * ( iy + 1 )) as i32;
@@ -194,7 +194,7 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: u32, heigh
 
 
 			// add a group to the geometry. this will ensure multi material support
-			// scope.addGroup( group_start, group_count, materialIndex );
+			// scope.addGroup( group_start, group_count, material_index );
 
 			// calculate new start value for groups
 			group_start += group_count;
