@@ -424,6 +424,7 @@ where T:Nums
 
 		if det == Nums::zero() {
 			eprintln!(".get_inverse() can't invert matrix, determinant is 0");
+			return self.identity();
 		}
 
 		{

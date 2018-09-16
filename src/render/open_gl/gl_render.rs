@@ -21,7 +21,7 @@ use self::glutin::dpi::*;
 use self::glutin::{EventsLoop, GlContext, GlWindow, ContextError};
 use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join};
 
-use math::{Matrix4, Vector4, Vector};
+use math::{Matrix3, Matrix4, Vector4, Vector};
 use super::super::Renderer;
 use super::gl_geometry::VertexArraysIDs;
 use super::gl_material::GLMaterialIDs;
@@ -168,24 +168,44 @@ impl<'a> System<'a> for RenderSystem {
 			mut gl_texture_ids,
 		) = data;
 
-		let mut view_matrix;
+		let mut matrix_cam_position;
+		let matrix_projection;
 
 		match self.camera {
-			None => {view_matrix = Matrix4::new();}
+			None => {
+				matrix_cam_position = Matrix4::new();
+				matrix_projection = Matrix4::new();
+			}
 			Some( ref cam ) => {
 				let cam_transform = transform_coll.get(*cam).unwrap();
 				let camera = camera_coll.get(*cam).unwrap();
-				view_matrix = Matrix4::new();
-				view_matrix.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local * camera.matrix_projection_inverse));
+				// matrix_projection = Matrix4::new();
+				matrix_cam_position = Matrix4::new();
+				matrix_projection = camera.matrix_projection.clone();
+				// matrix_projection = camera.matrix_projection_inverse.clone();
+				// matrix_cam_position = cam_transform.matrix_world * cam_transform.matrix_local;
+				matrix_cam_position.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local ));
 			}
 		}
 
 		for (transform, geometry, material) in (&transform_coll, &geometry_coll, &mut material_coll).join() {
-			let matrix_render = view_matrix * transform.matrix_world * transform.matrix_local;
+			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
+			let mut matrix_normal = Matrix3::new();
+			matrix_normal.get_normal_matrix(&matrix_model);
+
+			// println!("{:?}", matrix_model);
+			// println!("{:?}", matrix_normal);
 
 			material
-				.set_uniform("transform", &Uniform::Matrix4(matrix_render))
+				.set_uniform("matrix_model", &Uniform::Matrix4f(matrix_model))
 				.unwrap();
+
+			material
+				.set_uniform("matrix_view", &Uniform::Matrix4f(matrix_projection))
+				.unwrap();
+
+			material
+				.set_uniform("matrix_normal", &Uniform::Matrix3f(matrix_normal));
 
 			// material
 			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));

@@ -49,7 +49,8 @@ fn get_gl_uniform_name(uniform_item: &UniformItem) -> String {
 		Uniform::Vector4(_) => "vec4",
 		Uniform::Vector3(_) => "vec3",
 		Uniform::Vector2(_) => "vec2",
-		Uniform::Matrix4(_) => "mat4",
+		Uniform::Matrix3f(_) => "mat3",
+		Uniform::Matrix4f(_) => "mat4",
 		Uniform::Float(_) 	=> "float",
 		Uniform::Int(_) 	=> "int",
 		Uniform::UInt(_) 	=> "int",
@@ -75,7 +76,12 @@ pub fn set_uniform(u: &Uniform, loc: i32) {
 				gl::Uniform4fv(loc, 1, &data.x as *const f32);
 			});
 		}
-		Uniform::Matrix4(data) => {
+		Uniform::Matrix3f(data) => {
+			gl_call!({
+				gl::UniformMatrix3fv(loc, 1, gl::FALSE, &data.elements[0] as *const f32);
+			});
+		}
+		Uniform::Matrix4f(data) => {
 			gl_call!({
 				gl::UniformMatrix4fv(loc, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
@@ -95,11 +101,6 @@ pub fn set_uniform(u: &Uniform, loc: i32) {
 				gl::Uniform1ui(loc, *data);
 			});
 		}
-		// Uniform::Bool(data) => {
-		// 	gl_call!({
-		// 		gl::Uniformb(loc, *data);
-		// 	});
-		// }
 	};
 }
 
@@ -146,15 +147,12 @@ impl ShaderProgram {
 			.fs_source
 			.replace("#<textures>", &texture_uniforms[..]);
 
-		// println!("{}", &program.vs_source);
-		// println!("{}", fs_source);
-
 		gl_call!({
 			id = gl::CreateProgram();
 			program.id = id;
 
-			let vs = Self::compile_shader(gl::VERTEX_SHADER, &program.vs_source[..]);
-			let fs = Self::compile_shader(gl::FRAGMENT_SHADER, &fs_source[..]);
+			let vs = Self::compile_shader(gl::VERTEX_SHADER, &program.vs_source[..], material.get_src());
+			let fs = Self::compile_shader(gl::FRAGMENT_SHADER, &fs_source[..], material.get_src());
 
 			gl::AttachShader(id, fs);
 			gl::AttachShader(id, vs);
@@ -174,7 +172,8 @@ impl ShaderProgram {
 					info_log.as_mut_ptr() as *mut GLchar,
 				);
 				println!(
-					"ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n{}",
+					"ERROR::SHADER::PROGRAM::COMPILATION_FAILED: {}\n{}",
+					material.get_src(),
 					str::from_utf8(&info_log).unwrap()
 				);
 			}
@@ -190,8 +189,6 @@ impl ShaderProgram {
 
 		let mut tex_loc;
 		let mut c_name;
-
-		// println!("{:?}", texture_data);
 
 		for (i, (name, tid, gl_texture_dimensions)) in texture_data.iter().enumerate() {
 			c_name = CString::new(name.as_bytes()).unwrap();
@@ -224,12 +221,13 @@ impl ShaderProgram {
 		set_uniforms(uniforms, program);
 	}
 
-	fn compile_shader(t: GLenum, src: &str) -> u32 {
+	fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
 		let id;
 
 		gl_call!({
 			id = gl::CreateShader(t);
 			let c_str_frag = CString::new(src[..].as_bytes()).unwrap();
+
 
 			let mut success = gl::FALSE as GLint;
 			let mut info_log = Vec::with_capacity(512);
@@ -249,15 +247,18 @@ impl ShaderProgram {
 				);
 				match t {
 					gl::FRAGMENT_SHADER => println!(
-						"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n{}",
+						"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: {}\n{}",
+						src_path,
 						str::from_utf8(&info_log).unwrap()
 					),
 					gl::VERTEX_SHADER => println!(
-						"ERROR::SHADER::VERTEX::COMPILATION_FAILED\n{}",
+						"ERROR::SHADER::VERTEX::COMPILATION_FAILED: {}\n{}",
+						src_path,
 						str::from_utf8(&info_log).unwrap()
 					),
 					_ => println!(
-						"ERROR::SHADER::?::COMPILATION_FAILED\n{}",
+						"ERROR::SHADER::?::COMPILATION_FAILED: {}\n{}",
+						src_path,
 						str::from_utf8(&info_log).unwrap()
 					),
 				};
@@ -338,8 +339,6 @@ impl GLMaterial for Material {
 					.replace("#<uniforms>", &uniforms[..])
 			}
 		}
-
-		println!("{:?}", shader_program);
 
 		shader_program
 	}

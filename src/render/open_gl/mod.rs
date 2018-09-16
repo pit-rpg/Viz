@@ -113,7 +113,7 @@ pub fn test()
     transform1.position.y -=0.2;
     transform1.position.x -=0.2;
     let transform2 = Transform::default();
-    let transform3 = Transform::default();
+    let transform_spare = Transform::default();
 
     let mut transform_camera = Transform::default();
     transform_camera.position.z = 6.0;
@@ -135,7 +135,8 @@ pub fn test()
     let mut material2 = Material::new_basic_texture(&Vector4::random());
     material2.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
 
-    let material_sphere = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0));
+    // let material_sphere = Material::new_normal();
+    let material_sphere = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
     let material_light = Material::new_basic(&Vector4::new(1.0,1.0,1.0,1.0));
 
     let mut world = World::new();
@@ -168,7 +169,7 @@ pub fn test()
         .create_entity()
         .with(geom_sphere)
         .with(material_sphere)
-        .with(transform3)
+        .with(transform_spare)
         .build();
 
     let e_cam = world
@@ -220,8 +221,8 @@ pub fn test()
         color_tmp.copy(&color1);
         color_tmp.lerp(&color2, f_count);
 
-        render_system.clear_color.from_vector3(&color_tmp, 1.0);
-        render_system.clear_color_need_update = true;
+        // render_system.clear_color.from_vector3(&color_tmp, 1.0);
+        // render_system.clear_color_need_update = true;
 
         {
             let mut transform_store = world.write_storage::<Transform>();
@@ -245,8 +246,10 @@ pub fn test()
                 transform.update();
             }
             {
-                let transform3 = transform_store.get_mut(e3).unwrap();
-                transform3.update();
+                let transform_spare = transform_store.get_mut(e3).unwrap();
+                transform_spare.rotation.y += 0.01;
+                transform_spare.scale.y = 2.0 * render_system.get_duration().sin().abs();
+                transform_spare.update();
             }
         }
 

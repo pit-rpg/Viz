@@ -9,9 +9,12 @@ layout (location = 2) in vec2 aUv;
 out vec4 v_color;
 
 void main() {
-	v_color = transform * vec4(aNormal.xyz, 1.0);
-	v_color = vec4(normalize(v_color.xyz)+0.5, 1.0);
-	gl_Position = transform * vec4(aPos.xyz, 1.0);
+	// v_color = matrix_view * matrix_model * vec4(aNormal.xyz, 1.0);
+	v_color = vec4(normalize(matrix_normal * aNormal), 1.0);
+	// v_color = vec4(normalize(matrix_normal * aNormal + 0.5), 1.0);
+	// v_color = vec4(normalize(v_color.xyz)+0.5, 1.0);
+	// v_color = vec4(normalize(v_color.xyz)+0.5, 1.0);
+	gl_Position = matrix_view * matrix_model * vec4(aPos.xyz, 1.0);
 }
 
 #<fragment>

@@ -13,7 +13,8 @@ pub enum Uniform {
 	Vector4(Vector4<f32>),
 	Vector3(Vector3<f32>),
 	Vector2(Vector2<f32>),
-	Matrix4(Matrix4<f32>),
+	Matrix4f(Matrix4<f32>),
+	Matrix3f(Matrix3<f32>),
 	Float(f32),
 	Int(i32),
 	UInt(u32),
@@ -86,7 +87,11 @@ impl Material {
 						a.copy(&b);
 						uniform_item.need_update = true;
 					}
-					(Uniform::Matrix4(ref mut a), Uniform::Matrix4(b)) => {
+					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) => {
+						a.copy(&b);
+						uniform_item.need_update = true;
+					}
+					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) => {
 						a.copy(&b);
 						uniform_item.need_update = true;
 					}
@@ -161,10 +166,16 @@ impl Material {
 			"Basic",
 			&[
 				UniformItem {
-					name: "transform".to_string(),
+					name: "matrix_model".to_string(),
 					program_type: ProgramType::Vertex,
 					need_update: true,
-					uniform: Uniform::Matrix4(Matrix4::new()),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
@@ -182,10 +193,16 @@ impl Material {
 			"Basic-Texture",
 			&[
 				UniformItem {
-					name: "transform".to_string(),
+					name: "matrix_model".to_string(),
 					program_type: ProgramType::Vertex,
 					need_update: true,
-					uniform: Uniform::Matrix4(Matrix4::new()),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
@@ -203,31 +220,67 @@ impl Material {
 			"Normal",
 			&[
 				UniformItem {
-					name: "transform".to_string(),
+					name: "matrix_model".to_string(),
 					program_type: ProgramType::Vertex,
 					need_update: true,
-					uniform: Uniform::Matrix4(Matrix4::new()),
-				}
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_normal".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix3f(Matrix3::new()),
+				},
 			],
 		)
 	}
 
-	pub fn new_light(color: &Vector4<f32>) -> Self {
+	pub fn new_light(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
 		Material::new(
 			"light.glsl",
 			"Light",
 			&[
 				UniformItem {
-					name: "transform".to_string(),
+					name: "matrix_model".to_string(),
 					program_type: ProgramType::Vertex,
 					need_update: true,
-					uniform: Uniform::Matrix4(Matrix4::new()),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_normal".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix3f(Matrix3::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
 					program_type: ProgramType::Fragment,
 					need_update: true,
 					uniform: Uniform::Vector4(color.clone()),
+				},
+				UniformItem {
+					name: "color_light".to_string(),
+					program_type: ProgramType::Fragment,
+					need_update: true,
+					uniform: Uniform::Vector3(color_light.clone()),
+				},
+				UniformItem {
+					name: "position_light".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Vector3(position_light.clone()),
 				},
 			],
 		)
