@@ -508,7 +508,7 @@ where T:Nums
 		let mut vector = Vector3::<T>::zero();
 		let mut matrix = Matrix4::new();
 
-			let te = self.elements;
+			let te = &self.elements;
 			let mut sx = vector.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
 			let sy = vector.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
 			let sz = vector.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
@@ -539,6 +539,16 @@ where T:Nums
 			scale.z = sz;
 			self
 	}
+
+
+	pub fn decompose_to_new(&self) -> (Vector3<T>, Quaternion<T>, Vector3<T>) {
+		let mut position = Vector3::new_zero();
+		let mut rotation = Quaternion::new();
+		let mut scale = Vector3::new_one();
+		self.decompose(&mut position, &mut rotation, &mut scale);
+		(position, rotation, scale)
+	}
+
 
 	pub fn copy(&mut self, m: &Self) -> &mut Self {
 		{

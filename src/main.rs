@@ -36,7 +36,6 @@ fn main() {
 
     }
 
-    render::open_gl::create_window();
     render::open_gl::test();
 
 

@@ -9,17 +9,8 @@ layout (location = 2) in vec2 aUv;
 out vec4 v_color;
 
 void main() {
-    vec3 n = aNormal + 1;
-    n = normalize(n);
-	// v_color = vec4(aNormal+0.5, 1.0);
-	// v_color = vec4(n, 1.0);
-	v_color = vec4(normalize((vec4(n, 1.0) * inverse(transform) * transform).rgb), 1.0);
-	// v_color = vec4(n, 1.0) * (transform * inverse( transform) ) ;
-	// v_color = vec4(n, 1.0) * inverse( transform) * transform ;
-	// v_color = normalize(v_color);
-	// v_color = vec4(n, 1.0) * transform * inverse( transform);
-	// v_color = vec4(normalize((vec4(n, 1.0) * transform).rgb), 1.0);
-	// v_color.z = 1.0;
+	v_color = transform * vec4(aNormal.xyz, 1.0);
+	v_color = vec4(normalize(v_color.xyz)+0.5, 1.0);
 	gl_Position = transform * vec4(aPos.xyz, 1.0);
 }
 
@@ -32,5 +23,5 @@ in vec4 v_color;
 layout (location = 0) out vec4 FragColor;
 
 void main() {
-	FragColor = v_color * sin(time*10.0);
+	FragColor = v_color;
 }

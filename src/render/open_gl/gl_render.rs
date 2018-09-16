@@ -153,10 +153,10 @@ impl<'a> System<'a> for RenderSystem {
 			}
 		}
 		self.time += delta;
-		let time = self.get_duration();
+		// let time = self.get_duration();
 		// /Time
 
-		println!("{:?}", time);
+		// println!("{:?}", time);
 
 		let (
 			camera_coll,
@@ -181,13 +181,15 @@ impl<'a> System<'a> for RenderSystem {
 		}
 
 		for (transform, geometry, material) in (&transform_coll, &geometry_coll, &mut material_coll).join() {
+			let matrix_render = view_matrix * transform.matrix_world * transform.matrix_local;
 
 			material
-				.set_uniform("transform", &Uniform::Matrix4(view_matrix * transform.matrix_world * transform.matrix_local))
+				.set_uniform("transform", &Uniform::Matrix4(matrix_render))
 				.unwrap();
 
-			material
-				.set_uniform("time", &Uniform::Float(time));
+			// material
+			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));
+			// println!("{:?}", matrix_normal);
 
 			geometry.bind(&mut vertex_arrays_ids);
 			material.bind(&mut gl_material_ids, &mut gl_texture_ids);

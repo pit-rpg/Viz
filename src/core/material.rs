@@ -155,7 +155,7 @@ impl Material {
 		&mut self.uniforms[..]
 	}
 
-	pub fn new_basic(color: &Vector3<f32>) -> Self {
+	pub fn new_basic(color: &Vector4<f32>) -> Self {
 		Material::new(
 			"basic.glsl",
 			"Basic",
@@ -170,13 +170,13 @@ impl Material {
 					name: "color".to_string(),
 					program_type: ProgramType::Fragment,
 					need_update: true,
-					uniform: Uniform::Vector3(color.clone()),
+					uniform: Uniform::Vector4(color.clone()),
 				},
 			],
 		)
 	}
 
-	pub fn new_basic_texture(color: &Vector3<f32>) -> Self {
+	pub fn new_basic_texture(color: &Vector4<f32>) -> Self {
 		Material::new(
 			"basic-texture.glsl",
 			"Basic-Texture",
@@ -191,7 +191,7 @@ impl Material {
 					name: "color".to_string(),
 					program_type: ProgramType::Fragment,
 					need_update: true,
-					uniform: Uniform::Vector3(color.clone()),
+					uniform: Uniform::Vector4(color.clone()),
 				},
 			],
 		)
@@ -207,13 +207,28 @@ impl Material {
 					program_type: ProgramType::Vertex,
 					need_update: true,
 					uniform: Uniform::Matrix4(Matrix4::new()),
+				}
+			],
+		)
+	}
+
+	pub fn new_light(color: &Vector4<f32>) -> Self {
+		Material::new(
+			"light.glsl",
+			"Light",
+			&[
+				UniformItem {
+					name: "transform".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4(Matrix4::new()),
 				},
 				UniformItem {
-					name: "time".to_string(),
+					name: "color".to_string(),
 					program_type: ProgramType::Fragment,
 					need_update: true,
-					uniform: Uniform::Float(0.0),
-				}
+					uniform: Uniform::Vector4(color.clone()),
+				},
 			],
 		)
 	}
