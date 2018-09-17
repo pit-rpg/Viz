@@ -285,6 +285,52 @@ impl Material {
 			],
 		)
 	}
+
+
+	pub fn new_light_texture(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+		Material::new(
+			"light_texture.glsl",
+			"LightTexture",
+			&[
+				UniformItem {
+					name: "matrix_model".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_normal".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Matrix3f(Matrix3::new()),
+				},
+				UniformItem {
+					name: "color".to_string(),
+					program_type: ProgramType::Fragment,
+					need_update: true,
+					uniform: Uniform::Vector4(color.clone()),
+				},
+				UniformItem {
+					name: "color_light".to_string(),
+					program_type: ProgramType::Fragment,
+					need_update: true,
+					uniform: Uniform::Vector3(color_light.clone()),
+				},
+				UniformItem {
+					name: "position_light".to_string(),
+					program_type: ProgramType::Vertex,
+					need_update: true,
+					uniform: Uniform::Vector3(position_light.clone()),
+				},
+			],
+		)
+	}
 }
 
 impl Component for Material {

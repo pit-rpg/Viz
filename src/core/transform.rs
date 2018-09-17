@@ -26,12 +26,16 @@ impl Transform {
 
 	pub fn look_at (&mut self, target: &Vector3<f32>, up: &Vector3<f32>) -> &mut Self {
 		let mut matrix = Matrix4::new();
+		// let scale_tmp = Vector3::new_one();
+		// let pos_tmp = Vector3::new_zero();
 
 		matrix.look_at(&self.position, target, up);
 		self.quaternion.set_from_rotation_matrix(&matrix);
 		self.matrix_local.compose(&self.position, &self.quaternion, &self.scale);
+		// self.matrix_local.compose(&pos_tmp, &self.quaternion, &scale_tmp);
+		self.rotation.set_from_quaternion(&self.quaternion);
+		// self.update();
 		self
-		// self.update()
 	}
 }
 

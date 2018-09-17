@@ -38,96 +38,84 @@ where
 		}
 	}
 
-	// TODO: Some bug here
+
 	pub fn set_from_rotation_matrix(&mut self, m: &Matrix4<T>) -> &mut Self {
 		// assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
-		// let te = m.elements;
 
-		// let m11 = te[0];
-		// let m12 = te[4];
-		// let m13 = te[8];
-		// let m21 = te[1];
-		// let m22 = te[5];
-		// let m23 = te[9];
-		// let m31 = te[2];
-		// let m32 = te[6];
-		// let m33 = te[10];
+		let te = &m.elements;
+		let m11 = te[ 0 ]; let m12 = te[ 4 ]; let m13 = te[ 8 ];
+		let m21 = te[ 1 ]; let m22 = te[ 5 ]; let m23 = te[ 9 ];
+		let m31 = te[ 2 ]; let m32 = te[ 6 ]; let m33 = te[ 10 ];
 
-		// {
-		// 	let one = T::one();
-		// 	let zero = T::zero();
+		let one = T::one();
+		let zero = T::zero();
+		let min = T::from_f32(0.99999);
 
-		// 	match self.rotation_order {
-		// 		RotationOrders::XYZ => {
-		// 			self.y = m13.clamp(-one, one).sin();
-		// 			if m13.abs() < T::from_f32(0.99999) {
-		// 				self.x = T::atan2(-m23, m33);
-		// 				self.z = T::atan2(-m12, m11);
-		// 			} else {
-		// 				self.x = T::atan2(m32, m22);
-		// 				self.z = zero;
-		// 			}
-		// 		}
-
-		// 		RotationOrders::YXZ => {
-		// 			self.x = (-(m23.clamp(-one, one))).asin();
-		// 			if m23.abs() < T::from_f32(0.99999) {
-		// 				self.y = T::atan2(m13, m33);
-		// 				self.z = T::atan2(m21, m22);
-		// 			} else {
-		// 				self.y = T::atan2(-m31, m11);
-		// 				self.z = zero;
-		// 			}
-		// 		}
-
-		// 		RotationOrders::ZXY => {
-		// 			self.x = m32.clamp(-one, one).asin();
-		// 			if m32.abs() < T::from_f32(0.99999) {
-		// 				self.y = T::atan2(-m31, m33);
-		// 				self.z = T::atan2(-m12, m22);
-		// 			} else {
-		// 				self.y = zero;
-		// 				self.z = T::atan2(m21, m11);
-		// 			}
-		// 		}
-
-		// 		RotationOrders::ZYX => {
-		// 			self.y = -(m31.clamp(-one, one)).asin();
-		// 			if m31.abs() < T::from_f32(0.99999) {
-		// 				self.x = T::atan2(m32, m33);
-		// 				self.z = T::atan2(m21, m11);
-		// 			} else {
-		// 				self.x = zero;
-		// 				self.z = T::atan2(-m12, m22);
-		// 			}
-		// 		}
-
-		// 		RotationOrders::YZX => {
-		// 			self.z = m21.clamp(-one, one).asin();
-		// 			if m21.abs() < T::from_f32(0.99999) {
-		// 				self.x = T::atan2(-m23, m22);
-		// 				self.y = T::atan2(-m31, m11);
-		// 			} else {
-		// 				self.x = zero;
-		// 				self.y = T::atan2(m13, m33);
-		// 			}
-		// 		}
-
-		// 		RotationOrders::XZY => {
-		// 			self.z = (-(m12.clamp(-one, one))).asin();
-		// 			if m12.abs() < T::from_f32(0.99999) {
-		// 				self.x = T::atan2(m32, m22);
-		// 				self.y = T::atan2(m13, m11);
-		// 			} else {
-		// 				self.x = T::atan2(-m23, m33);
-		// 				self.y = zero;
-		// 			}
-		// 		}
-		// 	}
-		// }
-		// self
-		unimplemented!()
+		match self.rotation_order {
+			RotationOrders::XYZ => {
+				self.y = m13.clamp( - one, one).asin();
+				if m13.abs() < min {
+					self.x = T::atan2( - m23, m33 );
+					self.z = T::atan2( - m12, m11 );
+				} else {
+					self.x = T::atan2( m32, m22 );
+					self.z = zero;
+				}
+			}
+			RotationOrders::YXZ => {
+				self.x = ( - m23.clamp(- one, one ) ).asin();
+				if m23.abs() < min {
+					self.y = T::atan2( m13, m33 );
+					self.z = T::atan2( m21, m22 );
+				} else {
+					self.y = T::atan2( - m31, m11 );
+					self.z = zero;
+				}
+			}
+			RotationOrders::ZXY => {
+				self.x = ( m32.clamp(- one, one ) ).asin();
+				if m32.abs() < min {
+					self.y = T::atan2( - m31, m33 );
+					self.z = T::atan2( - m12, m22 );
+				} else {
+					self.y = zero;
+					self.z = T::atan2( m21, m11 );
+				}
+			}
+			RotationOrders::ZYX => {
+				self.y = ( - m31.clamp(- one, one ) ).asin();
+				if m31.abs() < min {
+					self.x = T::atan2( m32, m33 );
+					self.z = T::atan2( m21, m11 );
+				} else {
+					self.x = zero;
+					self.z = T::atan2( - m12, m22 );
+				}
+			}
+			RotationOrders::YZX => {
+				self.z = ( m21.clamp(- one, one ) ).asin();
+				if m21.abs() < min {
+					self.x = T::atan2( - m23, m22 );
+					self.y = T::atan2( - m31, m11 );
+				} else {
+					self.x = zero;
+					self.y = T::atan2( m13, m33 );
+				}
+			}
+			RotationOrders::XZY => {
+				self.z = ( - m12.clamp(- one, one ) ).asin();
+				if m12.abs() < min {
+					self.x = T::atan2( m32, m22 );
+					self.y = T::atan2( m13, m11 );
+				} else {
+					self.x = T::atan2( - m23, m33 );
+					self.y = zero;
+				}
+			}
+		};
+		self
 	}
+
 
 	pub fn set_from_quaternion(&mut self, q: &Quaternion<T>) -> &mut Self {
 		let mut matrix = Matrix4::new();
