@@ -25,13 +25,13 @@ pub struct PerspectiveCamera {
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct CameraView {
-	enabled: bool,
-	full_width: f32,
-	full_height: f32,
-	offset_x: f32,
-	offset_y: f32,
-	width: f32,
-	height: f32,
+	pub enabled: bool,
+	pub full_width: f32,
+	pub full_height: f32,
+	pub offset_x: f32,
+	pub offset_y: f32,
+	pub width: f32,
+	pub height: f32,
 }
 
 

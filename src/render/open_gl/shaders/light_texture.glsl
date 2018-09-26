@@ -49,7 +49,10 @@ void main() {
 	vec3 viewDir = normalize(-v_pos);
 	vec3 reflectDir = reflect(-light_dir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specularStrength * spec * color_light;
+	// vec3 specular = specularStrength * spec * pixel_spec;
+	// vec3 specular = specularStrength * spec * color_light;
+	vec3 specular = pixel_spec * spec * color_light;
+	// vec3 specular = color_light * spec * color_light;
 
 	vec3 f_color = (diffuse+amb+specular)*pixel_col;
 	// vec3 f_color = (diffuse+amb+specular)*color.xyz;

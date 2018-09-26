@@ -73,7 +73,7 @@ pub fn test()
     let mut f_count = 0.0;
     let up = Vector3::new(0.0, 1.0, 0.0);
     let center = Vector3::new_zero();
-    let radius = 8.0;
+    let radius = 5.0;
 
     let mut color1 = Vector3::<f32>::random();
     let mut color2 = Vector3::<f32>::random();
@@ -81,48 +81,14 @@ pub fn test()
 
     let mut running = true;
 
-    let pos = vec![
-            Vector3::<f32>::new(0.5,    0.5,    0.0),  // top right
-            Vector3::<f32>::new(0.5,    -0.5,   0.0),  // bottom right
-            Vector3::<f32>::new(-0.5,   -0.5,   0.0),  // bottom left
-            Vector3::<f32>::new(-0.5,   0.5,    0.0)   // top left
-    ];
-
-    let uv = vec![
-            Vector2::<f32>::new(1.0,    1.0),  // top right
-            Vector2::<f32>::new(1.0,    0.0),  // bottom right
-            Vector2::<f32>::new(0.0,    0.0),  // bottom left
-            Vector2::<f32>::new(0.0,    1.0)   // top left
-    ];
-
-    let col = vec![
-        Vector3::<f32>::new(1.0,    0.0,    0.0),  // top right
-        Vector3::<f32>::new(0.0,    1.0,    0.0),  // bottom right
-        Vector3::<f32>::new(1.0,    1.0,    1.0),  // bottom left
-        Vector3::<f32>::new(0.0,    0.0,    1.0)  // top left
-    ];
-
-    let ind = vec![
-            0, 1, 3,   // first triangle
-            1, 2, 3 // second triangle
-    ];
-
-    let mut geom = BufferGeometry::new();
-    geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(pos));
-    geom.create_buffer_attribute("color".to_string(), BufferType::Vector3(col));
-    geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uv));
-    geom.set_indices(ind);
 
     let geom2 = box_geometry(1.0,1.0,1.0);
     let geom_container = box_geometry(1.0,1.0,1.0);
-    let geom_sphere = sphere(0.5, 32, 32);
+    // let geom_sphere = sphere(0.5, 32, 32);
     let geom_light = sphere(0.5, 12, 12);
 
     let camera = PerspectiveCamera::new();
 
-    let mut transform1 = Transform::default();
-    transform1.position.y -=0.2;
-    transform1.position.x -=0.2;
     let transform2 = Transform::default();
     let transform_spare = Transform::default();
 
@@ -146,7 +112,6 @@ pub fn test()
     let m_texture_container_specular = Arc::new(Mutex::new(texture_container_specular));
 
 
-    let material1 = Material::new_basic(&Vector4::random());
     let mut material2 = Material::new_basic_texture(&Vector4::random());
     material2.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
 
@@ -167,15 +132,7 @@ pub fn test()
     world.add_resource(GLMaterialIDs::new());
     world.add_resource(GLTextureIDs::new());
 
-    println!("{}", geom.uuid);
     println!("{}", geom2.uuid);
-
-    let e1 = world
-        .create_entity()
-        .with(geom)
-        .with(material1)
-        .with(transform1)
-        .build();
 
     let e2 = world
         .create_entity()
@@ -207,6 +164,7 @@ pub fn test()
 
 
     render_system.camera = Some(e_cam);
+    render_system.window.set_resizable(true);
     let hidpi_factor = render_system.window.get_hidpi_factor().round();
     let mut window_state = WindowState::default();
 
@@ -224,7 +182,9 @@ pub fn test()
                         glutin::WindowEvent::Resized(logical_size) => {
                             let dpi_factor = window.get_hidpi_factor();
                             window.resize(logical_size.to_physical(dpi_factor));
-                            println!("{:?}", logical_size);
+                            // window.set_inner_size(logical_size);
+                            // window.context().resize(logical_size.to_physical(dpi_factor));
+                            // println!("{:?}", logical_size);
                             window_state.window_size.0 = logical_size.width;
                             window_state.window_size.1 = logical_size.height;
                         },
@@ -257,21 +217,12 @@ pub fn test()
         color_tmp.copy(&color1);
         color_tmp.lerp(&color2, f_count);
 
-        // render_system.clear_color.from_vector3(&color_tmp, 1.0);
-        // render_system.clear_color_need_update = true;
+        render_system.clear_color.from_vector3(&color_tmp, 1.0);
+        render_system.clear_color_need_update = true;
 
         {
             let mut transform_store = world.write_storage::<Transform>();
-            {
-                let transform = transform_store.get_mut(e1).unwrap();
-                transform.rotation.z = PI/4.0;
-                transform.position.x = -0.3;
-                transform.position.y = 0.6;
-                transform.scale.x = 0.4;
-                transform.scale.y = 0.4;
-                transform.scale.z = 0.4;
-                transform.update();
-            }
+            let mut cam_store = world.write_storage::<PerspectiveCamera>();
             {
                 let transform = transform_store.get_mut(e2).unwrap();
                 transform.rotation.y += 0.01;
@@ -283,20 +234,29 @@ pub fn test()
             }
             {
                 let transform_spare = transform_store.get_mut(e3).unwrap();
-                transform_spare.rotation.y += 0.01;
-                transform_spare.scale.y = 2.0 * render_system.get_duration().sin().abs();
+                // transform_spare.rotation.y += 0.001;
+                // transform_spare.rotation.z += 0.002;
+                // transform_spare.rotation.x += 0.003;
+                // transform_spare.scale.y = 2.0 * render_system.get_duration().sin().abs();
                 transform_spare.update();
             }
             {
                 let transform_camera = transform_store.get_mut(e_cam).unwrap();
+                let camera = cam_store.get_mut(e_cam).unwrap();
                 let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
                 let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
                 transform_camera.position.z = ( (x_prog * PI_f64).sin() * radius ) as f32;
                 transform_camera.position.x = (( x_prog * radius - radius/2.0) * 2.0) as f32;
-                transform_camera.position.y = (( y_prog * radius - radius/2.0) * 2.0) as f32;
+                transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
                 // println!("{:?}", transform_camera.rotation);
                 transform_camera.look_at(&center, &up);
                 transform_camera.update();
+                // camera.aspect = (window_state.window_size.0/window_state.window_size.1) as f32;
+                // camera.view.full_width = window_state.window_size.0 as f32;
+                // camera.view.full_height = window_state.window_size.1 as f32;
+                // camera.view.width = window_state.window_size.0 as f32;
+                // camera.view.height = window_state.window_size.1 as f32;
+                // camera.update_projection_matrix();
             }
         }
 
