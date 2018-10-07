@@ -178,7 +178,7 @@ where T:Nums
 	pub fn equals (&self, matrix: &Matrix4<T> ) -> bool {
 		let te = & self.elements;
 		let me = matrix.elements;
-		for i in 0..17  {
+		for i in 0..16  {
 			if te[ i ] != me[ i ] {return false};
 		}
 

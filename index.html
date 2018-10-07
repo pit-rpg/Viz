@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <title>Rust Wasm</title>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+
+<script>
+    var Module = {
+        preRun: [],
+        postRun: [],
+        print: function() {
+            console.log(Array.prototype.slice.call(arguments).join(" "));
+        },
+        printErr: function() {
+            console.warn(Array.prototype.slice.call(arguments).join(" "));
+        },
+        canvas: document.getElementById('canvas')
+      };
+
+    fetch('project.wasm').then(response =>
+        response.arrayBuffer()
+    ).then(buffer => {
+        Module.wasmBinary = buffer;
+        Module['canvas'] = document.getElementById('canvas');
+        const script = document.createElement('script');
+        script.src = "project.js";
+        document.body.appendChild(script);
+    });
+</script>
+</body>
+</html>

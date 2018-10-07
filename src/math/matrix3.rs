@@ -150,6 +150,16 @@ where
 		self
 	}
 
+	pub fn equals (&self, matrix: &Matrix3<T> ) -> bool {
+		let te = & self.elements;
+		let me = matrix.elements;
+		for i in 0..9  {
+			if te[ i ] != me[ i ] {return false};
+		}
+
+		true
+	}
+
 }
 
 // import { Vector3 } from './Vector3.js';

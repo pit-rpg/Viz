@@ -3,6 +3,8 @@ use self::uuid::Uuid;
 use helpers::Nums;
 use math::{Vector, Vector2, Vector3, Vector4};
 use std::vec::Vec;
+use std::rc::Rc;
+use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -83,9 +85,6 @@ pub struct BufferGeometry {
 extern crate specs;
 use self::specs::{Component, VecStorage};
 
-impl Component for BufferGeometry {
-	type Storage = VecStorage<Self>;
-}
 
 #[allow(dead_code)]
 impl BufferGeometry {
@@ -315,3 +314,27 @@ impl Drop for BufferGeometry {
 		}
 	}
 }
+
+
+// pub type Geometry = Arc<Mutex<BufferGeometry>>;
+
+#[derive(Clone)]
+pub struct SharedGeometry (Arc<Mutex<BufferGeometry>>);
+
+impl SharedGeometry {
+	pub fn new(g: BufferGeometry) -> Self {
+		SharedGeometry(Arc::new(Mutex::new(g)))
+	}
+
+	pub fn lock(&mut self) -> LockResult<MutexGuard<BufferGeometry>> {
+		self.0.lock()
+	}
+}
+
+
+impl Component for SharedGeometry {
+	type Storage = VecStorage<Self>;
+}
+// impl Component for BufferGeometry {
+// 	type Storage = VecStorage<Self>;
+// }

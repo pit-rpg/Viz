@@ -10,7 +10,9 @@ use std::os::raw::c_void;
 use std::ffi::CStr;
 
 use core::BufferGeometry;
+use core::SharedGeometry;
 use core::Material;
+use core::SharedMaterial;
 use core::Transform;
 use core::Uniform;
 use core::PerspectiveCamera;
@@ -124,8 +126,8 @@ impl<'a> System<'a> for RenderSystem {
 	type SystemData = (
 		ReadStorage<'a, PerspectiveCamera>,
 		ReadStorage<'a, Transform>,
-		ReadStorage<'a, BufferGeometry>,
-		WriteStorage<'a, Material>,
+		WriteStorage<'a, SharedGeometry>,
+		WriteStorage<'a, SharedMaterial>,
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
 		Write<'a, GLTextureIDs>,
@@ -161,7 +163,7 @@ impl<'a> System<'a> for RenderSystem {
 		let (
 			camera_coll,
 			transform_coll,
-			geometry_coll,
+			mut geometry_coll,
 			mut material_coll,
 			mut vertex_arrays_ids,
 			mut gl_material_ids,
@@ -181,20 +183,21 @@ impl<'a> System<'a> for RenderSystem {
 				let camera = camera_coll.get(*cam).unwrap();
 				// matrix_projection = Matrix4::new();
 				matrix_cam_position = Matrix4::new();
-				matrix_projection = camera.matrix_projection.clone();
-				// matrix_projection = camera.matrix_projection_inverse.clone();
-				// matrix_cam_position = cam_transform.matrix_world * cam_transform.matrix_local;
 				matrix_cam_position.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local ));
+				// matrix_projection = camera.matrix_projection_inverse * cam_transform.matrix_world * cam_transform.matrix_local;
+				// matrix_projection = camera.matrix_projection * matrix_cam_position;
+				matrix_projection = camera.matrix_projection.clone();
+				// matrix_cam_position = cam_transform.matrix_world * cam_transform.matrix_local;
 			}
 		}
 
-		for (transform, geometry, material) in (&transform_coll, &geometry_coll, &mut material_coll).join() {
+		for (transform, geometry, shared_material) in (&transform_coll, &mut geometry_coll, &mut material_coll).join() {
 			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
 			let mut matrix_normal = Matrix3::new();
 			matrix_normal.get_normal_matrix(&matrix_model);
 
-			// println!("{:?}", matrix_model);
-			// println!("{:?}", matrix_normal);
+			let mut material = shared_material.lock().unwrap();
+			let geom = geometry.lock().unwrap();
 
 			material
 				.set_uniform("matrix_model", &Uniform::Matrix4f(matrix_model))
@@ -211,10 +214,11 @@ impl<'a> System<'a> for RenderSystem {
 			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));
 			// println!("{:?}", matrix_normal);
 
-			geometry.bind(&mut vertex_arrays_ids);
+
+			geom.bind(&mut vertex_arrays_ids);
 			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
 
-			match geometry.indices {
+			match geom.indices {
 				Some(ref indices) => {
 					let len = indices.len() as GLint;
 					gl_call!({
@@ -224,8 +228,9 @@ impl<'a> System<'a> for RenderSystem {
 				None => {}
 			}
 
-			geometry.unbind();
+			geom.unbind();
 			material.unbind();
+
 		}
 
 		self.swap_buffers().unwrap();

@@ -65,6 +65,10 @@ where T:Nums
         Self { x: T::random(), y: T::random(), z: T::random() }
     }
 
+	fn randomize(&mut self) -> &mut Self {
+		self.set(T::random(), T::random(), T::random())
+	}
+
     fn copy (&mut self, v: &Self) -> &mut Self {
         self.set(v.x, v.y, v.z)
     }
@@ -221,6 +225,10 @@ where T:Nums
     fn zero() -> Self {
         Self{x: T::zero(), y: T::zero(), z: T::zero()}
     }
+
+	fn equals(&self, v: &Self ) -> bool {
+		( v.x == self.x ) && ( v.y == self.y ) && ( v.z == self.z )
+	}
 
     // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self {
     //     let i = index * 4;

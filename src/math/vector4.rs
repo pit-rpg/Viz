@@ -55,6 +55,10 @@ where T:Nums
         Self { x: T::random(), y: T::random(), z: T::random(), w: T::random() }
     }
 
+    fn randomize(&mut self) -> &mut Self {
+        self.set(T::random(), T::random(), T::random(), T::random())
+    }
+
     fn copy (&mut self, v: &Self) -> &mut Self {
         self.set(v.x, v.y, v.z, v.w)
     }
@@ -230,6 +234,10 @@ where T:Nums
     fn zero() -> Self {
         Self{x: T::zero(), y: T::zero(), z: T::zero(), w: T::zero()}
     }
+
+	fn equals(&self, v: &Self ) -> bool {
+		( v.x == self.x ) && ( v.y == self.y ) && ( v.z == self.z ) && ( v.w == self.w )
+	}
 
     fn from_array (&mut self, array: &[T] ) -> &mut Self {
         self.x = array[ 0 ];

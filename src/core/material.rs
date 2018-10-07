@@ -5,7 +5,7 @@ extern crate specs;
 use self::specs::{Component, VecStorage};
 use super::Texture;
 use math::*;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, LockResult};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -43,7 +43,7 @@ pub enum ProgramType {
 }
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Debug)]
 pub struct Material {
 	pub name: String,
 	pub uuid: Uuid,
@@ -76,36 +76,52 @@ impl Material {
 			Some(uniform_item) => {
 				match (&mut uniform_item.uniform, u) {
 					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) => {
-						a.copy(&b);
-						uniform_item.need_update = true;
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) => {
-						a.copy(&b);
-						uniform_item.need_update = true;
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) => {
-						a.copy(&b);
-						uniform_item.need_update = true;
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) => {
-						a.copy(&b);
-						uniform_item.need_update = true;
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) => {
-						a.copy(&b);
-						uniform_item.need_update = true;
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::Float(ref mut a), Uniform::Float(b)) => {
-						*a = *b;
-						uniform_item.need_update = true;
+						if a != b {
+							*a = *b;
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::Int(ref mut a), Uniform::Int(b)) => {
-						*a = *b;
-						uniform_item.need_update = true;
+						if a != b {
+							*a = *b;
+							uniform_item.need_update = true;
+						}
 					}
 					(Uniform::UInt(ref mut a), Uniform::UInt(b)) => {
-						*a = *b;
-						uniform_item.need_update = true;
+						if a != b {
+							*a = *b;
+							uniform_item.need_update = true;
+						}
 					}
 					_ => return None,
 				};
@@ -333,6 +349,25 @@ impl Material {
 	}
 }
 
-impl Component for Material {
+#[derive(Debug, Clone)]
+pub struct SharedMaterial (Arc<Mutex<Material>>);
+
+impl Component for SharedMaterial{
 	type Storage = VecStorage<Self>;
 }
+
+impl SharedMaterial {
+	pub fn new(m: Material) -> Self {
+		SharedMaterial(Arc::new(Mutex::new(m)))
+	}
+
+	pub fn lock(&mut self) -> LockResult<MutexGuard<Material>> {
+		self.0.lock()
+	}
+}
+
+
+
+// impl Component for Material {
+// 	type Storage = VecStorage<Self>;
+// }
