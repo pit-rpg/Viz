@@ -1,8 +1,13 @@
 #<vertex>
 #version 330 core
-#<uniforms>
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
+
+uniform mat4 matrix_model;
+uniform mat4 matrix_view;
+uniform mat3 matrix_normal;
+uniform vec3 position_light;
 
 out vec3 v_pos;
 out vec3 v_norm;
@@ -17,13 +22,14 @@ void main() {
 
 #<fragment>
 #version 330 core
-#<uniforms>
-#<textures>
 
 layout (location = 0) out vec4 FragColor;
 in vec3 v_pos;
 in vec3 v_norm;
 in vec3 light_pos;
+
+uniform vec3 color_light;
+uniform vec4 color;
 
 float specularStrength = 0.534;
 

@@ -30,34 +30,6 @@ impl Drop for ShaderProgram {
 	}
 }
 
-fn get_gl_texture_uniform_name(name: &str, texture_id: &TextureId) -> String {
-	let u_type = match texture_id.gl_texture_dimensions {
-		gl::TEXTURE_1D => "sampler1D",
-		gl::TEXTURE_2D => "sampler2D",
-		gl::TEXTURE_3D => "sampler3D",
-		_ => {
-			panic!();
-		}
-	};
-
-	format!("uniform {} {};\n", u_type, name)
-}
-
-fn get_gl_uniform_name(uniform_item: &UniformItem) -> String {
-	// uniform sampler2D map_color;
-	let u_type = match uniform_item.uniform {
-		Uniform::Vector4(_) => "vec4",
-		Uniform::Vector3(_) => "vec3",
-		Uniform::Vector2(_) => "vec2",
-		Uniform::Matrix3f(_) => "mat3",
-		Uniform::Matrix4f(_) => "mat4",
-		Uniform::Float(_) 	=> "float",
-		Uniform::Int(_) 	=> "int",
-		Uniform::UInt(_) 	=> "int",
-	};
-
-	format!("uniform {} {};\n", u_type, uniform_item.name)
-}
 
 pub fn set_uniform(u: &Uniform, loc: i32) {
 	match u {
@@ -108,10 +80,8 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &ShaderProgram
 	uniforms
 		.iter_mut()
 		.enumerate()
-		.filter(|(_, e)| e.need_update)
 		.for_each(|(i, uniform_i)| {
 			set_uniform(&uniform_i.uniform, shader_program.uniform_locations[i]);
-			uniform_i.need_update = false;
 		});
 }
 
@@ -121,7 +91,6 @@ impl ShaderProgram {
 		program: &mut ShaderProgram,
 		texture_store: &mut GLTextureIDs,
 	) {
-		let mut texture_uniforms = String::new();
 		let mut texture_data = Vec::new();
 
 		for data in material.get_textures() {
@@ -133,8 +102,6 @@ impl ShaderProgram {
 			}
 
 			let texture_id = texture_store.get(&texture.uuid).unwrap();
-			let uniform_name = get_gl_texture_uniform_name(&data.name[..], texture_id);
-			texture_uniforms.push_str(&uniform_name[..]);
 			texture_data.push((
 				data.name.clone(),
 				texture_id.id,
@@ -143,9 +110,7 @@ impl ShaderProgram {
 		}
 
 		let id;
-		let fs_source = program
-			.fs_source
-			.replace("#<textures>", &texture_uniforms[..]);
+		let fs_source = &program.fs_source;
 
 		gl_call!({
 			id = gl::CreateProgram();
@@ -230,8 +195,8 @@ impl ShaderProgram {
 
 
 			let mut success = gl::FALSE as GLint;
-			let mut info_log = Vec::with_capacity(512);
-			info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
+			let mut info_log = Vec::with_capacity(1024);
+			info_log.set_len(1024 - 1); // subtract 1 to skip the trailing null character
 
 			gl::ShaderSource(id, 1, &c_str_frag.as_ptr(), ptr::null());
 			gl::CompileShader(id);
@@ -241,7 +206,7 @@ impl ShaderProgram {
 			if success != gl::TRUE as GLint {
 				gl::GetShaderInfoLog(
 					id,
-					512,
+					1024,
 					ptr::null_mut(),
 					info_log.as_mut_ptr() as *mut GLchar,
 				);
@@ -317,27 +282,6 @@ impl GLMaterial for Material {
 					_ => {}
 				}
 			}
-
-			if shader_program.vs_source.contains("#<uniforms>") {
-				let uniforms: String = self.get_uniforms()
-					.iter()
-					.filter(|e| e.program_type == ProgramType::Vertex)
-					.map(|e| get_gl_uniform_name(e) + "\n")
-					.collect();
-				shader_program.vs_source = shader_program
-					.vs_source
-					.replace("#<uniforms>", &uniforms[..])
-			}
-			if shader_program.fs_source.contains("#<uniforms>") {
-				let uniforms: String = self.get_uniforms()
-					.iter()
-					.filter(|e| e.program_type == ProgramType::Fragment)
-					.map(|e| get_gl_uniform_name(e) + "\n")
-					.collect();
-				shader_program.fs_source = shader_program
-					.fs_source
-					.replace("#<uniforms>", &uniforms[..])
-			}
 		}
 
 		shader_program
@@ -364,11 +308,7 @@ impl GLMaterial for Material {
 						});
 					});
 
-				if self.uniform_need_update {
-					set_uniforms(self.get_uniforms(), program);
-					self.uniform_need_update = false;
-				}
-
+				set_uniforms(self.get_uniforms(), program);
 				return;
 			}
 		}

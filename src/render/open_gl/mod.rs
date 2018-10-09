@@ -116,14 +116,14 @@ pub fn test()
 
 
     let mut material2 = Material::new_basic_texture(&Vector4::random());
-    material2.set_texture("texture_color", Some(m_texture2.clone()), ProgramType::Fragment);
+    material2.set_texture("texture_color", Some(m_texture2.clone()));
 	let mut material2 = SharedMaterial::new(material2);
 
     let normal_mat = SharedMaterial::new(Material::new_normal());
     let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
     let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-    material_sphere.set_texture("texture_color", Some(m_texture_container), ProgramType::Fragment);
-    material_sphere.set_texture("texture_specular", Some(m_texture_container_specular), ProgramType::Fragment);
+    material_sphere.set_texture("texture_color", Some(m_texture_container));
+    material_sphere.set_texture("texture_specular", Some(m_texture_container_specular));
     let mut boxMat = SharedMaterial::new(material_sphere);
     let mut boxMat2 = SharedMaterial::new(material_sphere2);
 
@@ -194,10 +194,10 @@ pub fn test()
 
 		let m_box = world
 			.create_entity()
-			.with(geom_light.clone())
-			// .with(geom_container.clone())
+			// .with(geom_light.clone())
+			.with(geom_container.clone())
 			// .with(normal_mat.clone())
-			.with(boxMat2.clone())
+			.with(boxMat.clone())
 			.with(transform)
 			.build();
 		boxes.push(m_box);

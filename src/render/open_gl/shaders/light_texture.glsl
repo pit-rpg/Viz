@@ -1,6 +1,11 @@
 #<vertex>
 #version 330 core
-#<uniforms>
+
+uniform mat4 matrix_model;
+uniform mat4 matrix_view;
+uniform mat3 matrix_normal;
+uniform vec3 position_light;
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aUV;
@@ -20,8 +25,13 @@ void main() {
 
 #<fragment>
 #version 330 core
-#<uniforms>
-#<textures>
+
+
+uniform vec3 color_light;
+uniform vec4 color;
+uniform sampler2D texture_specular;
+uniform sampler2D texture_color;
+
 
 layout (location = 0) out vec4 FragColor;
 in vec3 v_pos;

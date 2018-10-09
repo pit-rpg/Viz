@@ -23,15 +23,12 @@ pub enum Uniform {
 #[derive(Debug, Clone)]
 pub struct UniformItem {
 	pub name: String,
-	pub program_type: ProgramType,
-	pub need_update: bool,
 	pub uniform: Uniform,
 }
 
 #[derive(Debug, Clone)]
 pub struct TextureItem {
 	pub name: String,
-	pub program_type: ProgramType,
 	pub texture: Arc<Mutex<Texture>>,
 }
 
@@ -50,7 +47,6 @@ pub struct Material {
 	src: String,
 	textures: Vec<TextureItem>,
 	uniforms: Vec<UniformItem>,
-	pub uniform_need_update: bool,
 }
 
 #[allow(dead_code)]
@@ -64,7 +60,6 @@ impl Material {
 			src: src.to_string(),
 			textures: Vec::new(),
 			uniforms,
-			uniform_need_update: true,
 		}
 	}
 
@@ -75,59 +70,18 @@ impl Material {
 			None => return None,
 			Some(uniform_item) => {
 				match (&mut uniform_item.uniform, u) {
-					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Float(ref mut a), Uniform::Float(b)) => {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Int(ref mut a), Uniform::Int(b)) => {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::UInt(ref mut a), Uniform::UInt(b)) => {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-						}
-					}
+					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) 		=> { a.copy(&b); }
+					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) 		=> { a.copy(&b); }
+					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) 		=> { a.copy(&b); }
+					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) 	=> { a.copy(&b); }
+					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) 	=> { a.copy(&b); }
+					(Uniform::Float(ref mut a), Uniform::Float(b)) 			=> { *a = *b; }
+					(Uniform::Int(ref mut a), Uniform::Int(b)) 				=> { *a = *b; }
+					(Uniform::UInt(ref mut a), Uniform::UInt(b)) 			=> { *a = *b; }
 					_ => return None,
 				};
 			}
 		}
-		self.uniform_need_update = true;
 		Some(())
 	}
 
@@ -139,7 +93,6 @@ impl Material {
 		&mut self,
 		name: &str,
 		t: Option<Arc<Mutex<Texture>>>,
-		program_type: ProgramType,
 	) {
 		match t {
 			Some(t) => {
@@ -149,7 +102,6 @@ impl Material {
 					if texture.is_some() {
 						let texture = texture.unwrap();
 						texture.texture = t;
-						texture.program_type = program_type;
 						return;
 					}
 				}
@@ -157,7 +109,6 @@ impl Material {
 				self.textures.push(TextureItem {
 					name: name.to_string(),
 					texture: t,
-					program_type,
 				});
 			}
 
@@ -183,20 +134,14 @@ impl Material {
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
-					program_type: ProgramType::Fragment,
-					need_update: true,
 					uniform: Uniform::Vector4(color.clone()),
 				},
 			],
@@ -210,20 +155,14 @@ impl Material {
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
-					program_type: ProgramType::Fragment,
-					need_update: true,
 					uniform: Uniform::Vector4(color.clone()),
 				},
 			],
@@ -237,20 +176,14 @@ impl Material {
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix3f(Matrix3::new()),
 				},
 			],
@@ -264,38 +197,26 @@ impl Material {
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix3f(Matrix3::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
-					program_type: ProgramType::Fragment,
-					need_update: true,
 					uniform: Uniform::Vector4(color.clone()),
 				},
 				UniformItem {
 					name: "color_light".to_string(),
-					program_type: ProgramType::Fragment,
-					need_update: true,
 					uniform: Uniform::Vector3(color_light.clone()),
 				},
 				UniformItem {
 					name: "position_light".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Vector3(position_light.clone()),
 				},
 			],
@@ -310,38 +231,26 @@ impl Material {
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix4f(Matrix4::new()),
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Matrix3f(Matrix3::new()),
 				},
 				UniformItem {
 					name: "color".to_string(),
-					program_type: ProgramType::Fragment,
-					need_update: true,
 					uniform: Uniform::Vector4(color.clone()),
 				},
 				UniformItem {
 					name: "color_light".to_string(),
-					program_type: ProgramType::Fragment,
-					need_update: true,
 					uniform: Uniform::Vector3(color_light.clone()),
 				},
 				UniformItem {
 					name: "position_light".to_string(),
-					program_type: ProgramType::Vertex,
-					need_update: true,
 					uniform: Uniform::Vector3(position_light.clone()),
 				},
 			],

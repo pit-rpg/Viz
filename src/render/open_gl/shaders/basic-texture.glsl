@@ -1,11 +1,13 @@
 
 #<vertex>
 #version 330 core
-#<uniforms>
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aColor;
 layout (location = 2) in vec2 aUv;
 
+uniform mat4 matrix_model;
+uniform mat4 matrix_view;
 
 out vec4 v_color;
 out vec2 v_uv;
@@ -21,12 +23,15 @@ void main() {
 
 #<fragment>
 #version 330 core
-#<uniforms>
-#<textures>
+
 in vec4 v_color;
 in vec2 v_uv;
 
+uniform sampler2D texture_color;
+
+
 layout (location = 0) out vec4 FragColor;
+
 
 void main() {
 	FragColor = texture(texture_color, v_uv);
