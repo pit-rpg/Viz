@@ -104,14 +104,24 @@ pub fn test()
     transform_light.scale.set(0.2, 0.2, 0.2);
     transform_light.update();
 
-    let texture1 = Texture::new("tile", "images/tile.jpg");
-    let texture2 = Texture::new("AWESOME_FACE", "images/awesomeface.png");
-    let texture3 = Texture::new("AWESOME_FACE", "images/earth.jpg");
-    let texture_container = Texture::new("CONTAINER_2", "images/container2.png");
-    let texture_container_specular = Texture::new("CONTAINER_2", "images/container2_specular.png");
-    let m_texture2 = Arc::new(Mutex::new(texture2));
+    let texture1 = Texture::new("images/tile.jpg");
+    let texture2 = Texture::new("images/awesomeface.png");
+    let texture3 = Texture::new("images/earth.jpg");
+
+    let texture_a = Texture::new("images/Stone_Tiles_003_COLOR.jpg");
+    let texture_a2 = Texture::new("images/Stone_Tiles_003_ROUGH.jpg");
+
+    let texture_container = Texture::new("images/container2.png");
+    let texture_container_specular = Texture::new("images/container2_specular.png");
+
+	let m_texture2 = Arc::new(Mutex::new(texture2));
     let m_texture3 = Arc::new(Mutex::new(texture3));
-    let m_texture_container = Arc::new(Mutex::new(texture_container));
+
+	let m_texture_a = Arc::new(Mutex::new(texture_a));
+    let m_texture_a2 = Arc::new(Mutex::new(texture_a2));
+
+
+	let m_texture_container = Arc::new(Mutex::new(texture_container));
     let m_texture_container_specular = Arc::new(Mutex::new(texture_container_specular));
 
 
@@ -121,10 +131,17 @@ pub fn test()
 
     let normal_mat = SharedMaterial::new(Material::new_normal());
     let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-    let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
+
+	let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
     material_sphere.set_texture("texture_color", Some(m_texture_container));
     material_sphere.set_texture("texture_specular", Some(m_texture_container_specular));
-    let mut boxMat = SharedMaterial::new(material_sphere);
+	let mut boxMat = SharedMaterial::new(material_sphere);
+
+	let mut material_sphere3 = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
+    material_sphere3.set_texture("texture_color", Some(m_texture_a));
+    material_sphere3.set_texture("texture_specular", Some(m_texture_a2));
+	let mut boxMat3 = SharedMaterial::new(material_sphere3);
+
     let mut boxMat2 = SharedMaterial::new(material_sphere2);
 
 
@@ -183,7 +200,7 @@ pub fn test()
 
 	let mut boxes = Vec::new();
 
-	for _ in 0..1000 {
+	for i in 0..1000 {
 		let mut transform = Transform::default();
 		transform.scale.set(0.4,0.4,0.4);
 		transform.position
@@ -192,12 +209,22 @@ pub fn test()
 			.sub_scalar(5.0);
 		transform.update();
 
+		let mut mat;
+
+		if i < 500 {
+			mat = boxMat.clone();
+			let mut m = mat.lock().unwrap();
+		} else  {
+			mat = boxMat3.clone();
+			let mut m = mat.lock().unwrap();
+		}
+
 		let m_box = world
 			.create_entity()
 			// .with(geom_light.clone())
 			.with(geom_container.clone())
 			// .with(normal_mat.clone())
-			.with(boxMat.clone())
+			.with(mat)
 			.with(transform)
 			.build();
 		boxes.push(m_box);

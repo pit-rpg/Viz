@@ -4,8 +4,10 @@ use self::uuid::Uuid;
 extern crate specs;
 use self::specs::{Component, VecStorage};
 use super::Texture;
+use super::TextureDimensions;
 use math::*;
 use std::sync::{Arc, Mutex, MutexGuard, LockResult};
+
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -29,7 +31,8 @@ pub struct UniformItem {
 #[derive(Debug, Clone)]
 pub struct TextureItem {
 	pub name: String,
-	pub texture: Arc<Mutex<Texture>>,
+	pub texture: Option<Arc<Mutex<Texture>>>,
+	pub dimensions: TextureDimensions,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -51,14 +54,15 @@ pub struct Material {
 
 #[allow(dead_code)]
 impl Material {
-	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem]) -> Self {
+	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem], new_textures: &[TextureItem]) -> Self {
 		let uniforms = new_uniforms.iter().map(|u| u.clone()).collect();
+		let textures = new_textures.iter().map(|u| u.clone()).collect();
 
 		Self {
 			name: name.to_string(),
 			uuid: Uuid::new_v4(),
 			src: src.to_string(),
-			textures: Vec::new(),
+			textures,
 			uniforms,
 		}
 	}
@@ -89,33 +93,23 @@ impl Material {
 		&self.src[..]
 	}
 
-	pub fn set_texture(
-		&mut self,
-		name: &str,
-		t: Option<Arc<Mutex<Texture>>>,
-	) {
-		match t {
-			Some(t) => {
-				{
-					let texture = self.textures.iter_mut().find(|e| e.name == name);
+	pub fn set_texture( &mut self, name: &str, t: Option<Arc<Mutex<Texture>>> ) -> Option<()> {
+		let texture = self.textures.iter_mut().find(|e| e.name == name);
 
-					if texture.is_some() {
-						let texture = texture.unwrap();
-						texture.texture = t;
-						return;
+		match texture {
+			Some(texture) => {
+				match t {
+					Some(ref data) => {
+						let d = data.lock().unwrap();
+						if d.dimensions != texture.dimensions {return None;}
 					}
+					None => {}
 				}
 
-				self.textures.push(TextureItem {
-					name: name.to_string(),
-					texture: t,
-				});
+				texture.texture = t;
+				Some(())
 			}
-
-			None => {
-				let textures = self.textures.drain(..).filter(|e| e.name != name).collect();
-				self.textures = textures;
-			}
+			None => {None}
 		}
 	}
 
@@ -145,6 +139,7 @@ impl Material {
 					uniform: Uniform::Vector4(color.clone()),
 				},
 			],
+			&[]
 		)
 	}
 
@@ -166,6 +161,13 @@ impl Material {
 					uniform: Uniform::Vector4(color.clone()),
 				},
 			],
+			&[
+				TextureItem {
+					name: "texture_color".to_string(),
+					texture: None,
+					dimensions: TextureDimensions::D2,
+				}
+			]
 		)
 	}
 
@@ -187,6 +189,7 @@ impl Material {
 					uniform: Uniform::Matrix3f(Matrix3::new()),
 				},
 			],
+			&[]
 		)
 	}
 
@@ -220,6 +223,7 @@ impl Material {
 					uniform: Uniform::Vector3(position_light.clone()),
 				},
 			],
+			&[]
 		)
 	}
 
@@ -254,6 +258,18 @@ impl Material {
 					uniform: Uniform::Vector3(position_light.clone()),
 				},
 			],
+			&[
+				TextureItem {
+					name: "texture_specular".to_string(),
+					texture: None,
+					dimensions: TextureDimensions::D2,
+				},
+				TextureItem {
+					name: "texture_color".to_string(),
+					texture: None,
+					dimensions: TextureDimensions::D2,
+				}
+			]
 		)
 	}
 }
@@ -274,9 +290,3 @@ impl SharedMaterial {
 		self.0.lock()
 	}
 }
-
-
-
-// impl Component for Material {
-// 	type Storage = VecStorage<Self>;
-// }

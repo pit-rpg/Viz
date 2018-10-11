@@ -9,7 +9,7 @@ use std::ffi::{CString};
 use std::ptr;
 use std::str;
 use helpers::{find_file, read_to_string};
-use super::gl_texture::{load_texture, GLTextureIDs, TextureId};
+use super::gl_texture::{load_texture, GLTextureIDs, TextureId, get_texture_dimensions, GLTexture};
 
 pub type GLMaterialIDs = HashMap<Uuid, ShaderProgram>;
 
@@ -19,6 +19,7 @@ pub struct ShaderProgram {
 	vs_source: String,
 	id: GLuint,
 	uniform_locations: Vec<i32>,
+	texture_locations: Vec<i32>,
 }
 
 impl Drop for ShaderProgram {
@@ -32,6 +33,8 @@ impl Drop for ShaderProgram {
 
 
 pub fn set_uniform(u: &Uniform, loc: i32) {
+	if loc == -1 {return}
+
 	match u {
 		Uniform::Vector2(data) => {
 			gl_call!({
@@ -86,29 +89,7 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &ShaderProgram
 }
 
 impl ShaderProgram {
-	fn compile_shader_program(
-		material: &mut Material,
-		program: &mut ShaderProgram,
-		texture_store: &mut GLTextureIDs,
-	) {
-		let mut texture_data = Vec::new();
-
-		for data in material.get_textures() {
-			let texture = data.texture.lock().unwrap();
-
-			if texture_store.get(&texture.uuid).is_none() {
-				let id = load_texture(&*texture).unwrap();
-				texture_store.insert(texture.uuid, id);
-			}
-
-			let texture_id = texture_store.get(&texture.uuid).unwrap();
-			texture_data.push((
-				data.name.clone(),
-				texture_id.id,
-				texture_id.gl_texture_dimensions,
-			));
-		}
-
+	fn compile_shader_program(material: &mut Material, program: &mut ShaderProgram, texture_store: &mut GLTextureIDs ) {
 		let id;
 		let fs_source = &program.fs_source;
 
@@ -155,15 +136,13 @@ impl ShaderProgram {
 		let mut tex_loc;
 		let mut c_name;
 
-		for (i, (name, tid, gl_texture_dimensions)) in texture_data.iter().enumerate() {
-			c_name = CString::new(name.as_bytes()).unwrap();
-
-			gl_call!({
-				gl::BindTexture(*gl_texture_dimensions, *tid);
-			});
+		for (i, textureItem) in material.get_textures().iter().enumerate() {
+			c_name = CString::new(textureItem.name.as_bytes()).unwrap();
 			gl_call!({
 				tex_loc = gl::GetUniformLocation(program.id, c_name.as_ptr());
 			});
+
+			program.texture_locations.push(tex_loc);
 
 			gl_call!({
 				gl::Uniform1i(tex_loc, i as i32);
@@ -260,6 +239,7 @@ impl GLMaterial for Material {
 			vs_source: String::from(""),
 			id: 0,
 			uniform_locations: Vec::new(),
+			texture_locations: Vec::new(),
 		};
 
 		let mut write_to_prog = ProgramType::None;
@@ -299,12 +279,24 @@ impl GLMaterial for Material {
 					.iter()
 					.enumerate()
 					.for_each(|(i, data)| {
-						let texture = data.texture.lock().unwrap();
-						let texture_id = texture_store.get(&texture.uuid).unwrap();
+						let loc = program.texture_locations[i];
+						if loc == -1 {return;}
 
 						gl_call!({
 							gl::ActiveTexture(gl::TEXTURE0 + i as u32);
-							gl::BindTexture(texture_id.gl_texture_dimensions, texture_id.id);
+						});
+
+						match data.texture {
+							Some(ref texture) => {
+								let texture = texture.lock().unwrap();
+								texture.bind(texture_store);
+								return;
+							}
+							None => {}
+						}
+
+						gl_call!({
+							gl::BindTexture(get_texture_dimensions(&data.dimensions), 0);
 						});
 					});
 

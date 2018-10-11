@@ -4,6 +4,7 @@ extern crate uuid;
 use self::image::{GenericImage, ColorType};
 use self::uuid::Uuid;
 use std::path::Path;
+use std::cmp::PartialEq;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -29,16 +30,24 @@ pub enum TextureColorType {
 	RGBA(u8),
 }
 
+// #[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub enum TextureDimensions {
+	D1,
+	D2,
+	D3,
+}
+
 
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Texture {
-	pub name: String,
 	pub path: String,
 	pub uuid: Uuid,
 	pub wrapping_x: Wrapping,
 	pub wrapping_y: Wrapping,
 	pub filtering: Filtering,
+	pub dimensions: TextureDimensions,
 }
 
 
@@ -51,14 +60,14 @@ pub struct TextureData {
 
 impl Texture {
 
-	pub fn new (name: &str, path: &str) -> Self {
+	pub fn new (path: &str) -> Self {
 		Self {
-			name: name.to_string(),
 			path: path.to_string(),
 			uuid: Uuid::new_v4(),
 			wrapping_x: Wrapping::Repeat,
 			wrapping_y: Wrapping::Repeat,
 			filtering: Filtering::NEAREST,
+			dimensions: TextureDimensions::D2,
 		}
 	}
 
@@ -91,5 +100,16 @@ impl Texture {
 			height,
 			color_type,
 		})
+	}
+}
+
+impl PartialEq for TextureDimensions {
+	 fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(TextureDimensions::D1, TextureDimensions::D1) => { true },
+			(TextureDimensions::D2, TextureDimensions::D2) => { true },
+			(TextureDimensions::D3, TextureDimensions::D3) => { true },
+			_ => { false }
+		}
 	}
 }

@@ -3,7 +3,7 @@ extern crate uuid;
 
 use self::gl::types::*;
 use self::uuid::Uuid;
-use core::{Texture, TextureColorType};
+use core::{Texture, TextureColorType, TextureDimensions};
 use std::collections::HashMap;
 use std::os::raw::c_void;
 
@@ -12,7 +12,6 @@ pub type GLTextureIDs = HashMap<Uuid, TextureId>;
 #[derive(Debug)]
 pub struct TextureId {
 	pub id: GLuint,
-	pub gl_texture_dimensions: u32,
 }
 
 impl Drop for TextureId {
@@ -27,9 +26,34 @@ impl Drop for TextureId {
 }
 
 pub trait GLTexture {
-	fn bind(&self, hash_map: &GLTextureIDs);
+	fn bind(&self, hash_map: &mut GLTextureIDs);
 	fn unbind(&self);
 }
+
+impl GLTexture for Texture {
+	fn bind(&self, hash_map: &mut GLTextureIDs) {
+		let gl_texture_dimensions = get_texture_dimensions(&self.dimensions);
+
+		if hash_map.get(&self.uuid).is_none() {
+			let tid = load_texture(self).unwrap();
+			gl_call!({
+				gl::BindTexture(gl_texture_dimensions, tid.id);
+			});
+			hash_map.insert(self.uuid, tid);
+		}
+
+		let tid = hash_map.get(&self.uuid).unwrap();
+		gl_call!({
+			gl::BindTexture(gl_texture_dimensions, tid.id);
+		});
+	}
+
+	fn unbind(&self) {
+		unimplemented!()
+	}
+}
+
+
 
 fn to_gl_color_type(color_type: &TextureColorType) -> u32 {
 	// TODO color depth support
@@ -41,16 +65,20 @@ fn to_gl_color_type(color_type: &TextureColorType) -> u32 {
 	}
 }
 
+pub fn get_texture_dimensions(d: &TextureDimensions) -> u32{
+	match d {
+		TextureDimensions::D1 => {gl::TEXTURE_1D}
+		TextureDimensions::D2 => {gl::TEXTURE_2D}
+		TextureDimensions::D3 => {gl::TEXTURE_3D}
+	}
+}
+
 pub fn load_texture(texture: &Texture) -> Result<TextureId, ()> {
 	println!("_/ LOAD TEXTURE______________________________",);
 
 	let mut id: u32 = 0;
 	let texture_data = texture.load().expect(&format!("Error cant load texture: {}", texture.path));
-	let gl_texture_dimensions = if texture_data.height == 1 {
-		gl::TEXTURE_1D
-	} else {
-		gl::TEXTURE_2D
-	};
+	let gl_texture_dimensions = get_texture_dimensions(&texture.dimensions);
 
 	println!("{:?}", texture_data.color_type);
 	let color_type = to_gl_color_type(&texture_data.color_type);
@@ -75,8 +103,5 @@ pub fn load_texture(texture: &Texture) -> Result<TextureId, ()> {
 
 	println!("__ LOAD TEXTURE______________________________",);
 
-	Ok(TextureId {
-		id,
-		gl_texture_dimensions,
-	})
+	Ok(TextureId { id })
 }

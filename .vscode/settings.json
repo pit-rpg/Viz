@@ -1,13 +1,17 @@
 {
 	"cSpell.words": [
 		"byteorder",
+		"flipv",
 		"g",
 		"geometry",
 		"gl",
 		"glutin",
 		"lchar",
 		"lenum",
+		"luint",
+		"mipmap",
 		"repr",
+		"rgba",
 		"uuid"
 	]
 }

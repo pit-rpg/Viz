@@ -4,6 +4,7 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 extern crate specs;
+extern crate uuid;
 
 use std::time::{Instant, Duration};
 use std::os::raw::c_void;
@@ -22,6 +23,7 @@ use self::gl::GetString;
 use self::glutin::dpi::*;
 use self::glutin::{EventsLoop, GlContext, GlWindow, ContextError};
 use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join};
+use self::uuid::Uuid;
 
 use math::{Matrix3, Matrix4, Vector4, Vector};
 use super::super::Renderer;
@@ -30,7 +32,6 @@ use super::gl_material::GLMaterialIDs;
 use super::gl_texture::GLTextureIDs;
 use super::GLGeometry;
 use super::GLMaterial;
-
 // #[allow(dead_code)]
 // pub struct GLRenderer {
 // 	pub window: GlWindow,
@@ -136,6 +137,9 @@ impl<'a> System<'a> for RenderSystem {
 	fn run(&mut self, data: Self::SystemData) {
 		Self::gl_clear_error();
 
+		// let mut prev_mat = Uuid::new_v4();
+		let mut prev_geom = Uuid::new_v4();
+
 		if self.clear_color_need_update {
 			gl_call!({
 				gl::ClearColor(self.clear_color.x, self.clear_color.y, self.clear_color.z, self.clear_color.w);
@@ -214,8 +218,11 @@ impl<'a> System<'a> for RenderSystem {
 			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));
 			// println!("{:?}", matrix_normal);
 
+			if prev_geom != geom.uuid {
+				geom.bind(&mut vertex_arrays_ids);
+				prev_geom = geom.uuid;
+			}
 
-			geom.bind(&mut vertex_arrays_ids);
 			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
 
 			match geom.indices {
@@ -228,8 +235,8 @@ impl<'a> System<'a> for RenderSystem {
 				None => {}
 			}
 
-			geom.unbind();
-			material.unbind();
+			// geom.unbind();
+			// material.unbind();
 
 		}
 
