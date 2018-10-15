@@ -3,48 +3,11 @@ use self::uuid::Uuid;
 
 extern crate specs;
 use self::specs::{Component, VecStorage};
-use super::{Texture2D, SharedTexture2D};
+use super::{Texture2D, SharedTexture2D, UniformItem, Uniform, ShaderProgram};
 use math::*;
 use std::sync::{Arc, Mutex, MutexGuard, LockResult};
 
 
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub enum Uniform {
-	Vector2(Vector2<f32>),
-	Vector3(Vector3<f32>),
-	Vector4(Vector4<f32>),
-	Matrix4f(Matrix4<f32>),
-	Matrix3f(Matrix3<f32>),
-	Float(f32),
-	Int(i32),
-	UInt(u32),
-
-	ArrVector2(Vec<Vector2<f32>>),
-	ArrVector3(Vec<Vector3<f32>>),
-	ArrVector4(Vec<Vector4<f32>>),
-	ArrMatrix4f(Vec<Matrix4<f32>>),
-	ArrMatrix3f(Vec<Matrix3<f32>>),
-	ArrFloat(Vec<f32>),
-	ArrInt(Vec<i32>),
-	ArrUInt(Vec<u32>),
-
-	Texture2D(Option<SharedTexture2D>),
-}
-
-#[derive(Debug, Clone)]
-pub struct UniformItem {
-	pub name: String,
-	pub uniform: Uniform,
-	pub need_update: bool
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ProgramType {
-	None,
-	Vertex,
-	Fragment,
-}
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -55,8 +18,21 @@ pub struct Material {
 	uniforms: Vec<UniformItem>,
 }
 
+
+impl ShaderProgram for Material {
+	fn get_src(&self) -> &str {
+		&self.src[..]
+	}
+
+	fn get_uniforms(&mut self) -> &mut [UniformItem] {
+		&mut self.uniforms[..]
+	}
+}
+
+
 #[allow(dead_code)]
 impl Material {
+
 	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem]) -> Self {
 		let uniforms = new_uniforms.iter().map(|u| u.clone()).collect();
 
@@ -68,90 +44,6 @@ impl Material {
 		}
 	}
 
-	pub fn set_uniform(&mut self, name: &str, u: &Uniform) -> Option<()> {
-		let res = self.uniforms.iter_mut().find(|e| *e.name == *name);
-
-		match res {
-			None => return None,
-			Some(uniform_item) => {
-				match (&mut uniform_item.uniform, u) {
-					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) 		=> {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) 		=> {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) 		=> {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) 	=> {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) 	=> {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Float(ref mut a), Uniform::Float(b)) 			=> {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::Int(ref mut a), Uniform::Int(b)) 				=> {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-						}
-					}
-					(Uniform::UInt(ref mut a), Uniform::UInt(b)) 			=> {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-						}
-					}
-
-					// (Uniform::ArrVector2(ref mut a), Uniform::ArrVector2(b)) => {
-
-					// 	*a = *b;
-
-					// }
-
-					(Uniform::Texture2D(ref mut a), Uniform::Texture2D(b)) 	=> {
-						match b {
-							None => {*a = None}
-							Some(t) => {*a = Some(t.clone())}
-						}
-						uniform_item.need_update = true;
-					}
-
-					_ => return None,
-				};
-			}
-		}
-		Some(())
-	}
-
-	pub fn get_src(&self) -> &str {
-		&self.src[..]
-	}
-
-	pub fn get_uniforms(&mut self) -> &mut [UniformItem] {
-		&mut self.uniforms[..]
-	}
 
 	pub fn new_basic(color: &Vector4<f32>) -> Self {
 		Material::new(

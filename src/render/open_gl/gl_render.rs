@@ -17,6 +17,7 @@ use core::SharedMaterial;
 use core::Transform;
 use core::Uniform;
 use core::PerspectiveCamera;
+use core::ShaderProgram;
 
 use self::gl::types::*;
 use self::gl::GetString;
@@ -40,6 +41,20 @@ use super::GLMaterial;
 
 // use self::specs::{Component, ReadStorage, RunNow, System, VecStorage, World, Write, WriteStorage};
 
+pub struct Capabilities {
+	pub num_point_lights: usize,
+	// pub num_directional_lights: usize,
+}
+
+impl Default for Capabilities {
+	fn default() -> Self {
+		Capabilities{
+			num_point_lights: 4,
+			// num_directional_lights: 4,
+		}
+	}
+}
+
 pub struct RenderSystem {
 	pub camera: Option<Entity>,
 	pub window: GlWindow,
@@ -50,7 +65,7 @@ pub struct RenderSystem {
 	pub delta_max: Option<Duration>,
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
-
+	pub capabilities: Capabilities,
 }
 
 
@@ -93,6 +108,7 @@ impl RenderSystem {
 			delta_max: None,
 			clear_color: Vector4::new_zero(),
 			clear_color_need_update: true,
+			capabilities: Capabilities::default(),
 		}
 	}
 

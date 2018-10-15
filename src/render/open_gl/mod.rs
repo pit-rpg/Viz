@@ -33,8 +33,7 @@ use core::BufferGeometry;
 use core::SharedGeometry;
 use core::Material;
 use core::SharedMaterial;
-use core::ProgramType;
-use core::{Texture2D, SharedTexture2D, Uniform};
+use core::{Texture2D, SharedTexture2D, Uniform, ShaderProgram};
 use core::PerspectiveCamera;
 use core::Transform;
 use render::Renderer;
@@ -42,7 +41,7 @@ use self::gl_render::*;
 use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
-use helpers::{sphere, box_geometry};
+use helpers::geometryGenerators;
 use std::f32::consts::PI;
 
 
@@ -85,10 +84,10 @@ pub fn test()
 
 
 	// let geom2 = box_geometry(1.0,1.0,1.0);
-	let geom_container = SharedGeometry::new(box_geometry(1.0, 1.0, 1.0));
+	let geom_container = SharedGeometry::new(geometryGenerators::box_geometry(1.0, 1.0, 1.0));
 	// let geom_container = box_geometry(1.0,1.0,1.0);
 	// let geom_sphere = sphere(0.5, 32, 32);
-	let geom_light = SharedGeometry::new(sphere(0.5, 12, 12));
+	let geom_light = SharedGeometry::new(geometryGenerators::sphere(0.5, 12, 12));
 
 	let camera = PerspectiveCamera::new();
 

@@ -1,7 +1,7 @@
 
 mod nums;
 mod file;
-mod geometry;
+pub mod geometryGenerators;
 pub use self::nums::*;
 pub use self::file::*;
-pub use self::geometry::*;
+// pub use self::geometry as GeometryGenerators;

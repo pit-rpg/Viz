@@ -156,6 +156,7 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 	};
 }
 
+
 pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgram, texture_store: &mut GLTextureIDs) {
 	uniforms
 		.iter_mut()
@@ -176,19 +177,48 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgr
 		});
 }
 
+
+fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
+	let p = find_file(&["src/render/open_gl/shaders"], path).unwrap();
+	let code = read_to_string(&p);
+	let mut result = String::with_capacity(code.len());
+
+	for line in code.lines() {
+
+		if line.starts_with("#<include>") {
+			let path: Vec<&str> = line.split("\"").collect();
+			let path = path[1];
+
+			let mut new_search_drs = search_dirs.clone();
+			new_search_drs.insert(0, p.parent().unwrap().to_str().unwrap());
+
+			let res = read_shader_file(&new_search_drs, path);
+			result += &res;
+			result += "\n";
+		} else {
+			result += line;
+			result += "\n";
+		}
+
+	}
+	result
+}
+
+
+
 impl GLShaderProgram {
 	fn compile_shader_program(material: &mut Material, program: &mut GLShaderProgram, texture_store: &mut GLTextureIDs ) {
 		println!("compile shader: {}", material.get_src());
 
 		let id;
-		let fs_source = &program.fs_source;
+		// let fs_source = &program.fs_source;
 
 		gl_call!({
 			id = gl::CreateProgram();
 			program.id = id;
 
 			let vs = Self::compile_shader(gl::VERTEX_SHADER, &program.vs_source[..], material.get_src());
-			let fs = Self::compile_shader(gl::FRAGMENT_SHADER, &fs_source[..], material.get_src());
+			let fs = Self::compile_shader(gl::FRAGMENT_SHADER, &program.fs_source[..], material.get_src());
 
 			gl::AttachShader(id, fs);
 			gl::AttachShader(id, vs);
@@ -309,9 +339,10 @@ impl GLShaderProgram {
 	}
 }
 
+
+
 pub trait GLMaterial
-where
-	Self: Sized,
+where Self: Sized,
 {
 	fn get_program(&mut self) -> GLShaderProgram;
 
@@ -324,32 +355,6 @@ where
 	}
 }
 
-
-fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
-	let p = find_file(&["src/render/open_gl/shaders"], path).unwrap();
-	let code = read_to_string(&p);
-	let mut result = String::with_capacity(code.len());
-
-	for line in code.lines() {
-
-		if line.starts_with("#<include>") {
-			let path: Vec<&str> = line.split("\"").collect();
-			let path = path[1];
-
-			let mut new_search_drs = search_dirs.clone();
-			new_search_drs.insert(0, p.parent().unwrap().to_str().unwrap());
-
-			let res = read_shader_file(&new_search_drs, path);
-			result += &res;
-			result += "\n";
-		} else {
-			result += line;
-			result += "\n";
-		}
-
-	}
-	result
-}
 
 
 impl GLMaterial for Material {
