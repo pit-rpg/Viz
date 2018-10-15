@@ -3,8 +3,7 @@ use self::uuid::Uuid;
 
 extern crate specs;
 use self::specs::{Component, VecStorage};
-use super::Texture;
-use super::TextureDimensions;
+use super::{Texture2D, SharedTexture2D};
 use math::*;
 use std::sync::{Arc, Mutex, MutexGuard, LockResult};
 
@@ -20,19 +19,23 @@ pub enum Uniform {
 	Float(f32),
 	Int(i32),
 	UInt(u32),
+	Texture2D(Option<SharedTexture2D>),
+
+	// ArrVector4(Vec<Vector4<f32>>),
+	// ArrVector3(Vec<Vector3<f32>>),
+	// ArrVector2(Vec<Vector2<f32>>),
+	// ArrMatrix4f(Vec<Matrix4<f32>>),
+	// ArrMatrix3f(Vec<Matrix3<f32>>),
+	// ArrFloat(Vec<f32>),
+	// ArrInt(Vec<i32>),
+	// ArrUInt(Vec<u32>),
 }
 
 #[derive(Debug, Clone)]
 pub struct UniformItem {
 	pub name: String,
 	pub uniform: Uniform,
-}
-
-#[derive(Debug, Clone)]
-pub struct TextureItem {
-	pub name: String,
-	pub texture: Option<Arc<Mutex<Texture>>>,
-	pub dimensions: TextureDimensions,
+	// pub need_update: bool
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -48,21 +51,18 @@ pub struct Material {
 	pub name: String,
 	pub uuid: Uuid,
 	src: String,
-	textures: Vec<TextureItem>,
 	uniforms: Vec<UniformItem>,
 }
 
 #[allow(dead_code)]
 impl Material {
-	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem], new_textures: &[TextureItem]) -> Self {
+	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem]) -> Self {
 		let uniforms = new_uniforms.iter().map(|u| u.clone()).collect();
-		let textures = new_textures.iter().map(|u| u.clone()).collect();
 
 		Self {
 			name: name.to_string(),
 			uuid: Uuid::new_v4(),
 			src: src.to_string(),
-			textures,
 			uniforms,
 		}
 	}
@@ -82,6 +82,12 @@ impl Material {
 					(Uniform::Float(ref mut a), Uniform::Float(b)) 			=> { *a = *b; }
 					(Uniform::Int(ref mut a), Uniform::Int(b)) 				=> { *a = *b; }
 					(Uniform::UInt(ref mut a), Uniform::UInt(b)) 			=> { *a = *b; }
+					(Uniform::Texture2D(ref mut a), Uniform::Texture2D(b)) 	=> {
+						match b {
+							None => {*a = None}
+							Some(t) => {*a = Some(t.clone())}
+						}
+					}
 					_ => return None,
 				};
 			}
@@ -91,30 +97,6 @@ impl Material {
 
 	pub fn get_src(&self) -> &str {
 		&self.src[..]
-	}
-
-	pub fn set_texture( &mut self, name: &str, t: Option<Arc<Mutex<Texture>>> ) -> Option<()> {
-		let texture = self.textures.iter_mut().find(|e| e.name == name);
-
-		match texture {
-			Some(texture) => {
-				match t {
-					Some(ref data) => {
-						let d = data.lock().unwrap();
-						if d.dimensions != texture.dimensions {return None;}
-					}
-					None => {}
-				}
-
-				texture.texture = t;
-				Some(())
-			}
-			None => {None}
-		}
-	}
-
-	pub fn get_textures(&self) -> &[TextureItem] {
-		&self.textures[..]
 	}
 
 	pub fn get_uniforms(&mut self) -> &mut [UniformItem] {
@@ -138,8 +120,7 @@ impl Material {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
 				},
-			],
-			&[]
+			]
 		)
 	}
 
@@ -160,12 +141,9 @@ impl Material {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
 				},
-			],
-			&[
-				TextureItem {
+				UniformItem {
 					name: "texture_color".to_string(),
-					texture: None,
-					dimensions: TextureDimensions::D2,
+					uniform: Uniform::Texture2D(None),
 				}
 			]
 		)
@@ -188,8 +166,7 @@ impl Material {
 					name: "matrix_normal".to_string(),
 					uniform: Uniform::Matrix3f(Matrix3::new()),
 				},
-			],
-			&[]
+			]
 		)
 	}
 
@@ -222,8 +199,7 @@ impl Material {
 					name: "position_light".to_string(),
 					uniform: Uniform::Vector3(position_light.clone()),
 				},
-			],
-			&[]
+			]
 		)
 	}
 
@@ -257,21 +233,44 @@ impl Material {
 					name: "position_light".to_string(),
 					uniform: Uniform::Vector3(position_light.clone()),
 				},
-			],
-			&[
-				TextureItem {
+				UniformItem {
 					name: "texture_specular".to_string(),
-					texture: None,
-					dimensions: TextureDimensions::D2,
+					uniform: Uniform::Texture2D(None),
 				},
-				TextureItem {
+				UniformItem {
 					name: "texture_color".to_string(),
-					texture: None,
-					dimensions: TextureDimensions::D2,
+					uniform: Uniform::Texture2D(None),
 				}
 			]
 		)
 	}
+
+
+	pub fn new_phong(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+		Material::new(
+			"phong.glsl",
+			"Phong",
+			&[
+				UniformItem {
+					name: "matrix_model".to_string(),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+				},
+				UniformItem {
+					name: "matrix_normal".to_string(),
+					uniform: Uniform::Matrix3f(Matrix3::new()),
+				},
+				UniformItem {
+					name: "color".to_string(),
+					uniform: Uniform::Vector4(color.clone()),
+				},
+			]
+		)
+	}
+
 }
 
 #[derive(Debug, Clone)]

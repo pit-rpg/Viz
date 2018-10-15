@@ -24,7 +24,7 @@ void main() {
 #<fragment>
 #version 330 core
 
-// #<include> "./snipets/point_light.glsl"
+#<include> "./snipets/point_light.glsl"
 
 layout (location = 0) out vec4 FragColor;
 in vec3 v_pos;

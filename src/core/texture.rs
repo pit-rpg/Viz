@@ -5,6 +5,8 @@ use self::image::{GenericImage, ColorType};
 use self::uuid::Uuid;
 use std::path::Path;
 use std::cmp::PartialEq;
+use std::sync::{Arc,Mutex, LockResult, MutexGuard};
+
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -30,24 +32,24 @@ pub enum TextureColorType {
 	RGBA(u8),
 }
 
-// #[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub enum TextureDimensions {
-	D1,
-	D2,
-	D3,
-}
+// // #[allow(dead_code)]
+// #[derive(Debug, Clone)]
+// pub enum TextureDimensions {
+// 	D1,
+// 	D2,
+// 	D3,
+// }
 
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub struct Texture {
+pub struct Texture2D {
 	pub path: String,
 	pub uuid: Uuid,
 	pub wrapping_x: Wrapping,
 	pub wrapping_y: Wrapping,
 	pub filtering: Filtering,
-	pub dimensions: TextureDimensions,
+	// pub dimensions: TextureDimensions,
 }
 
 
@@ -58,7 +60,7 @@ pub struct TextureData {
 	pub data: Vec<u8>, // TODO optional data for memory save
 }
 
-impl Texture {
+impl Texture2D {
 
 	pub fn new (path: &str) -> Self {
 		Self {
@@ -67,7 +69,7 @@ impl Texture {
 			wrapping_x: Wrapping::Repeat,
 			wrapping_y: Wrapping::Repeat,
 			filtering: Filtering::NEAREST,
-			dimensions: TextureDimensions::D2,
+			// dimensions: TextureDimensions::D2,
 		}
 	}
 
@@ -103,13 +105,32 @@ impl Texture {
 	}
 }
 
-impl PartialEq for TextureDimensions {
-	 fn eq(&self, other: &Self) -> bool {
-		match (self, other) {
-			(TextureDimensions::D1, TextureDimensions::D1) => { true },
-			(TextureDimensions::D2, TextureDimensions::D2) => { true },
-			(TextureDimensions::D3, TextureDimensions::D3) => { true },
-			_ => { false }
-		}
+
+#[derive(Debug, Clone)]
+pub struct SharedTexture2D (Arc<Mutex<Texture2D>>);
+
+
+impl SharedTexture2D {
+	pub fn new(texture: Texture2D) -> Self {
+		SharedTexture2D(Arc::new(Mutex::new(texture)))
+	}
+
+	pub fn new_from_path(path: &str) -> Self {
+		SharedTexture2D(Arc::new(Mutex::new(Texture2D::new(path))))
+	}
+
+	pub fn lock(&mut self) -> LockResult<MutexGuard<Texture2D>> {
+		self.0.lock()
 	}
 }
+
+// impl PartialEq for TextureDimensions {
+// 	 fn eq(&self, other: &Self) -> bool {
+// 		match (self, other) {
+// 			(TextureDimensions::D1, TextureDimensions::D1) => { true },
+// 			(TextureDimensions::D2, TextureDimensions::D2) => { true },
+// 			(TextureDimensions::D3, TextureDimensions::D3) => { true },
+// 			_ => { false }
+// 		}
+// 	}
+// }

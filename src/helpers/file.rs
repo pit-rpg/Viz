@@ -19,7 +19,7 @@ pub fn find_file(dirs: &[&str], file: &str) -> Result<PathBuf, String>  {
 
 
 pub fn read_to_string(p: &PathBuf) -> String {
-	let mut f = File::open(p).expect("file not found");
+	let mut f = File::open(p).expect(&format!("file not found: {}", p.display() ));
 	let mut contents = String::new();
 	f.read_to_string(&mut contents).expect("something went wrong reading the file");
 	contents

@@ -1,12 +1,9 @@
-
 #<vertex>
 #version 330 core
 
+layout (location = 0) in vec3 aPos;
 uniform mat4 matrix_model;
 uniform mat4 matrix_view;
-
-layout (location = 0) in vec3 aPos;
-
 out vec4 v_color;
 
 void main() {
@@ -18,7 +15,6 @@ void main() {
 #version 330 core
 
 uniform vec4 color;
-
 layout (location = 0) out vec4 FragColor;
 
 void main() {

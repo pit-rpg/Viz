@@ -3,7 +3,8 @@ extern crate uuid;
 
 use self::gl::types::*;
 use self::uuid::Uuid;
-use core::{Texture, TextureColorType, TextureDimensions};
+use core::{Texture2D, TextureColorType, SharedTexture2D};
+// use core::{Texture, TextureColorType, TextureDimensions};
 use std::collections::HashMap;
 use std::os::raw::c_void;
 
@@ -30,9 +31,10 @@ pub trait GLTexture {
 	fn unbind(&self);
 }
 
-impl GLTexture for Texture {
+impl GLTexture for Texture2D {
 	fn bind(&self, hash_map: &mut GLTextureIDs) {
-		let gl_texture_dimensions = get_texture_dimensions(&self.dimensions);
+		let gl_texture_dimensions = gl::TEXTURE_2D;
+		// let gl_texture_dimensions = get_texture_dimensions(&self.dimensions);
 
 		if hash_map.get(&self.uuid).is_none() {
 			let tid = load_texture(self).unwrap();
@@ -65,20 +67,21 @@ fn to_gl_color_type(color_type: &TextureColorType) -> u32 {
 	}
 }
 
-pub fn get_texture_dimensions(d: &TextureDimensions) -> u32{
-	match d {
-		TextureDimensions::D1 => {gl::TEXTURE_1D}
-		TextureDimensions::D2 => {gl::TEXTURE_2D}
-		TextureDimensions::D3 => {gl::TEXTURE_3D}
-	}
-}
+// pub fn get_texture_dimensions(d: &TextureDimensions) -> u32{
+// 	match d {
+// 		TextureDimensions::D1 => {gl::TEXTURE_1D}
+// 		TextureDimensions::D2 => {gl::TEXTURE_2D}
+// 		TextureDimensions::D3 => {gl::TEXTURE_3D}
+// 	}
+// }
 
-pub fn load_texture(texture: &Texture) -> Result<TextureId, ()> {
+pub fn load_texture(texture: &Texture2D) -> Result<TextureId, ()> {
 	println!("_/ LOAD TEXTURE______________________________",);
 
 	let mut id: u32 = 0;
 	let texture_data = texture.load().expect(&format!("Error cant load texture: {}", texture.path));
-	let gl_texture_dimensions = get_texture_dimensions(&texture.dimensions);
+	let gl_texture_dimensions = gl::TEXTURE_2D;
+	// let gl_texture_dimensions = get_texture_dimensions(&texture.dimensions);
 
 	println!("{:?}", texture_data.color_type);
 	let color_type = to_gl_color_type(&texture_data.color_type);

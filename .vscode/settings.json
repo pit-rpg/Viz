@@ -10,6 +10,8 @@
 		"lenum",
 		"luint",
 		"mipmap",
+		"nums",
+		"phong",
 		"repr",
 		"rgba",
 		"uuid"

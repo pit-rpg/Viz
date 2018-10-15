@@ -3,23 +3,32 @@ extern crate uuid;
 
 use self::gl::types::*;
 use self::uuid::Uuid;
+
 use core::{Material, ProgramType, Uniform, UniformItem};
 use std::collections::HashMap;
+use std::path::Path;
 use std::ffi::{CString};
 use std::ptr;
 use std::str;
 use helpers::{find_file, read_to_string};
-use super::gl_texture::{load_texture, GLTextureIDs, TextureId, get_texture_dimensions, GLTexture};
+use super::gl_texture::{load_texture, GLTextureIDs, TextureId, GLTexture};
+// use super::gl_texture::{load_texture, GLTextureIDs, TextureId, get_texture_dimensions, GLTexture};
 
 pub type GLMaterialIDs = HashMap<Uuid, ShaderProgram>;
+
+#[derive(Debug)]
+pub struct UniformLocation {
+	location: i32,
+	texture_slot: i32,
+}
 
 #[derive(Debug)]
 pub struct ShaderProgram {
 	fs_source: String,
 	vs_source: String,
 	id: GLuint,
-	uniform_locations: Vec<i32>,
-	texture_locations: Vec<i32>,
+	uniform_locations: Vec<UniformLocation>,
+	// texture_locations: Vec<i32>,
 }
 
 impl Drop for ShaderProgram {
@@ -32,64 +41,82 @@ impl Drop for ShaderProgram {
 }
 
 
-pub fn set_uniform(u: &Uniform, loc: i32) {
-	if loc == -1 {return}
+pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: &mut GLTextureIDs) {
+	if loc.location == -1 {return}
 
-	match u {
+	match uniform {
 		Uniform::Vector2(data) => {
 			gl_call!({
-				gl::Uniform2fv(loc, 1, &data.x as *const f32);
+				gl::Uniform2fv(loc.location, 1, &data.x as *const f32);
 			});
 		}
 		Uniform::Vector3(data) => {
 			gl_call!({
-				gl::Uniform3fv(loc, 1, &data.x as *const f32);
+				gl::Uniform3fv(loc.location, 1, &data.x as *const f32);
 			});
 		}
 		Uniform::Vector4(data) => {
 			gl_call!({
-				gl::Uniform4fv(loc, 1, &data.x as *const f32);
+				gl::Uniform4fv(loc.location, 1, &data.x as *const f32);
 			});
 		}
 		Uniform::Matrix3f(data) => {
 			gl_call!({
-				gl::UniformMatrix3fv(loc, 1, gl::FALSE, &data.elements[0] as *const f32);
+				gl::UniformMatrix3fv(loc.location, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
 		}
 		Uniform::Matrix4f(data) => {
 			gl_call!({
-				gl::UniformMatrix4fv(loc, 1, gl::FALSE, &data.elements[0] as *const f32);
+				gl::UniformMatrix4fv(loc.location, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
 		}
 		Uniform::Float(data) => {
 			gl_call!({
-				gl::Uniform1f(loc, *data);
+				gl::Uniform1f(loc.location, *data);
 			});
 		}
 		Uniform::Int(data) => {
 			gl_call!({
-				gl::Uniform1i(loc, *data);
+				gl::Uniform1i(loc.location, *data);
 			});
 		}
 		Uniform::UInt(data) => {
 			gl_call!({
-				gl::Uniform1ui(loc, *data);
+				gl::Uniform1ui(loc.location, *data);
+			});
+		}
+		Uniform::Texture2D(data) => {
+			gl_call!({
+				gl::ActiveTexture(gl::TEXTURE0 + loc.texture_slot as u32);
+			});
+			match data {
+				Some(ref mut texture) => {
+					let texture = texture.lock().unwrap();
+					texture.bind(texture_store);
+					return;
+				}
+				None => {}
+			}
+			gl_call!({
+				gl::BindTexture(gl::TEXTURE_2D, 0);
 			});
 		}
 	};
 }
 
-pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &ShaderProgram) {
+pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &ShaderProgram, texture_store: &mut GLTextureIDs) {
 	uniforms
 		.iter_mut()
 		.enumerate()
 		.for_each(|(i, uniform_i)| {
-			set_uniform(&uniform_i.uniform, shader_program.uniform_locations[i]);
+			set_uniform(&mut uniform_i.uniform, &shader_program.uniform_locations[i], texture_store);
 		});
 }
 
 impl ShaderProgram {
 	fn compile_shader_program(material: &mut Material, program: &mut ShaderProgram, texture_store: &mut GLTextureIDs ) {
+		println!("compile shader: {}", material.get_src());
+
 		let id;
 		let fs_source = &program.fs_source;
 
@@ -117,6 +144,7 @@ impl ShaderProgram {
 					ptr::null_mut(),
 					info_log.as_mut_ptr() as *mut GLchar,
 				);
+				// println!("{}", str::from_utf8_unchecked(&info_log));
 				println!(
 					"ERROR::SHADER::PROGRAM::COMPILATION_FAILED: {}\n{}",
 					material.get_src(),
@@ -133,36 +161,38 @@ impl ShaderProgram {
 			gl::UseProgram(program.id);
 		});
 
-		let mut tex_loc;
+		let uniforms = material.get_uniforms();
+		let mut uniform_locations = Vec::<UniformLocation>::with_capacity(uniforms.len());
+
+		let mut location;
+		let mut texture_slot = 0;
 		let mut c_name;
 
-		for (i, textureItem) in material.get_textures().iter().enumerate() {
-			c_name = CString::new(textureItem.name.as_bytes()).unwrap();
-			gl_call!({
-				tex_loc = gl::GetUniformLocation(program.id, c_name.as_ptr());
-			});
-
-			program.texture_locations.push(tex_loc);
-
-			gl_call!({
-				gl::Uniform1i(tex_loc, i as i32);
-			});
-		}
-
-		let uniforms = material.get_uniforms();
-		let mut uniform_locations = Vec::<i32>::with_capacity(uniforms.len());
-
 		for uniform in uniforms.iter() {
-			let c_name = CString::new(uniform.name.as_bytes()).unwrap();
-			let loc;
-			gl_call!({
-				loc = gl::GetUniformLocation(program.id, c_name.as_ptr());
-			});
-			uniform_locations.push(loc);
+			c_name = CString::new(uniform.name.as_bytes()).unwrap();
+
+			match uniform.uniform {
+				Uniform::Texture2D(_) => {
+					gl_call!({
+						location = gl::GetUniformLocation(program.id, c_name.as_ptr());
+						gl::Uniform1i(location, texture_slot as i32);
+					});
+
+					uniform_locations.push(UniformLocation{location, texture_slot});
+					texture_slot +=1;
+				}
+				_ => {
+					gl_call!({
+						location = gl::GetUniformLocation(program.id, c_name.as_ptr());
+					});
+					uniform_locations.push(UniformLocation{location, texture_slot: -1});
+				}
+			};
+
 		}
 
 		program.uniform_locations = uniform_locations;
-		set_uniforms(uniforms, program);
+		set_uniforms(uniforms, program, texture_store);
 	}
 
 	fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
@@ -189,6 +219,7 @@ impl ShaderProgram {
 					ptr::null_mut(),
 					info_log.as_mut_ptr() as *mut GLchar,
 				);
+				// println!("{}", str::from_utf8(&info_log).unwrap());
 				match t {
 					gl::FRAGMENT_SHADER => println!(
 						"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: {}\n{}",
@@ -230,16 +261,45 @@ where
 	}
 }
 
+
+fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
+	let p = find_file(&["src/render/open_gl/shaders"], path).unwrap();
+	let code = read_to_string(&p);
+	let mut result = String::with_capacity(code.len());
+
+	for line in code.lines() {
+
+		if line.starts_with("#<include>") {
+			let path: Vec<&str> = line.split("\"").collect();
+			let path = path[1];
+
+			let mut new_search_drs = search_dirs.clone();
+			new_search_drs.insert(0, p.parent().unwrap().to_str().unwrap());
+
+			let res = read_shader_file(&new_search_drs, path);
+			result += &res;
+			result += "\n";
+		} else {
+			result += line;
+			result += "\n";
+		}
+
+	}
+	result
+}
+
+
 impl GLMaterial for Material {
 	fn get_program(&mut self) -> ShaderProgram {
-		let p = find_file(&["src/render/open_gl/shaders"], self.get_src()).unwrap();
-		let code = read_to_string(&p);
+		let code =read_shader_file(&vec!("src/render/open_gl/shaders"), self.get_src());
+		// let code =read_shader_file(&["src/render/open_gl/shaders"], self.get_src());
+
 		let mut shader_program = ShaderProgram {
 			fs_source: String::from(""),
 			vs_source: String::from(""),
 			id: 0,
 			uniform_locations: Vec::new(),
-			texture_locations: Vec::new(),
+			// texture_locations: Vec::new(),
 		};
 
 		let mut write_to_prog = ProgramType::None;
@@ -275,32 +335,32 @@ impl GLMaterial for Material {
 					gl::UseProgram(program.id);
 				});
 
-				self.get_textures()
-					.iter()
-					.enumerate()
-					.for_each(|(i, data)| {
-						let loc = program.texture_locations[i];
-						if loc == -1 {return;}
+				// self.get_textures()
+				// 	.iter()
+				// 	.enumerate()
+				// 	.for_each(|(i, data)| {
+				// 		let loc = program.texture_locations[i];
+				// 		if loc == -1 {return;}
 
-						gl_call!({
-							gl::ActiveTexture(gl::TEXTURE0 + i as u32);
-						});
+				// 		gl_call!({
+				// 			gl::ActiveTexture(gl::TEXTURE0 + i as u32);
+				// 		});
 
-						match data.texture {
-							Some(ref texture) => {
-								let texture = texture.lock().unwrap();
-								texture.bind(texture_store);
-								return;
-							}
-							None => {}
-						}
+				// 		match data.texture {
+				// 			Some(ref texture) => {
+				// 				let texture = texture.lock().unwrap();
+				// 				texture.bind(texture_store);
+				// 				return;
+				// 			}
+				// 			None => {}
+				// 		}
 
-						gl_call!({
-							gl::BindTexture(get_texture_dimensions(&data.dimensions), 0);
-						});
-					});
+				// 		gl_call!({
+				// 			gl::BindTexture(get_texture_dimensions(&data.dimensions), 0);
+				// 		});
+				// 	});
 
-				set_uniforms(self.get_uniforms(), program);
+				set_uniforms(self.get_uniforms(), program, texture_store);
 				return;
 			}
 		}

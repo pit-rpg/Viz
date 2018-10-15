@@ -19,23 +19,17 @@ void main() {
 }
 
 
-
-
 #<fragment>
 #version 330 core
 
 in vec4 v_color;
 in vec2 v_uv;
-
 uniform sampler2D texture_color;
-
-
 layout (location = 0) out vec4 FragColor;
-
 
 void main() {
 	FragColor = texture(texture_color, v_uv);
-    // FragColor.x *=v_uv.x;
+	// FragColor.x *=v_uv.x;
 	// if (texture_color) {
 	// } else {
 	// 	FragColor = v_color;
