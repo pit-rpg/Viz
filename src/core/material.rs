@@ -11,31 +11,32 @@ use std::sync::{Arc, Mutex, MutexGuard, LockResult};
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Uniform {
-	Vector4(Vector4<f32>),
-	Vector3(Vector3<f32>),
 	Vector2(Vector2<f32>),
+	Vector3(Vector3<f32>),
+	Vector4(Vector4<f32>),
 	Matrix4f(Matrix4<f32>),
 	Matrix3f(Matrix3<f32>),
 	Float(f32),
 	Int(i32),
 	UInt(u32),
-	Texture2D(Option<SharedTexture2D>),
 
-	// ArrVector4(Vec<Vector4<f32>>),
-	// ArrVector3(Vec<Vector3<f32>>),
-	// ArrVector2(Vec<Vector2<f32>>),
-	// ArrMatrix4f(Vec<Matrix4<f32>>),
-	// ArrMatrix3f(Vec<Matrix3<f32>>),
-	// ArrFloat(Vec<f32>),
-	// ArrInt(Vec<i32>),
-	// ArrUInt(Vec<u32>),
+	ArrVector2(Vec<Vector2<f32>>),
+	ArrVector3(Vec<Vector3<f32>>),
+	ArrVector4(Vec<Vector4<f32>>),
+	ArrMatrix4f(Vec<Matrix4<f32>>),
+	ArrMatrix3f(Vec<Matrix3<f32>>),
+	ArrFloat(Vec<f32>),
+	ArrInt(Vec<i32>),
+	ArrUInt(Vec<u32>),
+
+	Texture2D(Option<SharedTexture2D>),
 }
 
 #[derive(Debug, Clone)]
 pub struct UniformItem {
 	pub name: String,
 	pub uniform: Uniform,
-	// pub need_update: bool
+	pub need_update: bool
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -74,20 +75,69 @@ impl Material {
 			None => return None,
 			Some(uniform_item) => {
 				match (&mut uniform_item.uniform, u) {
-					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) 		=> { a.copy(&b); }
-					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) 		=> { a.copy(&b); }
-					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) 		=> { a.copy(&b); }
-					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) 	=> { a.copy(&b); }
-					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) 	=> { a.copy(&b); }
-					(Uniform::Float(ref mut a), Uniform::Float(b)) 			=> { *a = *b; }
-					(Uniform::Int(ref mut a), Uniform::Int(b)) 				=> { *a = *b; }
-					(Uniform::UInt(ref mut a), Uniform::UInt(b)) 			=> { *a = *b; }
+					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) 		=> {
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) 		=> {
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) 		=> {
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) 	=> {
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) 	=> {
+						if !a.equals(b) {
+							a.copy(&b);
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::Float(ref mut a), Uniform::Float(b)) 			=> {
+						if a != b {
+							*a = *b;
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::Int(ref mut a), Uniform::Int(b)) 				=> {
+						if a != b {
+							*a = *b;
+							uniform_item.need_update = true;
+						}
+					}
+					(Uniform::UInt(ref mut a), Uniform::UInt(b)) 			=> {
+						if a != b {
+							*a = *b;
+							uniform_item.need_update = true;
+						}
+					}
+
+					// (Uniform::ArrVector2(ref mut a), Uniform::ArrVector2(b)) => {
+
+					// 	*a = *b;
+
+					// }
+
 					(Uniform::Texture2D(ref mut a), Uniform::Texture2D(b)) 	=> {
 						match b {
 							None => {*a = None}
 							Some(t) => {*a = Some(t.clone())}
 						}
+						uniform_item.need_update = true;
 					}
+
 					_ => return None,
 				};
 			}
@@ -111,14 +161,17 @@ impl Material {
 				UniformItem {
 					name: "matrix_model".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
+					need_update: true,
 				},
 			]
 		)
@@ -132,18 +185,22 @@ impl Material {
 				UniformItem {
 					name: "matrix_model".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "texture_color".to_string(),
 					uniform: Uniform::Texture2D(None),
+					need_update: true,
 				}
 			]
 		)
@@ -157,14 +214,17 @@ impl Material {
 				UniformItem {
 					name: "matrix_model".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
 					uniform: Uniform::Matrix3f(Matrix3::new()),
+					need_update: true,
 				},
 			]
 		)
@@ -178,26 +238,32 @@ impl Material {
 				UniformItem {
 					name: "matrix_model".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
 					uniform: Uniform::Matrix3f(Matrix3::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color_light".to_string(),
 					uniform: Uniform::Vector3(color_light.clone()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "position_light".to_string(),
 					uniform: Uniform::Vector3(position_light.clone()),
+					need_update: true,
 				},
 			]
 		)
@@ -212,34 +278,42 @@ impl Material {
 				UniformItem {
 					name: "matrix_model".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
 					uniform: Uniform::Matrix3f(Matrix3::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color_light".to_string(),
 					uniform: Uniform::Vector3(color_light.clone()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "position_light".to_string(),
 					uniform: Uniform::Vector3(position_light.clone()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "texture_specular".to_string(),
 					uniform: Uniform::Texture2D(None),
+					need_update: true,
 				},
 				UniformItem {
 					name: "texture_color".to_string(),
 					uniform: Uniform::Texture2D(None),
+					need_update: true,
 				}
 			]
 		)
@@ -254,18 +328,38 @@ impl Material {
 				UniformItem {
 					name: "matrix_model".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_view".to_string(),
 					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "matrix_normal".to_string(),
 					uniform: Uniform::Matrix3f(Matrix3::new()),
+					need_update: true,
 				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "color_light".to_string(),
+					uniform: Uniform::Vector3(color_light.clone()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "position_light".to_string(),
+					uniform: Uniform::Vector3(position_light.clone()),
+					need_update: true,
+				},
+
+				UniformItem {
+					name: "colors".to_string(),
+					uniform: Uniform::ArrVector3(vec!(Vector3::new(0.0,1.0,0.0), Vector3::new(0.0,0.0,1.0))),
+					need_update: true,
 				},
 			]
 		)

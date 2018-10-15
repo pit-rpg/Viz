@@ -85,6 +85,49 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 				gl::Uniform1ui(loc.location, *data);
 			});
 		}
+
+		Uniform::ArrVector2(data) => {
+			gl_call!({
+				gl::Uniform2fv(loc.location, data.len() as i32, &data[0].x as *const f32);
+			});
+		}
+		Uniform::ArrVector3(data) => {
+			gl_call!({
+				gl::Uniform3fv(loc.location, data.len() as i32, &data[0].x as *const f32);
+			});
+		}
+		Uniform::ArrVector4(data) => {
+			gl_call!({
+				gl::Uniform4fv(loc.location, data.len() as i32, &data[0].x as *const f32);
+			});
+		}
+		Uniform::ArrMatrix3f(data) => {
+			gl_call!({
+				gl::UniformMatrix3fv(loc.location, data.len() as i32, gl::FALSE, &data[0].elements[0] as *const f32);
+			});
+		}
+		Uniform::ArrMatrix4f(data) => {
+			gl_call!({
+				gl::UniformMatrix4fv(loc.location, data.len() as i32, gl::FALSE, &data[0].elements[0] as *const f32);
+			});
+		}
+
+		Uniform::ArrFloat(data) => {
+			gl_call!({
+				gl::Uniform1fv(loc.location, data.len() as i32,  &data[0] as *const f32);
+			});
+		}
+		Uniform::ArrInt(data) => {
+			gl_call!({
+				gl::Uniform1iv(loc.location, data.len() as i32,  &data[0] as *const i32);
+			});
+		}
+		Uniform::ArrUInt(data) => {
+			gl_call!({
+				gl::Uniform1iv(loc.location, data.len() as i32,  *&data[0] as i32 as *const i32);
+			});
+		}
+
 		Uniform::Texture2D(data) => {
 			gl_call!({
 				gl::ActiveTexture(gl::TEXTURE0 + loc.texture_slot as u32);
@@ -93,13 +136,13 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 				Some(ref mut texture) => {
 					let texture = texture.lock().unwrap();
 					texture.bind(texture_store);
-					return;
 				}
-				None => {}
+				None => {
+					gl_call!({
+						gl::BindTexture(gl::TEXTURE_2D, 0);
+					});
+				}
 			}
-			gl_call!({
-				gl::BindTexture(gl::TEXTURE_2D, 0);
-			});
 		}
 	};
 }
@@ -109,7 +152,18 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &ShaderProgram
 		.iter_mut()
 		.enumerate()
 		.for_each(|(i, uniform_i)| {
-			set_uniform(&mut uniform_i.uniform, &shader_program.uniform_locations[i], texture_store);
+			match uniform_i.uniform {
+				Uniform::Texture2D( _ ) => {
+					set_uniform(&mut uniform_i.uniform, &shader_program.uniform_locations[i], texture_store);
+				}
+				_=> {
+					if uniform_i.need_update {
+						set_uniform(&mut uniform_i.uniform, &shader_program.uniform_locations[i], texture_store);
+						uniform_i.need_update = false;
+					}
+				}
+			}
+
 		});
 }
 
@@ -334,31 +388,6 @@ impl GLMaterial for Material {
 				gl_call!({
 					gl::UseProgram(program.id);
 				});
-
-				// self.get_textures()
-				// 	.iter()
-				// 	.enumerate()
-				// 	.for_each(|(i, data)| {
-				// 		let loc = program.texture_locations[i];
-				// 		if loc == -1 {return;}
-
-				// 		gl_call!({
-				// 			gl::ActiveTexture(gl::TEXTURE0 + i as u32);
-				// 		});
-
-				// 		match data.texture {
-				// 			Some(ref texture) => {
-				// 				let texture = texture.lock().unwrap();
-				// 				texture.bind(texture_store);
-				// 				return;
-				// 			}
-				// 			None => {}
-				// 		}
-
-				// 		gl_call!({
-				// 			gl::BindTexture(get_texture_dimensions(&data.dimensions), 0);
-				// 		});
-				// 	});
 
 				set_uniforms(self.get_uniforms(), program, texture_store);
 				return;

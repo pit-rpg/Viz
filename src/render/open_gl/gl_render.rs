@@ -176,11 +176,13 @@ impl<'a> System<'a> for RenderSystem {
 
 		let mut matrix_cam_position;
 		let matrix_projection;
+		let matrix_projection_inverse;
 
 		match self.camera {
 			None => {
 				matrix_cam_position = Matrix4::new();
 				matrix_projection = Matrix4::new();
+				matrix_projection_inverse = Matrix4::new();
 			}
 			Some( ref cam ) => {
 				let cam_transform = transform_coll.get(*cam).unwrap();
@@ -191,6 +193,7 @@ impl<'a> System<'a> for RenderSystem {
 				// matrix_projection = camera.matrix_projection_inverse * cam_transform.matrix_world * cam_transform.matrix_local;
 				// matrix_projection = camera.matrix_projection * matrix_cam_position;
 				matrix_projection = camera.matrix_projection.clone();
+				matrix_projection_inverse = camera.matrix_projection_inverse.clone();
 				// matrix_cam_position = cam_transform.matrix_world * cam_transform.matrix_local;
 			}
 		}
@@ -198,7 +201,8 @@ impl<'a> System<'a> for RenderSystem {
 		for (transform, geometry, shared_material) in (&transform_coll, &mut geometry_coll, &mut material_coll).join() {
 			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
 			let mut matrix_normal = Matrix3::new();
-			matrix_normal.get_normal_matrix(&matrix_model);
+			matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+			// matrix_normal.get_normal_matrix(&matrix_model);
 
 			let mut material = shared_material.lock().unwrap();
 			let geom = geometry.lock().unwrap();

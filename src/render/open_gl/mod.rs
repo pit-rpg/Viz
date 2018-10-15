@@ -120,7 +120,6 @@ pub fn test()
 	let mut material2 = SharedMaterial::new(material2);
 
 	let normal_mat = SharedMaterial::new(Material::new_normal());
-	let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
 
 	let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
 	material_sphere.set_uniform("texture_color", &Uniform::Texture2D(Some(texture_container)));
@@ -132,8 +131,11 @@ pub fn test()
 	material_sphere3.set_uniform("texture_specular", &Uniform::Texture2D(Some(texture_a2)));
 	let mut boxMat3 = SharedMaterial::new(material_sphere3);
 
+	let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
 	let mut boxMat2 = SharedMaterial::new(material_sphere2);
 
+	let material_phong = Material::new_phong(&Vector4::new(0.46,0.46,1.0,1.0), &Vector3::new_one(), &transform_light.position);
+	let mut box_phong = SharedMaterial::new(material_phong);
 
 	let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(1.0,1.0,1.0,1.0)));
 
@@ -198,7 +200,6 @@ pub fn test()
 			.randomize()
 			.multiply_scalar(10.0)
 			.sub_scalar(5.0);
-		transform.update();
 
 		let mut mat;
 		let mut geom;
@@ -206,7 +207,9 @@ pub fn test()
 		if i < count/3 {
 			mat = boxMat.clone();
 		} else if i < count/3*2 {
-			mat = boxMat3.clone();
+			// transform.scale.set(0.2,0.2,0.5);
+			// mat = boxMat3.clone();
+			mat = box_phong.clone();
 		} else {
 			mat = boxMat2.clone();
 		}
@@ -218,6 +221,7 @@ pub fn test()
 		}
 
 
+		transform.update();
 
 		let m_box = world
 			.create_entity()
@@ -305,13 +309,24 @@ pub fn test()
 			{
 				for m_box in boxes.iter() {
 					let transform = transform_store.get_mut(*m_box).unwrap();
-					transform.rotation.x += 0.01;
-					transform.rotation.y += 0.02;
-					transform.rotation.z += 0.03;
+					if transform.scale.z == 0.5 {
+						if render_system.get_duration() < 10.0 {
+							transform.rotation.x -= 0.001;
+							transform.rotation.y -= 0.002;
+							transform.rotation.z -= 0.003;
+							transform.update();
+						}
+
+					} else {
+						transform.rotation.x += 0.01;
+						transform.rotation.y += 0.02;
+						transform.rotation.z += 0.03;
+						transform.update();
+					}
+
 					// transform.position.x += 0.001;
 					// transform.position.y += 0.001;
 					// transform.position.z -= 0.01;
-					transform.update();
 				}
 			}
 
