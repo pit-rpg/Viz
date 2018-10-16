@@ -136,6 +136,10 @@ impl RenderSystem {
 	pub fn get_duration(&self) -> f32 {
 		self.time.as_secs() as f32 + self.time.subsec_nanos() as f32 * 1e-9
 	}
+
+	pub fn get_delta(&self) -> f32 {
+		self.delta_time.as_secs() as f32 + self.delta_time.subsec_nanos() as f32 * 1e-9
+	}
 }
 
 
