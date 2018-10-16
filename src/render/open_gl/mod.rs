@@ -13,6 +13,7 @@ mod gl_geometry;
 mod gl_material;
 mod gl_render;
 mod gl_texture;
+mod gl_shaderProgram;
 
 extern crate image;
 

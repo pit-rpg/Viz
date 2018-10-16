@@ -2,19 +2,14 @@ extern crate gl;
 extern crate uuid;
 
 use self::gl::types::*;
-use self::uuid::Uuid;
 
-use core::{Material, Uniform, UniformItem, ShaderProgram};
-use std::collections::HashMap;
-use std::path::Path;
+use core::{Uniform, UniformItem, ShaderProgram};
 use std::ffi::{CString};
 use std::ptr;
 use std::str;
 use helpers::{find_file, read_to_string};
 use super::gl_texture::{load_texture, GLTextureIDs, TextureId, GLTexture};
 
-
-pub type GLMaterialIDs = HashMap<Uuid, GLShaderProgram>;
 
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -32,14 +27,14 @@ pub struct UniformLocation {
 }
 
 #[derive(Debug)]
-pub struct GLShaderProgram {
-	fs_source: String,
-	vs_source: String,
-	id: GLuint,
-	uniform_locations: Vec<UniformLocation>,
+pub struct GLShaderProgramID {
+	pub fs_source: String,
+	pub vs_source: String,
+	pub id: GLuint,
+	pub uniform_locations: Vec<UniformLocation>,
 }
 
-impl Drop for GLShaderProgram {
+impl Drop for GLShaderProgramID {
 	fn drop(&mut self) {
 		println!("delete program");
 		gl_call!({
@@ -157,7 +152,7 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 }
 
 
-pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgram, texture_store: &mut GLTextureIDs) {
+pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgramID, texture_store: &mut GLTextureIDs) {
 	uniforms
 		.iter_mut()
 		.enumerate()
@@ -178,7 +173,7 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgr
 }
 
 
-fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
+pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
 	let p = find_file(&["src/render/open_gl/shaders"], path).unwrap();
 	let code = read_to_string(&p);
 	let mut result = String::with_capacity(code.len());
@@ -206,210 +201,175 @@ fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
 
 
 
-impl GLShaderProgram {
-	fn compile_shader_program(material: &mut Material, program: &mut GLShaderProgram, texture_store: &mut GLTextureIDs ) {
-		println!("compile shader: {}", material.get_src());
+pub fn get_program(src: &str) -> GLShaderProgramID {
+	let code = read_shader_file(&vec!("src/render/open_gl/shaders"), src);
 
-		let id;
-		// let fs_source = &program.fs_source;
+	let mut shader_program = GLShaderProgramID {
+		fs_source: String::from(""),
+		vs_source: String::from(""),
+		id: 0,
+		uniform_locations: Vec::new(),
+	};
 
-		gl_call!({
-			id = gl::CreateProgram();
-			program.id = id;
+	let mut write_to_prog = ProgramType::None;
 
-			let vs = Self::compile_shader(gl::VERTEX_SHADER, &program.vs_source[..], material.get_src());
-			let fs = Self::compile_shader(gl::FRAGMENT_SHADER, &program.fs_source[..], material.get_src());
-
-			gl::AttachShader(id, fs);
-			gl::AttachShader(id, vs);
-
-			gl::LinkProgram(id);
-			gl::ValidateProgram(id);
-
-			let mut info_log = Vec::with_capacity(512);
-			info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
-			let mut success = gl::FALSE as GLint;
-			gl::GetProgramiv(id, gl::LINK_STATUS, &mut success);
-			if success != gl::TRUE as GLint {
-				gl::GetProgramInfoLog(
-					id,
-					512,
-					ptr::null_mut(),
-					info_log.as_mut_ptr() as *mut GLchar,
-				);
-				// println!("{}", str::from_utf8_unchecked(&info_log));
-				println!(
-					"ERROR::SHADER::PROGRAM::COMPILATION_FAILED: {}\n{}",
-					material.get_src(),
-					str::from_utf8(&info_log).unwrap()
-				);
+	for line in code.lines() {
+		if line.starts_with("#<vertex>") {
+			write_to_prog = ProgramType::Vertex;
+		} else if line.starts_with("#<fragment>") {
+			write_to_prog = ProgramType::Fragment;
+		} else {
+			match write_to_prog {
+				ProgramType::Vertex => {
+					shader_program.vs_source += line;
+					shader_program.vs_source += "\n";
+				}
+				ProgramType::Fragment => {
+					shader_program.fs_source += line;
+					shader_program.fs_source += "\n";
+				}
+				_ => {}
 			}
-
-			// TODO - releace remove shasers
-			gl::DeleteShader(vs);
-			gl::DeleteShader(fs);
-		});
-
-		gl_call!({
-			gl::UseProgram(program.id);
-		});
-
-		let uniforms = material.get_uniforms();
-		let mut uniform_locations = Vec::<UniformLocation>::with_capacity(uniforms.len());
-
-		let mut location;
-		let mut texture_slot = 0;
-		let mut c_name;
-
-		for uniform in uniforms.iter() {
-			c_name = CString::new(uniform.name.as_bytes()).unwrap();
-
-			match uniform.uniform {
-				Uniform::Texture2D(_) => {
-					gl_call!({
-						location = gl::GetUniformLocation(program.id, c_name.as_ptr());
-						gl::Uniform1i(location, texture_slot as i32);
-					});
-
-					uniform_locations.push(UniformLocation{location, texture_slot});
-					texture_slot +=1;
-				}
-				_ => {
-					gl_call!({
-						location = gl::GetUniformLocation(program.id, c_name.as_ptr());
-					});
-					uniform_locations.push(UniformLocation{location, texture_slot: -1});
-				}
-			};
-
 		}
-
-		program.uniform_locations = uniform_locations;
-		set_uniforms(uniforms, program, texture_store);
 	}
-
-	fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
-		let id;
-
-		gl_call!({
-			id = gl::CreateShader(t);
-			let c_str_frag = CString::new(src[..].as_bytes()).unwrap();
-
-
-			let mut success = gl::FALSE as GLint;
-			let mut info_log = Vec::with_capacity(1024);
-			info_log.set_len(1024 - 1); // subtract 1 to skip the trailing null character
-
-			gl::ShaderSource(id, 1, &c_str_frag.as_ptr(), ptr::null());
-			gl::CompileShader(id);
-
-			// check for shader compile errors
-			gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
-			if success != gl::TRUE as GLint {
-				gl::GetShaderInfoLog(
-					id,
-					1024,
-					ptr::null_mut(),
-					info_log.as_mut_ptr() as *mut GLchar,
-				);
-				// println!("{}", str::from_utf8(&info_log).unwrap());
-				match t {
-					gl::FRAGMENT_SHADER => println!(
-						"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: {}\n{}",
-						src_path,
-						str::from_utf8(&info_log).unwrap()
-					),
-					gl::VERTEX_SHADER => println!(
-						"ERROR::SHADER::VERTEX::COMPILATION_FAILED: {}\n{}",
-						src_path,
-						str::from_utf8(&info_log).unwrap()
-					),
-					_ => println!(
-						"ERROR::SHADER::?::COMPILATION_FAILED: {}\n{}",
-						src_path,
-						str::from_utf8(&info_log).unwrap()
-					),
-				};
-				gl::DeleteShader(id);
-				panic!();
-			}
-		});
-
-		id
-	}
+	shader_program
 }
 
 
+pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], texture_store: &mut GLTextureIDs ) -> GLShaderProgramID {
+	println!("compile shader: {}", src);
 
-pub trait GLMaterial
-where Self: Sized,
-{
-	fn get_program(&mut self) -> GLShaderProgram;
+	let mut program = get_program(src);
+	let id;
+	// let fs_source = &program.fs_source;
 
-	fn bind(&mut self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs);
+	gl_call!({
+		id = gl::CreateProgram();
+		program.id = id;
 
-	fn unbind(&self) {
-		gl_call!({
-			gl::UseProgram(0);
-		});
-	}
-}
+		let vs = compile_shader(gl::VERTEX_SHADER, &program.vs_source[..], src);
+		let fs = compile_shader(gl::FRAGMENT_SHADER, &program.fs_source[..], src);
 
+		gl::AttachShader(id, fs);
+		gl::AttachShader(id, vs);
 
+		gl::LinkProgram(id);
+		gl::ValidateProgram(id);
 
-impl GLMaterial for Material {
-	fn get_program(&mut self) -> GLShaderProgram {
-		let code = read_shader_file(&vec!("src/render/open_gl/shaders"), self.get_src());
-
-		let mut shader_program = GLShaderProgram {
-			fs_source: String::from(""),
-			vs_source: String::from(""),
-			id: 0,
-			uniform_locations: Vec::new(),
-		};
-
-		let mut write_to_prog = ProgramType::None;
-
-		for line in code.lines() {
-			if line.starts_with("#<vertex>") {
-				write_to_prog = ProgramType::Vertex;
-			} else if line.starts_with("#<fragment>") {
-				write_to_prog = ProgramType::Fragment;
-			} else {
-				match write_to_prog {
-					ProgramType::Vertex => {
-						shader_program.vs_source += line;
-						shader_program.vs_source += "\n";
-					}
-					ProgramType::Fragment => {
-						shader_program.fs_source += line;
-						shader_program.fs_source += "\n";
-					}
-					_ => {}
-				}
-			}
+		let mut info_log = Vec::with_capacity(512);
+		info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
+		let mut success = gl::FALSE as GLint;
+		gl::GetProgramiv(id, gl::LINK_STATUS, &mut success);
+		if success != gl::TRUE as GLint {
+			gl::GetProgramInfoLog(
+				id,
+				512,
+				ptr::null_mut(),
+				info_log.as_mut_ptr() as *mut GLchar,
+			);
+			// println!("{}", str::from_utf8_unchecked(&info_log));
+			println!(
+				"ERROR::SHADER::PROGRAM::COMPILATION_FAILED: {}\n{}",
+				src,
+				str::from_utf8(&info_log).unwrap()
+			);
 		}
-		shader_program
-	}
 
-	fn bind(&mut self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs) {
-		match mat_store.get_mut(&self.uuid) {
-			None => {}
-			Some(ref program) => {
+		// TODO - release remove shaders
+		gl::DeleteShader(vs);
+		gl::DeleteShader(fs);
+	});
+
+	gl_call!({
+		gl::UseProgram(program.id);
+	});
+
+	// let uniforms = material.get_uniforms();
+	let mut uniform_locations = Vec::<UniformLocation>::with_capacity(uniforms.len());
+
+	let mut location;
+	let mut texture_slot = 0;
+	let mut c_name;
+
+	for uniform in uniforms.iter() {
+		c_name = CString::new(uniform.name.as_bytes()).unwrap();
+
+		match uniform.uniform {
+			Uniform::Texture2D(_) => {
 				gl_call!({
-					gl::UseProgram(program.id);
+					location = gl::GetUniformLocation(program.id, c_name.as_ptr());
+					gl::Uniform1i(location, texture_slot as i32);
 				});
 
-				set_uniforms(self.get_uniforms(), program, texture_store);
-				return;
+				uniform_locations.push(UniformLocation{location, texture_slot});
+				texture_slot +=1;
 			}
-		}
+			_ => {
+				gl_call!({
+					location = gl::GetUniformLocation(program.id, c_name.as_ptr());
+				});
+				uniform_locations.push(UniformLocation{location, texture_slot: -1});
+			}
+		};
 
-		let mut program = self.get_program();
-		GLShaderProgram::compile_shader_program(self, &mut program, texture_store);
-
-		mat_store.insert(self.uuid, program);
-
-		self.bind(mat_store, texture_store);
 	}
+
+	program.uniform_locations = uniform_locations;
+	set_uniforms(uniforms, &program, texture_store);
+	program
 }
+
+
+
+pub fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
+	let id;
+
+	gl_call!({
+		id = gl::CreateShader(t);
+		let c_str_frag = CString::new(src[..].as_bytes()).unwrap();
+
+
+		let mut success = gl::FALSE as GLint;
+		let mut info_log = Vec::with_capacity(1024);
+		info_log.set_len(1024 - 1); // subtract 1 to skip the trailing null character
+
+		gl::ShaderSource(id, 1, &c_str_frag.as_ptr(), ptr::null());
+		gl::CompileShader(id);
+
+		// check for shader compile errors
+		gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
+		if success != gl::TRUE as GLint {
+			gl::GetShaderInfoLog(
+				id,
+				1024,
+				ptr::null_mut(),
+				info_log.as_mut_ptr() as *mut GLchar,
+			);
+			// println!("{}", str::from_utf8(&info_log).unwrap());
+			match t {
+				gl::FRAGMENT_SHADER => println!(
+					"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: {}\n{}",
+					src_path,
+					str::from_utf8(&info_log).unwrap()
+				),
+				gl::VERTEX_SHADER => println!(
+					"ERROR::SHADER::VERTEX::COMPILATION_FAILED: {}\n{}",
+					src_path,
+					str::from_utf8(&info_log).unwrap()
+				),
+				_ => println!(
+					"ERROR::SHADER::?::COMPILATION_FAILED: {}\n{}",
+					src_path,
+					str::from_utf8(&info_log).unwrap()
+				),
+			};
+			gl::DeleteShader(id);
+			panic!();
+		}
+	});
+
+	id
+}
+
+
+
