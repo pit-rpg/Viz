@@ -1,11 +1,11 @@
 extern crate image;
 extern crate uuid;
 
-use self::image::{GenericImage, ColorType};
+use self::image::{ColorType, GenericImageView};
 use self::uuid::Uuid;
 use std::path::Path;
-use std::cmp::PartialEq;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
+// use std::cmp::PartialEq;
 
 
 #[allow(dead_code)]

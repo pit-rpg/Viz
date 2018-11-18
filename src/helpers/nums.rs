@@ -2,6 +2,7 @@ extern crate rand;
 use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 use std::marker::{Sync, Send};
 use std::fmt::Debug;
+// use self::rand::R;
 
 pub trait Nums
 where Self:
@@ -14,7 +15,6 @@ AddAssign+
 SubAssign+
 DivAssign+
 PartialOrd+
-rand::Rand+
 Debug+
 Mul<Output=Self>+
 Add<Output=Self>+
@@ -22,7 +22,6 @@ Sub<Output=Self>+
 Neg<Output=Self>+
 Div<Output=Self>
 {
-	// type T = Self;
 	fn zero() -> Self;
 	fn one() -> Self;
 	fn two() -> Self;
@@ -43,7 +42,6 @@ Div<Output=Self>
 	fn clamp(&self, min: Self, max: Self) -> Self;
 	fn from_f32(n: f32) -> Self;
 	fn from_f64(n: f64) -> Self;
-	// fn from_f32(&self, min: Self, max: Self) -> Self;
 }
 
 

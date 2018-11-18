@@ -4,15 +4,19 @@ version = "0.1.0"
 authors = ["Krovspey Stepan <pit-rpg@yandex.ua>"]
 
 [dependencies]
-glutin = "0.18.0"
-gl = "0.10.0"
-rand = "0.5.5"
-# num-traits = "0.2.5"
-specs = "0.11"
-image = "0.19.0"
-uuid = { version = "0.5", features = ["v4"] }
-# features = ["secure-password", "civet", "prod"]
-byteorder = "1.2.4"
+glutin = "0.19.0"
+gl = "0.11.0"
+rand = "0.6.0"
+specs = "0.14"
+image = "0.20.1"
+uuid = { version = "0.7.1", features = ["v4"] }
+byteorder = "1.2.7"
+typer = "0.1.0"
+
 
 [features]
 prod = []
+
+
+[profile.dev]
+opt-level = 2

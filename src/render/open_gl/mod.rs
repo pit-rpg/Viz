@@ -59,7 +59,7 @@ struct WindowState {
 
 
 extern crate specs;
-use self::specs::{World, RunNow};
+use self::specs::{World, RunNow, Builder};
 
 
 
