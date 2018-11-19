@@ -46,6 +46,22 @@ where T:Nums
         self.cross_vectors(&c , v )
     }
 
+	pub fn as_hex_color(&self) -> String {
+		format!(
+			"#{:X}{:X}{:X}",
+			self.x.as_u8(),
+			self.y.as_u8(),
+			self.z.as_u8(),
+		)
+	}
+
+
+	pub fn as_u8_color(&self) -> [u8;3] {
+		[	self.x.as_u8(),
+			self.y.as_u8(),
+			self.z.as_u8(),
+		]
+	}
 }
 
 

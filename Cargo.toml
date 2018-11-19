@@ -11,7 +11,7 @@ specs = "0.14"
 image = "0.20.1"
 uuid = { version = "0.7.1", features = ["v4"] }
 byteorder = "1.2.7"
-typer = "0.1.0"
+typer = "0.1.1"
 
 
 [features]

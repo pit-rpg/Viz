@@ -27,14 +27,19 @@ impl Drop for TextureId {
 }
 
 pub trait GLTexture {
-	fn bind(&self, hash_map: &mut GLTextureIDs);
+	fn bind(&mut self, hash_map: &mut GLTextureIDs);
 	fn unbind(&self);
 }
 
 impl GLTexture for Texture2D {
-	fn bind(&self, hash_map: &mut GLTextureIDs) {
+	fn bind(&mut self, hash_map: &mut GLTextureIDs) {
 		let gl_texture_dimensions = gl::TEXTURE_2D;
 		// let gl_texture_dimensions = get_texture_dimensions(&self.dimensions);
+
+		if self.need_update {
+			hash_map.remove(&self.uuid);
+			self.need_update = false;
+		}
 
 		if hash_map.get(&self.uuid).is_none() {
 			let tid = load_texture(self).unwrap();
@@ -75,14 +80,15 @@ fn to_gl_color_type(color_type: &TextureColorType) -> u32 {
 // 	}
 // }
 
-pub fn load_texture(texture: &Texture2D) -> Result<TextureId, ()> {
+pub fn load_texture(texture: &mut Texture2D) -> Result<TextureId, ()> {
 	println!("_/ LOAD TEXTURE______________________________",);
 
 	let mut id: u32 = 0;
 
-	if let Some(path) = &texture.path {
-		texture.load().expect(&format!("Error cant load texture: {}", path));
+	if !texture.has_texture_data() && texture.path.is_some() {
+		texture.load().unwrap();
 	}
+
 	let texture_data = texture.get_texture_data_ref().unwrap();
 
 	let gl_texture_dimensions = gl::TEXTURE_2D;

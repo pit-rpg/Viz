@@ -36,6 +36,24 @@ where T:Nums
         self.w = w;
         self
     }
+
+	pub fn as_hex_color(&self) -> String {
+		format!(
+			"#{:X}{:X}{:X}{:X}",
+			self.x.as_u8(),
+			self.y.as_u8(),
+			self.z.as_u8(),
+			self.w.as_u8(),
+		)
+	}
+	
+	pub fn as_u8_color(&self) -> [u8;4] {
+		[	self.x.as_u8(),
+			self.y.as_u8(),
+			self.z.as_u8(),
+			self.w.as_u8()
+		]
+	}
 }
 
 

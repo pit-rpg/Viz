@@ -138,7 +138,7 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 			});
 			match data {
 				Some(ref mut texture) => {
-					let texture = texture.lock().unwrap();
+					let mut texture = texture.lock().unwrap();
 					texture.bind(texture_store);
 				}
 				None => {

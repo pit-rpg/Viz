@@ -42,6 +42,7 @@ Div<Output=Self>
 	fn clamp(&self, min: Self, max: Self) -> Self;
 	fn from_f32(n: f32) -> Self;
 	fn from_f64(n: f64) -> Self;
+	fn as_u8(&self) -> u8;
 }
 
 
@@ -66,6 +67,7 @@ impl Nums for f32 {
 	fn clamp(&self, min: Self, max: Self) -> Self { self.min(max).max(min) }
 	fn from_f32(n: f32) -> Self { n }
 	fn from_f64(n: f64) -> Self { n as f32 }
+	fn as_u8(&self) -> u8 { (self * 255.0).max(0.0).min(255.0) as u8 }
 }
 
 impl Nums for f64 {
@@ -89,4 +91,5 @@ impl Nums for f64 {
 	fn clamp(&self, min: Self, max: Self) -> Self { self.min(max).max(min) }
 	fn from_f32(n: f32) -> Self { n as f64 }
 	fn from_f64(n: f64) -> Self { n }
+	fn as_u8(&self) -> u8 { (self * 255.0).max(0.0).min(255.0) as u8 }
 }

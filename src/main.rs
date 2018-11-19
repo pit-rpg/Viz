@@ -2,6 +2,7 @@
 mod macros;
 mod math;
 mod core;
+mod components;
 mod render;
 mod helpers;
 use core::BufferGeometry;
