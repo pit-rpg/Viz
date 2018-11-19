@@ -79,7 +79,12 @@ pub fn load_texture(texture: &Texture2D) -> Result<TextureId, ()> {
 	println!("_/ LOAD TEXTURE______________________________",);
 
 	let mut id: u32 = 0;
-	let texture_data = texture.load().expect(&format!("Error cant load texture: {}", texture.path));
+
+	if let Some(path) = &texture.path {
+		texture.load().expect(&format!("Error cant load texture: {}", path));
+	}
+	let texture_data = texture.get_texture_data_ref().unwrap();
+
 	let gl_texture_dimensions = gl::TEXTURE_2D;
 	// let gl_texture_dimensions = get_texture_dimensions(&texture.dimensions);
 

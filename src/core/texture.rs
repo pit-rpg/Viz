@@ -5,7 +5,6 @@ use self::image::{ColorType, GenericImageView};
 use self::uuid::Uuid;
 use std::path::Path;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
-// use std::cmp::PartialEq;
 
 
 #[allow(dead_code)]
@@ -32,27 +31,20 @@ pub enum TextureColorType {
 	RGBA(u8),
 }
 
-// // #[allow(dead_code)]
-// #[derive(Debug, Clone)]
-// pub enum TextureDimensions {
-// 	D1,
-// 	D2,
-// 	D3,
-// }
-
 
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Texture2D {
-	pub path: String,
+	pub path: Option<String>,
 	pub uuid: Uuid,
 	pub wrapping_x: Wrapping,
 	pub wrapping_y: Wrapping,
 	pub filtering: Filtering,
-	// pub dimensions: TextureDimensions,
+	texture_data: Option<TextureData>,
 }
 
 
+#[derive(Debug)]
 pub struct TextureData {
 	pub color_type: TextureColorType,
 	pub width: u32,
@@ -64,44 +56,59 @@ impl Texture2D {
 
 	pub fn new (path: &str) -> Self {
 		Self {
-			path: path.to_string(),
+			path: Some(path.to_string()),
 			uuid: Uuid::new_v4(),
 			wrapping_x: Wrapping::Repeat,
 			wrapping_y: Wrapping::Repeat,
 			filtering: Filtering::NEAREST,
-			// dimensions: TextureDimensions::D2,
+			texture_data: None,
 		}
 	}
 
-	pub fn load (&self) -> Result<TextureData, ()> {
-
-		let img =  match image::open(&Path::new(&self.path)) {
-			Ok(img) => { img }
-			Err(e) => {
-				println!("{}", e);
-				return Err(())
+	pub fn load (&self) -> Result<&TextureData, ()> {
+		match (&self.path, &self.texture_data) {
+			(None, Some(td)) | (Some(_), Some(td)) => {
+				Ok(td)
 			}
-		};
+			(Some(path), None) => {
+				let img =  match image::open(&Path::new(path)){
+					Err(_) => {return Err(());}
+					Ok(im) => im.flipv()
+				};
 
-		let img = img.flipv();
+				let color_type = match img.color() {
+					ColorType::Gray(d) => TextureColorType::Gray(d),
+					ColorType::RGB(d) =>  TextureColorType::RGB(d),
+					ColorType::RGBA(d) => TextureColorType::RGBA(d),
+					_ =>{ return Err(()) }
+				};
 
-		let color_type;
-		match img.color() {
-			ColorType::Gray(d) => { color_type = TextureColorType::Gray(d) },
-			ColorType::RGB(d) =>  { color_type = TextureColorType::RGB(d) },
-			ColorType::RGBA(d) => { color_type = TextureColorType::RGBA(d) },
-			_ =>{ return Err(()) }
+				let data = img.raw_pixels();
+				let (width, height) = img.dimensions();
+
+				self.texture_data = Some(TextureData {
+					data,
+					width,
+					height,
+					color_type,
+				});
+
+				Ok(&self.texture_data.unwrap())
+			}
+			(None,None) => Err(())
 		}
+	}
 
-		let data = img.raw_pixels();
-		let (width, height) = img.dimensions();
+	pub fn set_texture_data(&self, data: Option<TextureData>) {
+		self.texture_data = data;
+	}
 
-		Ok(TextureData {
-			data,
-			width,
-			height,
-			color_type,
-		})
+	pub fn get_texture_data_ref (&self) -> Option<&TextureData> {
+		self.texture_data.as_ref()
+	}
+
+	pub fn get_texture_data_ref_mut (&mut self) -> Option<&mut TextureData> {
+		self.texture_data.as_mut()
 	}
 }
 
@@ -123,14 +130,3 @@ impl SharedTexture2D {
 		self.0.lock()
 	}
 }
-
-// impl PartialEq for TextureDimensions {
-// 	 fn eq(&self, other: &Self) -> bool {
-// 		match (self, other) {
-// 			(TextureDimensions::D1, TextureDimensions::D1) => { true },
-// 			(TextureDimensions::D2, TextureDimensions::D2) => { true },
-// 			(TextureDimensions::D3, TextureDimensions::D3) => { true },
-// 			_ => { false }
-// 		}
-// 	}
-// }
