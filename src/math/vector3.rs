@@ -77,6 +77,15 @@ where T:Nums
         Self { x: T::one(), y: T::one(), z: T::one() }
     }
 
+	fn new_max() -> Self {
+        Self { x: T::max_val(), y: T::max_val(), z: T::max_val() }
+    }
+	
+	fn new_min() -> Self{
+        Self { x: T::min_val(), y: T::min_val(), z: T::min_val() }
+    }
+
+
     fn random() -> Self {
         Self { x: T::random(), y: T::random(), z: T::random() }
     }
@@ -245,6 +254,11 @@ where T:Nums
 	fn equals(&self, v: &Self ) -> bool {
 		( v.x == self.x ) && ( v.y == self.y ) && ( v.z == self.z )
 	}
+
+	fn is_zero(&self) -> bool {
+		self.x == T::zero() && self.y == T::zero() && self.z == T::zero()
+	}
+
 
     // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self {
     //     let i = index * 4;

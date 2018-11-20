@@ -3,8 +3,9 @@ use self::uuid::Uuid;
 use helpers::Nums;
 use math::{Vector, Vector2, Vector3, Vector4};
 use std::vec::Vec;
-use std::rc::Rc;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
+use super::{Box3};
+
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -168,7 +169,7 @@ impl BufferGeometry {
 		self.attributes.iter().find(|e| e.name == name)
 	}
 
-	pub fn get_mut_attribute(&mut self, name: &str) -> Option<&mut BufferAttribute> {
+	pub fn get_attribute_mut(&mut self, name: &str) -> Option<&mut BufferAttribute> {
 		self.attributes.iter_mut().find(|e| e.name == name)
 	}
 
@@ -303,6 +304,33 @@ impl BufferGeometry {
 		let mut data = self.clone();
 		data.uuid = Uuid::new_v4();
 		data
+	}
+
+	pub fn create_box3 (&self) -> Option<Box3<f32>> {
+		if let Some(attr) = self.get_attribute("positions") {
+			if let BufferType::Vector3(positions) = &attr.data {
+				let mut b = Box3::new_empty();
+				b.set_from_array(&positions[..]);
+				return Some(b);
+			}
+			return None;
+		}
+		None
+	}
+
+	pub fn scale_positions_by_vec(&mut self, v: &Vector3<f32>) -> Option<()> {
+		if let Some(attr) = self.get_attribute_mut("positions") {
+			if let BufferType::Vector3(positions) = &mut attr.data {
+				positions
+					.iter_mut()
+					.for_each(|e| {
+						e.multiply(v);
+					});
+				return Some(());
+			}
+			return None;
+		}
+		None
 	}
 }
 

@@ -39,6 +39,15 @@ where T:Nums
         Self { x: T::one(), y: T::one() }
     }
 
+	fn new_max() -> Self {
+        Self { x: T::max_val(), y: T::max_val() }
+    }
+	
+	fn new_min() -> Self{
+        Self { x: T::min_val(), y: T::min_val() }
+    }
+
+
     fn random() -> Self {
         Self { x: T::random(), y: T::random() }
     }
@@ -187,6 +196,10 @@ where T:Nums
 
 	fn equals(&self, v: &Self ) -> bool {
 		( v.x == self.x ) && ( v.y == self.y )
+	}
+
+	fn is_zero(&self) -> bool {
+		self.x == T::zero() && self.y == T::zero()
 	}
 
     fn from_array (&mut self, array: &[T] ) -> &mut Self {

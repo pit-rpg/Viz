@@ -42,7 +42,7 @@ use self::gl_render::*;
 use self::gl_texture::*;
 use self::gl_material::GLMaterial;
 use self::gl_material::GLMaterialIDs;
-use helpers::geometryGenerators;
+use helpers::geometry_generators;
 use std::f32::consts::PI;
 
 
@@ -85,10 +85,10 @@ pub fn test()
 
 
 	// let geom2 = box_geometry(1.0,1.0,1.0);
-	let geom_container = SharedGeometry::new(geometryGenerators::box_geometry(1.0, 1.0, 1.0));
+	let geom_container = SharedGeometry::new(geometry_generators::box_geometry(1.0, 1.0, 1.0));
 	// let geom_container = box_geometry(1.0,1.0,1.0);
 	// let geom_sphere = sphere(0.5, 32, 32);
-	let geom_light = SharedGeometry::new(geometryGenerators::sphere(0.5, 12, 12));
+	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
 	let camera = PerspectiveCamera::new();
 

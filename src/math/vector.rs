@@ -3,10 +3,12 @@ use std::ops::{Sub};
 
 
 pub trait Vector<T>
-
-where T: Nums {
+where T: Nums, Self: Sized
+{
     fn new_zero() -> Self;
     fn new_one() -> Self;
+    fn new_max() -> Self;
+    fn new_min() -> Self;
     fn random() -> Self;
     fn randomize(&mut self) -> &mut Self;
     fn copy (&mut self, v: &Self) -> &mut Self;
@@ -35,6 +37,7 @@ where T: Nums {
     fn lerp (&mut self, v: &Self,  alpha:T )-> &mut Self;
     fn zero () -> Self;
 	fn equals(&self, v: &Self ) -> bool;
+	fn is_zero(&self) -> bool;
     // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self;
     fn from_array (&mut self, array: &[T] ) -> &mut Self;
     // fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self;
