@@ -1,4 +1,4 @@
-pub mod open_gl;
+#[macro_use] pub mod open_gl;
 
 
 pub trait Renderer {

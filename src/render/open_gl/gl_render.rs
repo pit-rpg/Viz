@@ -23,7 +23,7 @@ use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::dpi::*;
 use self::glutin::{EventsLoop, GlContext, GlWindow, ContextError};
-use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join};
+use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join, World};
 use self::uuid::Uuid;
 
 use math::{Matrix3, Matrix4, Vector4, Vector};
@@ -69,15 +69,21 @@ pub struct RenderSystem {
 }
 
 
-impl Default for RenderSystem {
-	fn default() -> Self {
-		Self::new()
-	}
-}
+// impl Default for RenderSystem {
+// 	fn default() -> Self {
+// 		Self::new()
+// 	}
+// }
 
 
 impl RenderSystem {
-	pub fn new() -> Self {
+	pub fn new(world: &mut World) -> Self {
+		// TODO: ensure once
+		world.add_resource(VertexArraysIDs::new()); 
+		world.add_resource(GLMaterialIDs::new());
+		world.add_resource(GLTextureIDs::new());
+		// TODO: ensure once /
+
 		let events_loop = glutin::EventsLoop::new();
 		let window = glutin::WindowBuilder::new()
 			.with_title("Hello, world!")

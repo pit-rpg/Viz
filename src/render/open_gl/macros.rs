@@ -1,5 +1,5 @@
-#![macro_use]
-
+// #![macro_use]
+// #![macro_escape]
 extern crate gl;
 
 use std::fmt::Display;

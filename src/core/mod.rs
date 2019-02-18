@@ -6,6 +6,7 @@ mod perspective_camera;
 mod light;
 mod shaderProgram;
 mod rectangle;
+mod world;
 
 pub use self::buffer_geometry::*;
 pub use self::material::*;
@@ -15,3 +16,4 @@ pub use self::perspective_camera::*;
 pub use self::light::*;
 pub use self::shaderProgram::*;
 pub use self::rectangle::*;
+pub use self::world::create_world;

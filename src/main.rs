@@ -37,8 +37,6 @@ fn main() {
 
     }
 
-    render::open_gl::test();
-
 
     // let mut buffer = [0u8; 10];
 
