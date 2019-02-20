@@ -2,7 +2,6 @@ extern crate uuid;
 #[macro_use] extern crate project;
 
 
-use uuid::Uuid;
 use std::f64::consts::PI as PI_f64;
 use project::{
 	specs::*,
@@ -22,11 +21,14 @@ pub struct WindowState {
 	pub window_size: (f64, f64),
 }
 
+
 fn main(){
 
 	let mut world = create_world();
 	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
-
+	
+	let count = 100;
+	let mut boxes = Vec::with_capacity(count);
 
 	gl_call!({
 		gl::Enable(gl::DEPTH_TEST);
@@ -44,32 +46,25 @@ fn main(){
 	let mut running = true;
 
 
-	// let geom2 = box_geometry(1.0,1.0,1.0);
 	let geom_container = SharedGeometry::new(geometry_generators::box_geometry(1.0, 1.0, 1.0));
-	// let geom_container = box_geometry(1.0,1.0,1.0);
-	// let geom_sphere = sphere(0.5, 32, 32);
+
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
-	let camera = PerspectiveCamera::new();
 
 	let transform2 = Transform::default();
-	let transform_spare = Transform::default();
 
+	let mut camera = PerspectiveCamera::new();
 	let mut transform_camera = Transform::default();
 	transform_camera.position.z = 6.0;
 	transform_camera.update();
+	camera.view.enabled = false;
+	println!("{:?}", camera);
 
 	let mut transform_light = Transform::default();
-	// transform_light.position.set(1.2, 1.0, 2.0);
 	transform_light.scale.set(0.2, 0.2, 0.2);
 	transform_light.update();
 
-	let texture1 = SharedTexture2D::new_from_path("images/tile.jpg");
 	let texture2 = SharedTexture2D::new_from_path("images/awesomeface.png");
-	let texture3 = SharedTexture2D::new_from_path("images/earth.jpg");
-
-	let texture_a = SharedTexture2D::new_from_path("images/Stone_Tiles_003_COLOR.jpg");
-	let texture_a2 = SharedTexture2D::new_from_path("images/Stone_Tiles_003_ROUGH.jpg");
 
 	let texture_container = SharedTexture2D::new_from_path("images/container2.png");
 	let texture_container_specular = SharedTexture2D::new_from_path("images/container2_specular.png");
@@ -77,34 +72,20 @@ fn main(){
 
 	let mut material2 = Material::new_basic_texture(&Vector4::random());
 	material2.set_uniform("texture_color", &Uniform::Texture2D(Some(texture2.clone())));
-	let mut material2 = SharedMaterial::new(material2);
-
-	let normal_mat = SharedMaterial::new(Material::new_normal());
+	let material2 = SharedMaterial::new(material2);
 
 	let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
 	material_sphere.set_uniform("texture_color", &Uniform::Texture2D(Some(texture_container)));
 	material_sphere.set_uniform("texture_specular", &Uniform::Texture2D(Some(texture_container_specular)));
-	let mut boxMat = SharedMaterial::new(material_sphere);
-
-	let mut material_sphere3 = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-	material_sphere3.set_uniform("texture_color", &Uniform::Texture2D(Some(texture_a)));
-	material_sphere3.set_uniform("texture_specular", &Uniform::Texture2D(Some(texture_a2)));
-	let mut boxMat3 = SharedMaterial::new(material_sphere3);
+	let box_mat = SharedMaterial::new(material_sphere);
 
 	let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-	let mut boxMat2 = SharedMaterial::new(material_sphere2);
+	let box_mat2 = SharedMaterial::new(material_sphere2);
 
 	let material_phong = Material::new_phong(&Vector4::new(0.46,0.46,1.0,1.0), &Vector3::new_one(), &transform_light.position);
-	let mut box_phong = SharedMaterial::new(material_phong);
+	let box_phong = SharedMaterial::new(material_phong);
 
 	let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(1.0,1.0,1.0,1.0)));
-
-
-	// println!("{}", geom2.uuid);
-
-	{
-		// let a = geom2.0;
-	}
 
 	let e2 = world
 		.create_entity()
@@ -113,13 +94,6 @@ fn main(){
 		.with(transform2)
 		.build();
 
-	// let e3 = world
-	//	 .create_entity()
-	//	 .with(geom_container)
-	//	 // .with(geom_sphere)
-	//	 .with(material_sphere)
-	//	 .with(transform_spare)
-	//	 .build();
 
 	let e_cam = world
 		.create_entity()
@@ -127,24 +101,15 @@ fn main(){
 		.with(camera)
 		.build();
 
-	let e_Light = world
+	world
 		.create_entity()
 		.with(geom_light.clone())
 		.with(material_light)
 		.with(transform_light)
 		.build();
 
-	// {
-		// let mut transform_store = world.write_storage::<Transform>();
-		// transform_store.
-		// let mut cam_store = world.write_storage::<PerspectiveCamera>();
-		// let transform_camera = transform_store.get_mut(e_cam).unwrap();
-	// }
 
-	let mut boxes = Vec::new();
-
-	let count = 1000;
-	for i in 0..1000 {
+	for i in 0..count {
 		let mut transform = Transform::default();
 		transform.scale.set(0.4,0.4,0.4);
 		transform.position
@@ -156,13 +121,11 @@ fn main(){
 		let mut geom;
 
 		if i < count/3 {
-			mat = boxMat.clone();
+			mat = box_mat.clone();
 		} else if i < count/3*2 {
-			// transform.scale.set(0.2,0.2,0.5);
-			// mat = boxMat3.clone();
 			mat = box_phong.clone();
 		} else {
-			mat = boxMat2.clone();
+			mat = box_mat2.clone();
 		}
 
 		if i%2 == 0 {
@@ -176,16 +139,12 @@ fn main(){
 
 		let m_box = world
 			.create_entity()
-			// .with(geom_light.clone())
 			.with(geom.clone())
-			// .with(normal_mat.clone())
 			.with(mat)
 			.with(transform)
 			.build();
 		boxes.push(m_box);
 	}
-
-
 
 
 	render_system.camera = Some(e_cam);
@@ -205,25 +164,24 @@ fn main(){
 					glutin::Event::WindowEvent{ event, .. } => match event {
 						glutin::WindowEvent::CloseRequested => running = false,
 						glutin::WindowEvent::Resized(logical_size) => {
-							let dpi_factor = window.get_hidpi_factor();
-							window.resize(logical_size.to_physical(dpi_factor));
+							// let dpi_factor = window.get_hidpi_factor();
+							// window.resize(logical_size.to_physical(dpi_factor));
 							// window.set_inner_size(logical_size);
 							// window.context().resize(logical_size.to_physical(dpi_factor));
-							// println!("{:?}", logical_size);
+							println!("{:?}", logical_size);
 							window_state.window_size.0 = logical_size.width;
 							window_state.window_size.1 = logical_size.height;
+
+							gl_call!({
+								gl::Viewport(0,0, logical_size.width as i32, logical_size.height as i32);
+							});
 						},
 						CursorMoved { position: pos, .. } =>{
 							window_state.pointer_pos = pos
 								.to_physical(window.get_hidpi_factor())
 								.to_logical(hidpi_factor)
 								.into();
-							// println!("{:?}", mouse_state.pos);
 						}
-						// WindowEvent::Resized(data) => {
-						//	 println!("{:?}", data);
-						//	 // window.resize(w, h),
-						// }
 						_ => ()
 					},
 					_ => ()
@@ -274,49 +232,29 @@ fn main(){
 						transform.rotation.z += 0.03;
 						transform.update();
 					}
-
-					// transform.position.x += 0.001;
-					// transform.position.y += 0.001;
-					// transform.position.z -= 0.01;
 				}
 			}
 
-			{
-				// let transform_spare = transform_store.get_mut(e3).unwrap();
-				// transform_spare.rotation.y += 0.001;
-				// transform_spare.rotation.z += 0.002;
-				// transform_spare.rotation.x += 0.003;
-				// transform_spare.scale.y = 2.0 * render_system.get_duration().sin().abs();
-				// transform_spare.update();
-			}
+
 			{
 				let transform_camera = transform_store.get_mut(e_cam).unwrap();
-				let camera = cam_store.get_mut(e_cam).unwrap();
+				let aspect = window_state.window_size.0/window_state.window_size.1;
+
+				let  camera = cam_store.get_mut(e_cam).unwrap();
+				camera.aspect = aspect as f32;
+				camera.update_projection_matrix();
+
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
 				transform_camera.position.z = ( (x_prog * (PI_f64*2.0)).sin() * radius ) as f32;
 				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;;
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
-				// println!("{:?}", transform_camera.rotation);
 				transform_camera.look_at(&center, &up);
 				transform_camera.update();
-				// camera.aspect = (window_state.window_size.0/window_state.window_size.1) as f32;
-				// camera.view.full_width = window_state.window_size.0 as f32;
-				// camera.view.full_height = window_state.window_size.1 as f32;
-				// camera.view.width = window_state.window_size.0 as f32;
-				// camera.view.height = window_state.window_size.1 as f32;
-				// camera.update_projection_matrix();
 			}
 		}
 
 		render_system.run_now(&world.res);
 
 	}
-
-
-
-
-
-
-
 }

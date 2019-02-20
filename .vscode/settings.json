@@ -8,11 +8,13 @@
 		"glutin",
 		"lchar",
 		"lenum",
+		"lerp",
 		"luint",
 		"mipmap",
 		"nums",
 		"phong",
 		"repr",
+		"resizable",
 		"rgba",
 		"uuid"
 	]

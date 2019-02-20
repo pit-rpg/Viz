@@ -45,14 +45,6 @@ use helpers::geometry_generators;
 use std::f32::consts::PI;
 
 
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
-pub struct WindowState {
-	pub pointer_pos: (f64, f64),
-	pub pointer_pressed: (bool, bool, bool),
-	pub pointer_wheel: f32,
-	pub window_size: (f64, f64),
-}
-
 
 extern crate specs;
 use self::specs::{World, RunNow, Builder};
