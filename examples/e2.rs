@@ -27,7 +27,7 @@ fn main(){
 	let mut world = create_world();
 	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
 	
-	let count = 100;
+	let count = 400;
 	let mut boxes = Vec::with_capacity(count);
 
 	gl_call!({

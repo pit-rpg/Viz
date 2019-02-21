@@ -1,7 +1,7 @@
 
 use std::ops::{Sub, Index, IndexMut};
 use helpers::Nums;
-use super::Vector;
+use super::{Vector, Matrix4};
 
 #[repr(C)]
 #[derive(Clone, Debug)]
@@ -61,6 +61,21 @@ where T:Nums
 			self.y.as_u8(),
 			self.z.as_u8(),
 		]
+	}
+
+
+	pub fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self {
+		let one:T = Nums::one();
+
+		let x = self.x; let y = self.y; let z = self.z;
+		let e = m.elements;
+		let w = one / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
+
+		self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
+		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
+		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
+
+		self
 	}
 }
 
@@ -272,21 +287,6 @@ where T:Nums
         self.z = array[ 2 ];
         self
     }
-
-    // fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self {
-    //     let one:T = Nums::one();
-
-    //     let x = self.x; let y = self.y; let z = self.z;
-    // 	let e = m.elements;
-    // 	let w = one / ( e[ 3 ] * x + e[ 7 ] * y + e[ 11 ] * z + e[ 15 ] );
-
-    //     self.x = ( e[ 0 ] * x + e[ 4 ] * y + e[ 8 ] * z + e[ 12 ] ) * w;
-    // 	self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
-    // 	self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
-
-    //     self
-    // }
-
 
     // fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self {
     // 	let x = self.x; let y = self.y; let z = self.z;

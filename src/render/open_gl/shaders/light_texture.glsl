@@ -12,14 +12,12 @@ layout (location = 2) in vec2 aUV;
 
 out vec3 v_pos;
 out vec3 v_norm;
-out vec3 light_pos;
 out vec2 v_uv;
 
 void main() {
 	gl_Position = matrix_view * matrix_model * vec4(aPos.xyz, 1.0);
 	v_pos = vec3(matrix_model * vec4(aPos, 1.0f));
 	v_norm = matrix_normal * aNormal;
-	light_pos = vec3(matrix_view * vec4(position_light, 1.0)); // Transform world-space light position to view-space light position
 	v_uv = aUV;
 }
 
@@ -31,12 +29,13 @@ uniform vec3 color_light;
 uniform vec4 color;
 uniform sampler2D texture_specular;
 uniform sampler2D texture_color;
+uniform vec3 position_light;
+
 
 
 layout (location = 0) out vec4 FragColor;
 in vec3 v_pos;
 in vec3 v_norm;
-in vec3 light_pos;
 in vec2 v_uv;
 
 float specularStrength = 0.534;
@@ -51,7 +50,7 @@ void main() {
 
 	// diffuse
 	vec3 norm = normalize(v_norm);
-	vec3 light_dir = normalize(light_pos - v_pos);
+	vec3 light_dir = normalize(position_light - v_pos);
 	float diff = max(dot(norm, light_dir), 0.0);
 	vec3 diffuse = diff* color_light;
 

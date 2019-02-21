@@ -10,9 +10,9 @@ use std::time::{Instant, Duration};
 use std::os::raw::c_void;
 use std::ffi::CStr;
 
-use core::BufferGeometry;
+// use core::BufferGeometry;
 use core::SharedGeometry;
-use core::Material;
+// use core::Material;
 use core::SharedMaterial;
 use core::Transform;
 use core::Uniform;
@@ -26,7 +26,7 @@ use self::glutin::{EventsLoop, GlContext, GlWindow, ContextError};
 use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join, World};
 use self::uuid::Uuid;
 
-use math::{Matrix3, Matrix4, Vector4, Vector};
+use math::{Matrix3, Matrix4, Vector4, Vector3, Vector};
 use super::super::Renderer;
 use super::gl_geometry::VertexArraysIDs;
 use super::gl_material::GLMaterialIDs;
@@ -202,13 +202,13 @@ impl<'a> System<'a> for RenderSystem {
 
 		let mut matrix_cam_position;
 		let matrix_projection;
-		let matrix_projection_inverse;
+		// let matrix_projection_inverse;
 
 		match self.camera {
 			None => {
 				matrix_cam_position = Matrix4::new();
 				matrix_projection = Matrix4::new();
-				matrix_projection_inverse = Matrix4::new();
+				// matrix_projection_inverse = Matrix4::new();
 			}
 			Some( ref cam ) => {
 				let cam_transform = transform_coll.get(*cam).unwrap();
@@ -219,7 +219,7 @@ impl<'a> System<'a> for RenderSystem {
 				// matrix_projection = camera.matrix_projection_inverse * cam_transform.matrix_world * cam_transform.matrix_local;
 				// matrix_projection = camera.matrix_projection * matrix_cam_position;
 				matrix_projection = camera.matrix_projection.clone();
-				matrix_projection_inverse = camera.matrix_projection_inverse.clone();
+				// matrix_projection_inverse = camera.matrix_projection_inverse.clone();
 				// matrix_cam_position = cam_transform.matrix_world * cam_transform.matrix_local;
 			}
 		}
@@ -228,6 +228,10 @@ impl<'a> System<'a> for RenderSystem {
 			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
 			let mut matrix_normal = Matrix3::new();
 			matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+
+			let mut position_light = Vector3::new_zero();
+			position_light.apply_matrix_4(&( matrix_cam_position ));
+
 			// matrix_normal.get_normal_matrix(&matrix_model);
 
 			let mut material = shared_material.lock().unwrap();
@@ -243,6 +247,9 @@ impl<'a> System<'a> for RenderSystem {
 
 			material
 				.set_uniform("matrix_normal", &Uniform::Matrix3f(matrix_normal));
+			
+			material
+				.set_uniform("position_light", &Uniform::Vector3(position_light));
 
 			// material
 			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));
