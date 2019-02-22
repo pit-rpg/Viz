@@ -5,6 +5,7 @@ extern crate uuid;
 use std::f64::consts::PI as PI_f64;
 use project::{
 	specs::*,
+	glutin::{MouseScrollDelta},
 	glutin,
 	render,
 	math::{Vector3, Vector, Vector4},
@@ -35,7 +36,8 @@ fn main(){
 	let mut f_count = 0.0;
 	let up = Vector3::new(0.0, 1.0, 0.0);
 	let center = Vector3::new_zero();
-	let radius = 10.0;
+	let mut radius = 10.0;
+	let zoom_speed = 0.5;
 
 	let mut color1 = Vector3::<f32>::random();
 	let mut color2 = Vector3::<f32>::random();
@@ -113,6 +115,14 @@ fn main(){
 								gl::Viewport(0,0, logical_size.width as i32, logical_size.height as i32);
 							});
 						},
+						glutin::WindowEvent::MouseWheel{ delta, .. } => {
+							match delta {
+								MouseScrollDelta::LineDelta(x,y) => {
+									if y > 0.0 { radius -= zoom_speed } else {radius += zoom_speed};
+								}
+								MouseScrollDelta::PixelDelta(_) => {}
+							}							
+						}
 						CursorMoved { position: pos, .. } =>{
 							window_state.pointer_pos = pos
 								.to_physical(window.get_hidpi_factor())

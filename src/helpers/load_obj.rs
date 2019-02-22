@@ -36,7 +36,7 @@ fn add_elem(
 #[allow(dead_code)]
 pub fn load_obj () -> Result<Vec<BufferGeometry>, String>{
 
-	match Obj::<SimplePolygon>::load(&Path::new("models/Predator_OBJ.OBJ")) {
+	match Obj::<SimplePolygon>::load(&Path::new("models/untitled.obj")) {
 		Ok(obj_data) => {
 			let obj_position: Vec<Vector3<f32>> = obj_data.position
 				.iter()
