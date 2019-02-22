@@ -3,12 +3,13 @@ use self::uuid::Uuid;
 use helpers::Nums;
 use math::{Vector, Vector2, Vector3, Vector4};
 use std::vec::Vec;
+use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 use super::{Box3};
 
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum BufferType {
 	Vector3(Vec<Vector3<f32>>),
 	Vector4(Vec<Vector4<f32>>),
@@ -16,7 +17,7 @@ pub enum BufferType {
 }
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BufferAttribute {
 	pub data: BufferType,
 	pub name: String,
@@ -67,9 +68,10 @@ impl BufferAttribute {
 #[allow(dead_code)]
 #[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub struct BufferGroup {
-	pub start: u32,
-	pub material_index: u32,
-	pub count: u32,
+	pub start: usize,
+	pub material_index: usize,
+	pub count: usize,
+	pub name: String,
 }
 
 #[allow(dead_code)]
@@ -82,6 +84,30 @@ pub struct BufferGeometry {
 	pub attributes: Vec<BufferAttribute>,
 	callbacks: Vec<fn(&mut BufferGeometry)>,
 }
+
+
+impl fmt::Debug for BufferGeometry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "=====================
+BufferGeometry: {}
+uuid: {}
+groups: {:?}
+callbacks: {}
+indices: {:?}
+attributes: {:?}
+=====================",
+		self.name,
+		self.uuid,
+		self.groups,
+		self.callbacks.len(),
+		self.indices,
+		self.attributes,
+		)
+    }
+}
+
+
+
 
 extern crate specs;
 use self::specs::{Component, VecStorage};

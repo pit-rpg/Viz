@@ -156,7 +156,6 @@ fn main(){
 
 		{
 			let window = &render_system.window;
-			// let mut events_loop = &test_gl_render.events_loop;
 			use self::glutin::WindowEvent::*;
 
 			render_system.events_loop.poll_events(|event| {
@@ -164,10 +163,6 @@ fn main(){
 					glutin::Event::WindowEvent{ event, .. } => match event {
 						glutin::WindowEvent::CloseRequested => running = false,
 						glutin::WindowEvent::Resized(logical_size) => {
-							// let dpi_factor = window.get_hidpi_factor();
-							// window.resize(logical_size.to_physical(dpi_factor));
-							// window.set_inner_size(logical_size);
-							// window.context().resize(logical_size.to_physical(dpi_factor));
 							println!("{:?}", logical_size);
 							window_state.window_size.0 = logical_size.width;
 							window_state.window_size.1 = logical_size.height;
