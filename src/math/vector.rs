@@ -70,4 +70,10 @@ where T: Nums, Self: Sized
     fn lerp_vectors (&mut self, v1: &Self, v2: &Self, alpha:T )-> &mut Self {
         self.sub_vectors( v2, v1 ).multiply_scalar( alpha ).add( v1 )
     }
+
+	fn add_all_vectors(vectors: &[Self]) -> Self {
+		let mut res = Self::new_zero();
+		vectors.iter().for_each(|v| {res.add(v);} );
+		res
+	}
 }

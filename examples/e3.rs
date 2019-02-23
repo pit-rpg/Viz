@@ -33,15 +33,11 @@ fn main(){
 		gl::Enable(gl::DEPTH_TEST);
 	});
 
-	let mut f_count = 0.0;
 	let up = Vector3::new(0.0, 1.0, 0.0);
 	let center = Vector3::new_zero();
 	let mut radius = 10.0;
 	let zoom_speed = 0.5;
 
-	let mut color1 = Vector3::<f32>::random();
-	let mut color2 = Vector3::<f32>::random();
-	let mut color_tmp = Vector3::<f32>::new(color1.x, color1.y, color1.z);
 
 	let mut running = true;
 
@@ -65,14 +61,24 @@ fn main(){
 
 	
 
-	let mut objects = load_obj().expect("cant load file");
-	let normal_mat = SharedMaterial::new(Material::new_normal());
-	let geom_container = SharedGeometry::new(geometry_generators::box_geometry(1.0, 1.0, 1.0));
+	let objects = load_obj().expect("cant load file");
+	// let normal_mat = SharedMaterial::new(Material::new_normal());
+	// let geom_container = SharedGeometry::new(geometry_generators::box_geometry(1.0, 1.0, 1.0));
 
-	for object in objects {
+	let mut mat_cup_mat = Material::new_mat_cup();
+	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc11.jpg");
+	mat_cup_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
+	let shared_mat_cup_mat = SharedMaterial::new(mat_cup_mat);
+
+
+
+	for mut object in objects {
+
+		if !object.has_attribute("normal") {
+			object.generate_normals();
+		}
+
 		let geom = SharedGeometry::new(object);
-
-		// println!("{:?}", object);
 
 		let mut transform = Transform::default();
 		transform.update();
@@ -82,13 +88,10 @@ fn main(){
 			.with(transform)
 			.with(geom)
 			// .with(geom_container.clone())
-			.with(normal_mat.clone())
+			.with(shared_mat_cup_mat.clone())
+			// .with(normal_mat.clone())
 			.build();
-
-		println!("<><><><>===========<><><><>");
 	}
-
-
 
 
 	render_system.camera = Some(e_cam);
@@ -136,25 +139,10 @@ fn main(){
 			});
 		}
 
-		f_count += 0.01;
-
-		if f_count > 1.0 {
-			color1.copy(&color2);
-			color2 = Vector3::random();
-			f_count = 0.0;
-		}
-
-		color_tmp.copy(&color1);
-		color_tmp.lerp(&color2, f_count);
-
-		render_system.clear_color.from_vector3(&color_tmp, 1.0);
-		render_system.clear_color_need_update = true;
 
 		{
 			let mut transform_store = world.write_storage::<Transform>();
 			let mut cam_store = world.write_storage::<PerspectiveCamera>();
-						
-
 
 			{
 				let transform_camera = transform_store.get_mut(e_cam).unwrap();

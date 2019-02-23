@@ -117,10 +117,41 @@ impl Material {
 					name: "matrix_normal".to_string(),
 					uniform: Uniform::Matrix3f(Matrix3::new()),
 					need_update: true,
-				},
+				},	
 			]
 		)
 	}
+
+
+	pub fn new_mat_cup() -> Self {
+		Material::new(
+			"mat_cup.glsl",
+			"MatCup",
+			&[
+				UniformItem {
+					name: "matrix_model".to_string(),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "matrix_normal".to_string(),
+					uniform: Uniform::Matrix3f(Matrix3::new()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "texture_color".to_string(),
+					uniform: Uniform::Texture2D(None),
+					need_update: true,
+				}
+			]
+		)
+	}
+
 
 	pub fn new_light(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
 		Material::new(

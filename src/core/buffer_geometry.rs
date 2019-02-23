@@ -154,18 +154,16 @@ impl BufferGeometry {
 		&mut self,
 		buffer_attribute: BufferAttribute,
 	) -> &mut BufferAttribute {
-		if self.attributes.len() > 0 {
-			let len = buffer_attribute.len();
-			let prev_len = self.attributes[0].len();
-			if len != prev_len {
-				panic!(
-					"BufferGeometry: different buffer length {}:{}, {}:{}",
-					buffer_attribute.name, len, self.attributes[0].name, prev_len
-				);
-			}
-		}
+		let index = self.attributes.iter().position( |attr| attr.name == buffer_attribute.name);
 
+		if let Some(index) = index {
+			self.attributes.remove(index);
+		}
 		self.attributes.push(buffer_attribute);
+
+		if !self.attributes.iter().all( |e| e.len() == self.attributes[0].len() ) {
+			panic!("BufferGeometry: different buffer length: {}", self.name);
+		}
 
 		let i = self.attributes.len() - 1;
 		&mut self.attributes[i]
@@ -194,136 +192,64 @@ impl BufferGeometry {
 	pub fn get_attribute(&self, name: &str) -> Option<&BufferAttribute> {
 		self.attributes.iter().find(|e| e.name == name)
 	}
+	
+	pub fn has_attribute(&self, name: &str) -> bool {
+		self.attributes.iter().any(|e| e.name == name)
+	}
 
 	pub fn get_attribute_mut(&mut self, name: &str) -> Option<&mut BufferAttribute> {
 		self.attributes.iter_mut().find(|e| e.name == name)
 	}
 
-	fn _compute_face_normals<T: Nums>(
-		&self,
-		positions: &Vec<Vector3<T>>,
-		indices: &Vec<i32>,
-	) -> Vec<Vector3<T>> {
-		let len = indices.len() / 3;
-		let mut normals = Vec::with_capacity(positions.len());
 
-		for i in 0..len {
-			let a = positions
-				.get(*(indices.get(i * 3).unwrap()) as usize)
-				.unwrap();
-			let b = positions
-				.get(*(indices.get(i * 3 + 1).unwrap()) as usize)
-				.unwrap();
-			let c = positions
-				.get(*(indices.get(i * 3 + 2).unwrap()) as usize)
-				.unwrap();
-
-			let mut cb = c - b;
-			let ab = a - b;
-			cb.cross(&ab);
-			cb.normalize();
-			normals.push(cb)
-		}
-		normals
-	}
-
-	fn _compute_vertex_normals<T: Nums>(
-		&self,
-		face_normals: &Vec<Vector3<T>>,
-		indices: &Vec<i32>,
-	) -> Vec<Vector3<T>> {
-		// let vertex_normals = self.get_attribute("positions").unwrap();
-		// let indices = self.indices.as_ref().unwrap();
-
-		// match vertex_normals.data {
-		// 	BufferType::Vector3f32(ref normals) => {
-
-		// 		for i in 0..(indices.len()/3) {
-		// 			let normal = face_normals[i];
-		// 			normals[i].copy(normal);
-		// 		}
-
-		// 	},
-		// 	// BufferType::Vector3f64(normals) => {
-
-		// 	// },
-		// }
-
-		unimplemented!()
-	}
-
-	pub fn compute_face_normals(&mut self) -> Option<&BufferAttribute> {
-		let mut normals32 = None;
-		// let mut normals64 = None;
-
-		match self.get_attribute("positions") {
-			None => return None,
-			Some(attribute) => {
-				match &attribute.data {
-					&BufferType::Vector3(ref data) => {
-						let mut normals =
-							self._compute_face_normals(data, &self.indices.as_ref().unwrap());
-						normals32 = Some(normals);
-					}
-					// &BufferType::Vector3f64(ref data) => {
-					// 	let mut normals = self._compute_face_normals(data, &self.indices.as_ref().unwrap() );
-					// 	normals64 = Some(normals);
-					// },
-					_ => return None,
-				}
-			}
-		};
-
-		match normals32 {
-			Some(normals) => {
-				let buffer_attribute = self.create_buffer_attribute(
-					"face_normals".to_string(),
-					BufferType::Vector3(normals),
-				);
-				return Some(buffer_attribute);
-			}
-			_ => {}
-		}
-
-		// match normals64 {
-		// 	Some(normals) => {
-		// 		let buffer_attribute = self.create_buffer_attribute("face_normals".to_string(), BufferType::Vector3f64(normals), 3);
-		// 		return Some(buffer_attribute);
-		// 	},
-		// 	_=>{}
-		// }
-
-		None
-	}
-
-	pub fn compute_vertex_normals(&mut self) -> Option<&BufferAttribute> {
-		let mut normals32 = None;
-
+	pub fn generate_normals(&mut self) {
+		let mut normals = None;
 		{
-			let face_normals = self.get_attribute("face_normals").unwrap();
+			let attribute = self.get_attribute("positions").unwrap();
+			if let BufferType::Vector3(data) = &attribute.data {
+				let mut calc_normals = vec![Vec::new(); data.len()];
+				let indices = self.indices.as_ref().unwrap();
+				
+				let il = indices.len();
+				let mut i = 0;
+				while i < il {
+					let a = &data[ indices[i]   as usize];
+					let b = &data[ indices[i+1] as usize];
+					let c = &data[ indices[i+2] as usize];
 
-			match face_normals.data {
-				BufferType::Vector3(ref normals) => {
-					let mut normals =
-						self._compute_vertex_normals(normals, &self.indices.as_ref().unwrap());
-					normals32 = Some(normals);
+					let mut cb = c - b;
+					let ab = a - b;
+					cb.cross(&ab);
+					cb.normalize();
+
+					calc_normals[ indices[i]   as usize ].push(cb.clone());
+					calc_normals[ indices[i+1] as usize ].push(cb.clone());
+					calc_normals[ indices[i+2] as usize ].push(cb);
+					// calc_normals.push(cb.clone());
+					// calc_normals.push(cb.clone());
+					// calc_normals.push(cb);
+
+					i+=3;
 				}
-				_ => return None,
+
+				let calc_normals = calc_normals
+					.iter()
+					.map(|items|{
+						if items.len() == 1 {
+							return items[0].clone();
+						}
+						let mut res = Vector3::add_all_vectors(items);
+						res.normalize();
+						res
+					})
+					.collect();
+				normals = Some(calc_normals);
 			}
 		}
 
-		match normals32 {
-			Some(normals) => {
-				let buffer_attribute = self.create_buffer_attribute(
-					"vertex_normals".to_string(),
-					BufferType::Vector3(normals),
-				);
-				return Some(buffer_attribute);
-			}
-			_ => {}
+		if let Some(normal) = normals {
+			self.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normal));
 		}
-
-		None
 	}
 
 	pub fn duplicate(&self) -> Self {
