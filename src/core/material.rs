@@ -125,7 +125,7 @@ impl Material {
 
 	pub fn new_mat_cup() -> Self {
 		Material::new(
-			"mat_cup.glsl",
+			"mat_cup2.glsl",
 			"MatCup",
 			&[
 				UniformItem {

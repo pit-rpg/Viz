@@ -1,10 +1,7 @@
 extern crate obj;
 
-
 use core::{BufferGeometry, BufferType, BufferGroup};
 use math::{Vector3, Vector2};
-// use math::{Vector2, Vector3, Vector};
-// use std::f32::consts::PI;
 use self::obj::{Obj, SimplePolygon, IndexTuple};
 use std::path::Path;
 
@@ -23,24 +20,34 @@ fn add_elem (
 	data_map: &mut Vec<Option<TmpIndex>>,
 	data_order: &mut Vec<usize>,
 	indices: &mut Vec<i32>,
-	position: &Vec<Vector3<f32>>,
-	normal: &Vec<Vector3<f32>>,
-	uv: &Vec<Vector2<f32>>,
+	obj: &Obj<SimplePolygon>
 ) {
 	if let Some(vertex) = &data_map[index_tuple.0] {
 		indices.push(vertex.index_new as i32);
 		return;
 	}
 
-	let n = if let Some(index) = index_tuple.2 { Some(normal[index].clone()) } else {None};
-	let t = if let Some(index) = index_tuple.1 { Some(uv[index].clone()) } else {None};
+	let pos = obj.position[index_tuple.0];
+	let position = Vector3::new(pos[0], pos[1], pos[2]);
+
+	let n = if let Some(index) = index_tuple.2 {
+		let e = obj.normal[index];
+		Some(Vector3::new(e[0], e[1], e[2]))
+	} else {None};
+	
+	let t = if let Some(index) = index_tuple.1 {
+		let e = obj.texture[index];
+		Some(Vector2::new(e[0], e[1]))
+	} else {None};
+
 	let tmp_index = TmpIndex {
 		index_old: index_tuple.0,
 		index_new: data_order.len(),
-		position: position[index_tuple.0].clone(),
+		position: position,
 		normal: n,
 		uv: t,
 	};
+	
 	indices.push(tmp_index.index_new as i32);
 	data_map[index_tuple.0] = Some(tmp_index);
 	data_order.push(index_tuple.0);
@@ -48,26 +55,9 @@ fn add_elem (
 
 
 #[allow(dead_code)]
-pub fn load_obj () -> Result<Vec<BufferGeometry>, String>{
-
-	match Obj::<SimplePolygon>::load(&Path::new("models/Predator.obj")) {
-	// match Obj::<SimplePolygon>::load(&Path::new("models/Predator_OBJ.OBJ")) {
-	// match Obj::<SimplePolygon>::load(&Path::new("models/untitled.obj")) {
+pub fn load_obj( path: &Path ) -> Result<Vec<BufferGeometry>, String>{
+	match Obj::<SimplePolygon>::load(path) {
 		Ok(obj_data) => {
-			let obj_position: Vec<Vector3<f32>> = obj_data.position
-				.iter()
-				.map(|[x,y,z]| Vector3::new(*x,*y,*z))
-				.collect();
-			
-			let obj_normal: Vec<Vector3<f32>> = obj_data.normal
-				.iter()
-				.map(|[x,y,z]| Vector3::new(*x,*y,*z))
-				.collect();
-
-			let obj_uv: Vec<Vector2<f32>> = obj_data.texture
-				.iter()
-				.map(|[x,y]| Vector2::new(*x,*y))
-				.collect();
 
 			let mut result = Vec::new();
 			
@@ -75,9 +65,10 @@ pub fn load_obj () -> Result<Vec<BufferGeometry>, String>{
 				let mut geom = BufferGeometry::new();
 				geom.name = object.name.clone();
 
-				let mut indices = Vec::with_capacity(obj_position.len()*4);
-				let mut data_map = vec![None; obj_position.len()];
-				let mut data_order = Vec::with_capacity(obj_position.len());
+				let length = obj_data.position.len();
+				let mut indices = Vec::with_capacity(length*4);
+				let mut data_map = vec![None; length];
+				let mut data_order = Vec::with_capacity(length);
 
 				println!("name: {}, groups: {}", object.name, object.groups.len());
 
@@ -93,18 +84,18 @@ pub fn load_obj () -> Result<Vec<BufferGeometry>, String>{
 					for poly in &group.polys {
 						match poly.len() {
 							4 => {
-								add_elem(&poly[0], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
-								add_elem(&poly[1], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
-								add_elem(&poly[2], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
+								add_elem(&poly[0], &mut data_map, &mut data_order, &mut indices, &obj_data);
+								add_elem(&poly[1], &mut data_map, &mut data_order, &mut indices, &obj_data);
+								add_elem(&poly[2], &mut data_map, &mut data_order, &mut indices, &obj_data);
 
-								add_elem(&poly[2], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
-								add_elem(&poly[3], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
-								add_elem(&poly[0], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
+								add_elem(&poly[2], &mut data_map, &mut data_order, &mut indices, &obj_data);
+								add_elem(&poly[3], &mut data_map, &mut data_order, &mut indices, &obj_data);
+								add_elem(&poly[0], &mut data_map, &mut data_order, &mut indices, &obj_data);
 							}
 							3 => {
-								add_elem(&poly[0], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
-								add_elem(&poly[1], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
-								add_elem(&poly[2], &mut data_map, &mut data_order, &mut indices, &obj_position, &obj_normal, &obj_uv);
+								add_elem(&poly[0], &mut data_map, &mut data_order, &mut indices, &obj_data);
+								add_elem(&poly[1], &mut data_map, &mut data_order, &mut indices, &obj_data);
+								add_elem(&poly[2], &mut data_map, &mut data_order, &mut indices, &obj_data);
 							}
 							_ => {}
 						}
