@@ -23,8 +23,16 @@ impl ShaderProgram for Material {
 		&self.src[..]
 	}
 
-	fn get_uniforms(&mut self) -> &mut [UniformItem] {
-		&mut self.uniforms[..]
+	fn get_uniforms(&mut self) -> &Vec<UniformItem> {
+		&mut self.uniforms
+	}
+
+	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem> {
+		&mut self.uniforms
+	}
+	
+	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem] {
+		&mut self.uniforms
 	}
 }
 
@@ -48,16 +56,6 @@ impl Material {
 			"basic",
 			&[
 				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
 					need_update: true,
@@ -71,21 +69,6 @@ impl Material {
 			"basic-texture",
 			&[
 				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "color".to_string(),
-					uniform: Uniform::Vector4(color.clone()),
-					need_update: true,
-				},
-				UniformItem {
 					name: "texture_color".to_string(),
 					uniform: Uniform::Texture2D(None),
 					need_update: true,
@@ -97,23 +80,7 @@ impl Material {
 	pub fn new_normal() -> Self {
 		Material::new(
 			"normal",
-			&[
-				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_normal".to_string(),
-					uniform: Uniform::Matrix3f(Matrix3::new()),
-					need_update: true,
-				},	
-			]
+			&[]
 		)
 	}
 
@@ -123,47 +90,8 @@ impl Material {
 			"mat_cup2",
 			&[
 				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_normal".to_string(),
-					uniform: Uniform::Matrix3f(Matrix3::new()),
-					need_update: true,
-				},
-				UniformItem {
 					name: "texture_color".to_string(),
 					uniform: Uniform::Texture2D(None),
-					need_update: true,
-				}
-			]
-		)
-	}
-
-
-	pub fn new_test_mat() -> Self {
-		Material::new(
-			"test_mat",
-			&[
-				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_normal".to_string(),
-					uniform: Uniform::Matrix3f(Matrix3::new()),
 					need_update: true,
 				}
 			]
@@ -175,21 +103,6 @@ impl Material {
 		Material::new(
 			"light",
 			&[
-				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_normal".to_string(),
-					uniform: Uniform::Matrix3f(Matrix3::new()),
-					need_update: true,
-				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
@@ -210,25 +123,35 @@ impl Material {
 	}
 
 
+
+	pub fn new_test_mat(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+		Material::new(
+			"test_mat1",
+			&[
+				UniformItem {
+					name: "color".to_string(),
+					uniform: Uniform::Vector4(color.clone()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "color_light".to_string(),
+					uniform: Uniform::Vector3(color_light.clone()),
+					need_update: true,
+				},
+				// UniformItem {
+				// 	name: "position_light".to_string(),
+				// 	uniform: Uniform::Vector3(position_light.clone()),
+				// 	need_update: true,
+				// },
+			]
+		)
+	}
+
+
 	pub fn new_light_texture(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
 		Material::new(
 			"light_texture",
 			&[
-				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_normal".to_string(),
-					uniform: Uniform::Matrix3f(Matrix3::new()),
-					need_update: true,
-				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
@@ -260,24 +183,9 @@ impl Material {
 
 
 	pub fn new_phong(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
-		Material::new(
+		let mut m = Material::new(
 			"phong",
 			&[
-				UniformItem {
-					name: "matrix_model".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_view".to_string(),
-					uniform: Uniform::Matrix4f(Matrix4::new()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "matrix_normal".to_string(),
-					uniform: Uniform::Matrix3f(Matrix3::new()),
-					need_update: true,
-				},
 				UniformItem {
 					name: "color".to_string(),
 					uniform: Uniform::Vector4(color.clone()),
@@ -293,14 +201,13 @@ impl Material {
 					uniform: Uniform::Vector3(position_light.clone()),
 					need_update: true,
 				},
-
-				UniformItem {
-					name: "colors".to_string(),
-					uniform: Uniform::ArrVector3(vec!(Vector3::new(0.0,1.0,0.0), Vector3::new(0.0,0.0,1.0))),
-					need_update: true,
-				},
 			]
-		)
+		);
+
+		m.set_uniform("colors[0]", &Uniform::Vector3(Vector3::new(0.0,1.0,0.0)));
+		m.set_uniform("colors[1]", &Uniform::Vector3(Vector3::new(0.0,0.0,1.0)));
+
+		m
 	}
 
 }

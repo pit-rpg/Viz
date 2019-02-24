@@ -191,6 +191,8 @@ impl<'a> System<'a> for RenderSystem {
 
 		self.time += delta;
 
+		let time = self.get_duration();
+
 		let (
 			camera_coll,
 			transform_coll,
@@ -246,18 +248,19 @@ impl<'a> System<'a> for RenderSystem {
 			let geom = geometry.lock().unwrap();
 
 			material
-				.set_uniform("matrix_model", &Uniform::Matrix4f(matrix_model))
-				.unwrap();
+				.set_uniform("matrix_model", &Uniform::Matrix4f(matrix_model));
 
 			material
-				.set_uniform("matrix_view", &Uniform::Matrix4f(matrix_projection))
-				.unwrap();
+				.set_uniform("matrix_view", &Uniform::Matrix4f(matrix_projection));
 
 			material
 				.set_uniform("matrix_normal", &Uniform::Matrix3f(matrix_normal));
 			
 			material
 				.set_uniform("position_light", &Uniform::Vector3(position_light));
+
+			material
+				.set_uniform("time", &Uniform::Float(time));
 
 			// material
 			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));

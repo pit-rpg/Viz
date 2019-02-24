@@ -62,10 +62,10 @@ fn main(){
 		.build();
 
 	
-	let path = Path::new("models/Predator.obj");
+	let path = Path::new("models/untitled.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
-	let mut mat_cup_mat = Material::new_test_mat();
+	let mut mat_cup_mat = Material::new_test_mat(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
 	mat_cup_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
 	let shared_mat_cup_mat = SharedMaterial::new(mat_cup_mat);

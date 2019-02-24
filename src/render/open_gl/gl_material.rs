@@ -41,19 +41,19 @@ impl GLMaterial for Material {
 
 		match bind_context.gl_material_ids.get_mut(&self.uuid) {
 			None => {}
-			Some(ref program) => {
+			Some(program) => {
 				gl_call!({
 					gl::UseProgram(program.id);
 				});
 
-				set_uniforms(self.get_uniforms(), program, bind_context.gl_texture_ids);
+				set_uniforms(self.get_uniforms_slice_mut(), program, bind_context.gl_texture_ids);
 				return;
 			}
 		}
 
 		let program;
 		{
-			let uniforms = self.get_uniforms();
+			let uniforms = self.get_uniforms_slice_mut();
 			program = compile_shader_program(&src, uniforms, bind_context);
 		}
 

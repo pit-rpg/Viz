@@ -50,6 +50,15 @@ impl Drop for GLShaderProgramID {
 	}
 }
 
+fn create_whitespace_cstring_with_len(len: usize) -> CString {
+	// allocate buffer of correct size
+	let mut buffer: Vec<u8> = Vec::with_capacity(len + 1);
+	// fill it with len spaces
+	buffer.extend([b' '].iter().cycle().take(len));
+	// convert buffer to CString
+	unsafe { CString::from_vec_unchecked(buffer) }
+}
+
 
 pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: &mut GLTextureIDs) {
 	if loc.location == -1 {return}
@@ -95,50 +104,6 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 				gl::Uniform1ui(loc.location, *data);
 			});
 		}
-
-		Uniform::ArrVector2(data) => {
-			gl_call!({
-				gl::Uniform2fv(loc.location, data.len() as i32, &data[0].x as *const f32);
-			});
-		}
-		Uniform::ArrVector3(data) => {
-			gl_call!({
-				gl::Uniform3fv(loc.location, data.len() as i32, &data[0].x as *const f32);
-			});
-		}
-		Uniform::ArrVector4(data) => {
-			gl_call!({
-				gl::Uniform4fv(loc.location, data.len() as i32, &data[0].x as *const f32);
-			});
-		}
-		Uniform::ArrMatrix3f(data) => {
-			gl_call!({
-				gl::UniformMatrix3fv(loc.location, data.len() as i32, gl::FALSE, &data[0].elements[0] as *const f32);
-			});
-		}
-		Uniform::ArrMatrix4f(data) => {
-			gl_call!({
-				gl::UniformMatrix4fv(loc.location, data.len() as i32, gl::FALSE, &data[0].elements[0] as *const f32);
-			});
-		}
-
-		Uniform::ArrFloat(data) => {
-			gl_call!({
-				gl::Uniform1fv(loc.location, data.len() as i32,  &data[0] as *const f32);
-			});
-		}
-		Uniform::ArrInt(data) => {
-			gl_call!({
-				gl::Uniform1iv(loc.location, data.len() as i32,  &data[0] as *const i32);
-			});
-		}
-
-		Uniform::ArrUInt(data) => {
-			gl_call!({
-				gl::Uniform1iv(loc.location, data.len() as i32,  *&data[0] as i32 as *const i32);
-			});
-		}
-
 		Uniform::Texture2D(data) => {
 			gl_call!({
 				gl::ActiveTexture(gl::TEXTURE0 + loc.texture_slot as u32);
@@ -159,23 +124,47 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 }
 
 
-pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgramID, texture_store: &mut GLTextureIDs) {
+pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderProgramID, texture_store: &mut GLTextureIDs) {
+	let mut texture_slot = 0;
+	
 	uniforms
 		.iter_mut()
 		.enumerate()
-		.for_each(|(i, uniform_i)| {
-			match uniform_i.uniform {
-				Uniform::Texture2D( _ ) => {
-					set_uniform(&mut uniform_i.uniform, &shader_program.uniform_locations[i], texture_store);
-				}
-				_=> {
-					if uniform_i.need_update {
-						set_uniform(&mut uniform_i.uniform, &shader_program.uniform_locations[i], texture_store);
-						uniform_i.need_update = false;
-					}
+		.for_each(|(i, uniform)| {
+			if shader_program.uniform_locations.get(i).is_none() {
+				let c_name = CString::new(uniform.name.as_bytes()).unwrap();
+				let location;
+				
+				gl_call!({
+					location = gl::GetUniformLocation(shader_program.id, c_name.as_ptr());
+				});
+
+				println!(">>...........{} {}", uniform.name, location);
+				if let Uniform::Texture2D( _ ) = uniform.uniform {
+					println!("...........{} {}", texture_slot, uniform.name);
+					gl_call!({
+						gl::Uniform1i(location, texture_slot as i32);
+					});
+					shader_program.uniform_locations.push(UniformLocation{location, texture_slot: texture_slot});
+					texture_slot +=1 ;
+				} else {
+					shader_program.uniform_locations.push(UniformLocation{location, texture_slot: -1});
 				}
 			}
 
+			if shader_program.uniform_locations[i].location != -1 {
+				match uniform.uniform {
+					Uniform::Texture2D( _ ) => {
+						set_uniform(&mut uniform.uniform, &shader_program.uniform_locations[i], texture_store);
+					}
+					_=> {
+						if uniform.need_update {
+							set_uniform(&mut uniform.uniform, &shader_program.uniform_locations[i], texture_store);
+							uniform.need_update = false;
+						}
+					}
+				}
+			}
 		});
 }
 
@@ -251,17 +240,11 @@ pub fn get_program(src: &str, bind_context: &mut BindContext) -> GLShaderProgram
 	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, bind_context);
 	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, bind_context);
 
-	println!("========================================================");
-	println!("{}", shader_program.vs_source);
-	println!("========================================================");
-	println!("{}", shader_program.fs_source);
-	println!("========================================================");
-
 	shader_program
 }
 
 
-pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], bind_context: &mut BindContext ) -> GLShaderProgramID {
+pub fn compile_shader_program(src: &str, uniforms: &mut[UniformItem], bind_context: &mut BindContext ) -> GLShaderProgramID {
 	println!("compile shader: {}", src);
 
 	let mut program = get_program(src, bind_context);
@@ -281,8 +264,7 @@ pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], bind_cont
 		gl::LinkProgram(id);
 		gl::ValidateProgram(id);
 
-		let mut info_log = Vec::with_capacity(512);
-		info_log.set_len(512 - 1); // subtract 1 to skip the trailing null character
+		let info_log = create_whitespace_cstring_with_len(1024);
 		let mut success = gl::FALSE as GLint;
 		gl::GetProgramiv(id, gl::LINK_STATUS, &mut success);
 		if success != gl::TRUE as GLint {
@@ -290,13 +272,12 @@ pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], bind_cont
 				id,
 				512,
 				ptr::null_mut(),
-				info_log.as_mut_ptr() as *mut GLchar,
+				info_log.as_ptr() as *mut gl::types::GLchar,
 			);
-			// println!("{}", str::from_utf8_unchecked(&info_log));
 			println!(
 				"ERROR::SHADER::PROGRAM::COMPILATION_FAILED: {}\n{}",
 				src,
-				str::from_utf8(&info_log).unwrap()
+				info_log.to_string_lossy()
 			);
 		}
 
@@ -309,38 +290,10 @@ pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], bind_cont
 		gl::UseProgram(program.id);
 	});
 
-	// let uniforms = material.get_uniforms();
-	let mut uniform_locations = Vec::<UniformLocation>::with_capacity(uniforms.len());
-
-	let mut location;
-	let mut texture_slot = 0;
-	let mut c_name;
-
-	for uniform in uniforms.iter() {
-		c_name = CString::new(uniform.name.as_bytes()).unwrap();
-
-		match uniform.uniform {
-			Uniform::Texture2D(_) => {
-				gl_call!({
-					location = gl::GetUniformLocation(program.id, c_name.as_ptr());
-					gl::Uniform1i(location, texture_slot as i32);
-				});
-
-				uniform_locations.push(UniformLocation{location, texture_slot});
-				texture_slot +=1;
-			}
-			_ => {
-				gl_call!({
-					location = gl::GetUniformLocation(program.id, c_name.as_ptr());
-				});
-				uniform_locations.push(UniformLocation{location, texture_slot: -1});
-			}
-		};
-
-	}
+	let uniform_locations = Vec::<UniformLocation>::with_capacity(uniforms.len());
 
 	program.uniform_locations = uniform_locations;
-	set_uniforms(uniforms, &program, bind_context.gl_texture_ids);
+	set_uniforms(uniforms, &mut program, bind_context.gl_texture_ids);
 	program
 }
 
@@ -355,8 +308,7 @@ pub fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
 
 
 		let mut success = gl::FALSE as GLint;
-		let mut info_log = Vec::with_capacity(1024);
-		info_log.set_len(1024 - 1); // subtract 1 to skip the trailing null character
+		let info_log = create_whitespace_cstring_with_len(1024);
 
 		gl::ShaderSource(id, 1, &c_str_frag.as_ptr(), ptr::null());
 		gl::CompileShader(id);
@@ -368,24 +320,23 @@ pub fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
 				id,
 				1024,
 				ptr::null_mut(),
-				info_log.as_mut_ptr() as *mut GLchar,
+				info_log.as_ptr() as *mut gl::types::GLchar
 			);
-			// println!("{}", str::from_utf8(&info_log).unwrap());
 			match t {
 				gl::FRAGMENT_SHADER => println!(
 					"ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: {}\n{}",
 					src_path,
-					str::from_utf8(&info_log).unwrap()
+					info_log.to_string_lossy()
 				),
 				gl::VERTEX_SHADER => println!(
 					"ERROR::SHADER::VERTEX::COMPILATION_FAILED: {}\n{}",
 					src_path,
-					str::from_utf8(&info_log).unwrap()
+					info_log.to_string_lossy()
 				),
 				_ => println!(
 					"ERROR::SHADER::?::COMPILATION_FAILED: {}\n{}",
 					src_path,
-					str::from_utf8(&info_log).unwrap()
+					info_log.to_string_lossy()
 				),
 			};
 			gl::DeleteShader(id);

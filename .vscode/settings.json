@@ -14,9 +14,11 @@
 		"mipmap",
 		"nums",
 		"phong",
+		"programiv",
 		"repr",
 		"resizable",
 		"rgba",
+		"shaderiv",
 		"uuid"
 	]
 }
