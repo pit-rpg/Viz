@@ -1,5 +1,4 @@
 #<vertex>
-#version 330 core
 
 layout (location = 0) in vec3 aPos;
 uniform mat4 matrix_model;
@@ -12,7 +11,6 @@ void main() {
 
 
 #<fragment>
-#version 330 core
 
 uniform vec4 color;
 layout (location = 0) out vec4 FragColor;

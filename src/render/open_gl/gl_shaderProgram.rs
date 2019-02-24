@@ -1,16 +1,23 @@
 extern crate gl;
 extern crate uuid;
+extern crate regex;
+
 
 use self::gl::types::*;
 
-use core::{Uniform, UniformItem, ShaderProgram};
+use core::{Uniform, UniformItem};
 use std::ffi::{CString};
 use std::ptr;
 use std::str;
 use helpers::{find_file, read_to_string};
-use super::gl_texture::{load_texture, GLTextureIDs, TextureId, GLTexture};
+use super::gl_texture::{GLTextureIDs, GLTexture};
+use super::BindContext;
+use self::regex::Regex;
 
 
+lazy_static! {
+	static ref RE_INCLUDE: Regex = Regex::new(r"#include\s+<(\S+)>").unwrap();
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ProgramType {
@@ -174,34 +181,42 @@ pub fn set_uniforms(uniforms: &mut [UniformItem], shader_program: &GLShaderProgr
 
 
 pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
-	let p = find_file(&["src/render/open_gl/shaders"], path).unwrap();
-	let code = read_to_string(&p);
-	let mut result = String::with_capacity(code.len());
+	let path = path.to_string() + ".glsl";
 
-	for line in code.lines() {
+	let p = find_file(&["src/render/open_gl/shaders"], &path).unwrap();
+	let mut code = read_to_string(&p);
 
-		if line.starts_with("#<include>") {
-			let path: Vec<&str> = line.split("\"").collect();
-			let path = path[1];
-
-			let mut new_search_drs = search_dirs.clone();
-			new_search_drs.insert(0, p.parent().unwrap().to_str().unwrap());
-
-			let res = read_shader_file(&new_search_drs, path);
-			result += &res;
-			result += "\n";
-		} else {
-			result += line;
-			result += "\n";
-		}
-
+	while let Some(cap) = RE_INCLUDE.captures(&code.clone()) {
+		let include_data = read_shader_file(search_dirs, &cap[1]);
+		code = code.replace(&cap[0], &include_data);
 	}
-	result
+
+	code
+}
+
+
+fn set_definitions_fragment(code: &String, bind_context: &mut BindContext) -> String {
+
+	let core_definitions = format!("#define NUM_POINT_LIGHTS {}\n", bind_context.render_settings.num_point_lights);
+
+	let definitions: String = bind_context.definitions.iter()
+		.filter(|e| e.0 == ProgramType::Fragment )
+		.map(|e| {
+			format!("#define {} {}\n", e.1, e.2)
+		})
+		.collect();
+	
+	format!("#version 330 core\n{}\n{}\n{}",core_definitions,  definitions, code)
+}
+
+
+fn set_definitions_vertex(code: &String, bind_context: &mut BindContext) -> String {	
+	format!("#version 330 core\n{}", code)
 }
 
 
 
-pub fn get_program(src: &str) -> GLShaderProgramID {
+pub fn get_program(src: &str, bind_context: &mut BindContext) -> GLShaderProgramID {
 	let code = read_shader_file(&vec!("src/render/open_gl/shaders"), src);
 
 	let mut shader_program = GLShaderProgramID {
@@ -232,14 +247,24 @@ pub fn get_program(src: &str) -> GLShaderProgramID {
 			}
 		}
 	}
+
+	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, bind_context);
+	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, bind_context);
+
+	println!("========================================================");
+	println!("{}", shader_program.vs_source);
+	println!("========================================================");
+	println!("{}", shader_program.fs_source);
+	println!("========================================================");
+
 	shader_program
 }
 
 
-pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], texture_store: &mut GLTextureIDs ) -> GLShaderProgramID {
+pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], bind_context: &mut BindContext ) -> GLShaderProgramID {
 	println!("compile shader: {}", src);
 
-	let mut program = get_program(src);
+	let mut program = get_program(src, bind_context);
 	let id;
 	// let fs_source = &program.fs_source;
 
@@ -315,7 +340,7 @@ pub fn compile_shader_program(src: &str, uniforms: &mut [UniformItem], texture_s
 	}
 
 	program.uniform_locations = uniform_locations;
-	set_uniforms(uniforms, &program, texture_store);
+	set_uniforms(uniforms, &program, bind_context.gl_texture_ids);
 	program
 }
 

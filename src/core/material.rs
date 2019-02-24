@@ -12,7 +12,6 @@ use std::sync::{Arc, Mutex, MutexGuard, LockResult};
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Material {
-	pub name: String,
 	pub uuid: Uuid,
 	src: String,
 	uniforms: Vec<UniformItem>,
@@ -33,11 +32,10 @@ impl ShaderProgram for Material {
 #[allow(dead_code)]
 impl Material {
 
-	pub fn new(src: &str, name: &str, new_uniforms: &[UniformItem]) -> Self {
+	pub fn new(src: &str, new_uniforms: &[UniformItem]) -> Self {
 		let uniforms = new_uniforms.iter().map(|u| u.clone()).collect();
 
 		Self {
-			name: name.to_string(),
 			uuid: Uuid::new_v4(),
 			src: src.to_string(),
 			uniforms,
@@ -47,8 +45,7 @@ impl Material {
 
 	pub fn new_basic(color: &Vector4<f32>) -> Self {
 		Material::new(
-			"basic.glsl",
-			"Basic",
+			"basic",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
@@ -71,8 +68,7 @@ impl Material {
 
 	pub fn new_basic_texture(color: &Vector4<f32>) -> Self {
 		Material::new(
-			"basic-texture.glsl",
-			"Basic-Texture",
+			"basic-texture",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
@@ -100,8 +96,7 @@ impl Material {
 
 	pub fn new_normal() -> Self {
 		Material::new(
-			"normal.glsl",
-			"Normal",
+			"normal",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
@@ -125,8 +120,7 @@ impl Material {
 
 	pub fn new_mat_cup() -> Self {
 		Material::new(
-			"mat_cup2.glsl",
-			"MatCup",
+			"mat_cup2",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
@@ -153,10 +147,33 @@ impl Material {
 	}
 
 
+	pub fn new_test_mat() -> Self {
+		Material::new(
+			"test_mat",
+			&[
+				UniformItem {
+					name: "matrix_model".to_string(),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "matrix_view".to_string(),
+					uniform: Uniform::Matrix4f(Matrix4::new()),
+					need_update: true,
+				},
+				UniformItem {
+					name: "matrix_normal".to_string(),
+					uniform: Uniform::Matrix3f(Matrix3::new()),
+					need_update: true,
+				}
+			]
+		)
+	}
+
+
 	pub fn new_light(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
 		Material::new(
-			"light.glsl",
-			"Light",
+			"light",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
@@ -195,8 +212,7 @@ impl Material {
 
 	pub fn new_light_texture(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
 		Material::new(
-			"light_texture.glsl",
-			"LightTexture",
+			"light_texture",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),
@@ -245,8 +261,7 @@ impl Material {
 
 	pub fn new_phong(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
 		Material::new(
-			"phong.glsl",
-			"Phong",
+			"phong",
 			&[
 				UniformItem {
 					name: "matrix_model".to_string(),

@@ -1,5 +1,4 @@
 #<vertex>
-#version 330 core
 
 uniform mat4 matrix_model;
 uniform mat4 matrix_view;
@@ -21,9 +20,9 @@ void main() {
 	v_uv = aUV;
 }
 
-#<fragment>
-#version 330 core
 
+
+#<fragment>
 
 uniform vec3 color_light;
 uniform vec4 color;

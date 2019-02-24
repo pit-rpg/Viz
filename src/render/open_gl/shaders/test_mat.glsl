@@ -15,7 +15,6 @@ void main() {
 
 
 
-
 #<fragment>
 uniform sampler2D texture_color;
 
@@ -23,9 +22,12 @@ in vec3 n;
 
 layout (location = 0) out vec4 FragColor;
 
+#include <lololo>
+
 void main() {
 	vec2 x = (normalize(n).xy * 0.5) + 0.5;
 	vec3 base = texture2D( texture_color, x ).rgb;
 
-	FragColor = vec4( base, 1. );
+	FragColor = vec4( x.x, 0.0, 0.0, 1 );
+	// FragColor = vec4( base, 1. );
 }

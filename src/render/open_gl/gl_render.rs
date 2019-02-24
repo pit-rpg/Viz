@@ -33,6 +33,7 @@ use super::gl_material::GLMaterialIDs;
 use super::gl_texture::GLTextureIDs;
 use super::GLGeometry;
 use super::GLMaterial;
+use super::gl_shaderProgram::ProgramType;
 // #[allow(dead_code)]
 // pub struct GLRenderer {
 // 	pub window: GlWindow,
@@ -41,19 +42,27 @@ use super::GLMaterial;
 
 // use self::specs::{Component, ReadStorage, RunNow, System, VecStorage, World, Write, WriteStorage};
 
-pub struct Capabilities {
+pub struct RenderSettings {
 	pub num_point_lights: usize,
 	// pub num_directional_lights: usize,
 }
 
-impl Default for Capabilities {
+impl Default for RenderSettings {
 	fn default() -> Self {
-		Capabilities{
+		RenderSettings{
 			num_point_lights: 4,
 			// num_directional_lights: 4,
 		}
 	}
 }
+
+pub struct BindContext<'z> {
+	pub definitions: &'z Vec<(ProgramType, String, String)>,
+	pub render_settings: &'z RenderSettings,
+	pub gl_material_ids: &'z mut GLMaterialIDs,
+	pub gl_texture_ids: &'z mut GLTextureIDs,
+}
+
 
 pub struct RenderSystem {
 	pub camera: Option<Entity>,
@@ -65,15 +74,9 @@ pub struct RenderSystem {
 	pub delta_max: Option<Duration>,
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
-	pub capabilities: Capabilities,
+	pub definitions: Vec<(ProgramType, String, String)>,
+	pub render_settings: RenderSettings,
 }
-
-
-// impl Default for RenderSystem {
-// 	fn default() -> Self {
-// 		Self::new()
-// 	}
-// }
 
 
 impl RenderSystem {
@@ -114,7 +117,8 @@ impl RenderSystem {
 			delta_max: None,
 			clear_color: Vector4::new_zero(),
 			clear_color_need_update: true,
-			capabilities: Capabilities::default(),
+			definitions: Vec::new(),
+			render_settings: RenderSettings::default(),
 		}
 	}
 
@@ -184,11 +188,8 @@ impl<'a> System<'a> for RenderSystem {
 				if delta > *max {delta = max.clone()}
 			}
 		}
-		self.time += delta;
-		// let time = self.get_duration();
-		// /Time
 
-		// println!("{:?}", time);
+		self.time += delta;
 
 		let (
 			camera_coll,
@@ -199,6 +200,13 @@ impl<'a> System<'a> for RenderSystem {
 			mut gl_material_ids,
 			mut gl_texture_ids,
 		) = data;
+
+		let mut bind_context = BindContext{
+			gl_texture_ids: &mut gl_texture_ids,
+			gl_material_ids: &mut gl_material_ids,
+			definitions: &self.definitions,
+			render_settings: &self.render_settings,
+		};
 
 		let mut matrix_cam_position;
 		let matrix_projection;
@@ -260,7 +268,7 @@ impl<'a> System<'a> for RenderSystem {
 				prev_geom = geom.uuid;
 			}
 
-			material.bind(&mut gl_material_ids, &mut gl_texture_ids);
+			material.bind(&mut bind_context);
 
 			match geom.indices {
 				Some(ref indices) => {

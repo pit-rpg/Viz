@@ -13,7 +13,7 @@ use std::str;
 use helpers::{find_file, read_to_string};
 use super::gl_texture::{load_texture, GLTextureIDs, TextureId, GLTexture};
 use super::gl_shaderProgram::{compile_shader_program, GLShaderProgramID, read_shader_file, ProgramType, set_uniforms};
-
+use super::BindContext;
 
 pub type GLMaterialIDs = HashMap<Uuid, GLShaderProgramID>;
 
@@ -22,7 +22,7 @@ pub trait GLMaterial
 where
 	Self: Sized,
 {
-	fn bind(&mut self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs);
+	fn bind(&mut self, bind_context: &mut BindContext);
 
 	fn unbind(&self) {
 		gl_call!({
@@ -36,17 +36,17 @@ where
 
 impl GLMaterial for Material {
 
-	fn bind(&mut self, mat_store: &mut GLMaterialIDs, texture_store: &mut GLTextureIDs) {
+	fn bind(&mut self, bind_context: &mut BindContext) {
 		let src = self.get_src().to_string();
 
-		match mat_store.get_mut(&self.uuid) {
+		match bind_context.gl_material_ids.get_mut(&self.uuid) {
 			None => {}
 			Some(ref program) => {
 				gl_call!({
 					gl::UseProgram(program.id);
 				});
 
-				set_uniforms(self.get_uniforms(), program, texture_store);
+				set_uniforms(self.get_uniforms(), program, bind_context.gl_texture_ids);
 				return;
 			}
 		}
@@ -54,11 +54,11 @@ impl GLMaterial for Material {
 		let program;
 		{
 			let uniforms = self.get_uniforms();
-			program = compile_shader_program(&src, uniforms, texture_store);
+			program = compile_shader_program(&src, uniforms, bind_context);
 		}
 
-		mat_store.insert(self.uuid, program);
+		bind_context.gl_material_ids.insert(self.uuid, program);
 
-		self.bind(mat_store, texture_store);
+		self.bind(bind_context);
 	}
 }

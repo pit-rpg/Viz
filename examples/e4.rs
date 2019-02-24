@@ -65,7 +65,7 @@ fn main(){
 	let path = Path::new("models/Predator.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
-	let mut mat_cup_mat = Material::new_mat_cup();
+	let mut mat_cup_mat = Material::new_test_mat();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
 	mat_cup_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
 	let shared_mat_cup_mat = SharedMaterial::new(mat_cup_mat);
