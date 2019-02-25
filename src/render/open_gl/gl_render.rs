@@ -82,7 +82,7 @@ pub struct RenderSystem {
 impl RenderSystem {
 	pub fn new(world: &mut World) -> Self {
 		// TODO: ensure once
-		world.add_resource(VertexArraysIDs::new()); 
+		world.add_resource(VertexArraysIDs::new());
 		world.add_resource(GLMaterialIDs::new());
 		world.add_resource(GLTextureIDs::new());
 		// TODO: ensure once /
@@ -255,9 +255,6 @@ impl<'a> System<'a> for RenderSystem {
 
 			material
 				.set_uniform("matrix_normal", &Uniform::Matrix3f(matrix_normal));
-			
-			material
-				.set_uniform("position_light", &Uniform::Vector3(position_light));
 
 			material
 				.set_uniform("time", &Uniform::Float(time));

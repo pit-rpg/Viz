@@ -29,8 +29,8 @@ fn main(){
 
 	let mut world = create_world();
 	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
-	
-	
+
+
 	gl_call!({
 		gl::Enable(gl::DEPTH_TEST);
 	});
@@ -39,9 +39,9 @@ fn main(){
 	let center = Vector3::new_zero();
 	let mut radius = 10.0;
 	let zoom_speed = 0.5;
-
-
 	let mut running = true;
+
+
 
 
 	let mut camera = PerspectiveCamera::new();
@@ -50,9 +50,7 @@ fn main(){
 	transform_camera.update();
 	camera.view.enabled = false;
 
-	let mut transform_light = Transform::default();
-	transform_light.scale.set(0.2, 0.2, 0.2);
-	transform_light.update();
+	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
 
 	let e_cam = world
@@ -61,14 +59,14 @@ fn main(){
 		.with(camera)
 		.build();
 
-	
+
 	let path = Path::new("models/untitled.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
-	let mut mat_cup_mat = Material::new_test_mat(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
+	let mut test_mat = Material::new_test_mat();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
-	mat_cup_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
-	let shared_mat_cup_mat = SharedMaterial::new(mat_cup_mat);
+	test_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
+	let shared_test_mat = SharedMaterial::new(test_mat);
 
 
 	for mut object in objects {
@@ -82,11 +80,50 @@ fn main(){
 		let mut transform = Transform::default();
 		transform.update();
 
+		let mut mat = shared_test_mat.clone();
+		{
+			let mut material = mat.lock().unwrap();
+			material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
+			material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+			material.set_uniform("shininess", &Uniform::Float(1.0));
+		}
+
 		world
 			.create_entity()
 			.with(transform)
 			.with(geom)
-			.with(shared_mat_cup_mat.clone())
+			.with(mat)
+			.build();
+	}
+
+
+	for i in  0..4 {
+		let mut mat = shared_test_mat.clone();
+		let mut material = mat.lock().unwrap();
+
+		let mut transform = Transform::default();
+		transform.scale.set(0.2,0.2,0.2);
+		transform.position
+			.randomize()
+			.multiply_scalar(5.0)
+			.sub_scalar(2.5);
+		transform.update();
+
+		let mut color = Vector3::random();
+		// color.set_length(2.0);
+
+		material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(transform.position.clone()));
+		material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(color.clone()));
+		material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(40.0));
+		material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(1.0));
+
+		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,1.0)));
+
+		world
+			.create_entity()
+			.with(transform)
+			.with(geom_light.clone())
+			.with(material_light.clone())
 			.build();
 	}
 
@@ -121,7 +158,7 @@ fn main(){
 									if y > 0.0 { radius -= zoom_speed } else {radius += zoom_speed};
 								}
 								MouseScrollDelta::PixelDelta(_) => {}
-							}							
+							}
 						}
 						CursorMoved { position: pos, .. } =>{
 							window_state.pointer_pos = pos

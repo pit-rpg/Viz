@@ -30,7 +30,7 @@ impl ShaderProgram for Material {
 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem> {
 		&mut self.uniforms
 	}
-	
+
 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem] {
 		&mut self.uniforms
 	}
@@ -124,26 +124,10 @@ impl Material {
 
 
 
-	pub fn new_test_mat(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+	pub fn new_test_mat() -> Self {
 		Material::new(
 			"test_mat1",
-			&[
-				UniformItem {
-					name: "color".to_string(),
-					uniform: Uniform::Vector4(color.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "color_light".to_string(),
-					uniform: Uniform::Vector3(color_light.clone()),
-					need_update: true,
-				},
-				// UniformItem {
-				// 	name: "position_light".to_string(),
-				// 	uniform: Uniform::Vector3(position_light.clone()),
-				// 	need_update: true,
-				// },
-			]
+			&[]
 		)
 	}
 
