@@ -25,7 +25,7 @@ pub struct WindowState {
 fn main(){
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
 
 
 	gl_call!({

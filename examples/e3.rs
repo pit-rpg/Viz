@@ -10,9 +10,20 @@ use project::{
 	glutin::{MouseScrollDelta},
 	glutin,
 	render,
-	math::{Vector3, Vector, Vector4},
-	core::{SharedGeometry, PerspectiveCamera, Transform, SharedTexture2D, Material, SharedMaterial, Uniform, create_world, ShaderProgram, BufferType, BufferGeometry},
-	helpers::{load_obj, geometry_generators},
+	math::{Vector3, Vector},
+	core::{
+		SharedGeometry,
+		PerspectiveCamera,
+		Transform,
+		SharedTexture2D,
+		Material,
+		SharedMaterial,
+		Uniform,
+		create_world,
+		ShaderProgram,
+		SystemTransform,
+	},
+	helpers::{load_obj},
 };
 
 
@@ -28,9 +39,9 @@ pub struct WindowState {
 fn main(){
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
-	
-	
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
+	let mut system_transform = SystemTransform::new();
+
 	gl_call!({
 		gl::Enable(gl::DEPTH_TEST);
 	});
@@ -47,12 +58,10 @@ fn main(){
 	let mut camera = PerspectiveCamera::new();
 	let mut transform_camera = Transform::default();
 	transform_camera.position.z = 6.0;
-	transform_camera.update();
 	camera.view.enabled = false;
 
 	let mut transform_light = Transform::default();
 	transform_light.scale.set(0.2, 0.2, 0.2);
-	transform_light.update();
 
 
 	let e_cam = world
@@ -61,7 +70,7 @@ fn main(){
 		.with(camera)
 		.build();
 
-	
+
 	let path = Path::new("models/Predator.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
@@ -80,7 +89,6 @@ fn main(){
 		let geom = SharedGeometry::new(object);
 
 		let mut transform = Transform::default();
-		transform.update();
 
 		world
 			.create_entity()
@@ -117,11 +125,11 @@ fn main(){
 						},
 						glutin::WindowEvent::MouseWheel{ delta, .. } => {
 							match delta {
-								MouseScrollDelta::LineDelta(x,y) => {
+								MouseScrollDelta::LineDelta(_, y) => {
 									if y > 0.0 { radius -= zoom_speed } else {radius += zoom_speed};
 								}
 								MouseScrollDelta::PixelDelta(_) => {}
-							}							
+							}
 						}
 						CursorMoved { position: pos, .. } =>{
 							window_state.pointer_pos = pos
@@ -155,11 +163,11 @@ fn main(){
 				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;;
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
-				transform_camera.update();
 			}
 		}
 
-		render_system.run_now(&world.res);
 
+		system_transform.run_now(&world.res);
+		render_system.run_now(&world.res);
 	}
 }

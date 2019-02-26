@@ -8,5 +8,6 @@ pub fn create_world() -> World {
 	world.register::<SharedMaterial>();
 	world.register::<Transform>();
 	world.register::<PerspectiveCamera>();
+	world.register::<PointLight>();
 	world
 }

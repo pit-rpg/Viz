@@ -5,7 +5,7 @@ extern crate regex;
 
 use self::gl::types::*;
 
-use core::{Uniform, UniformItem};
+use core::{Uniform, UniformItem, ShaderProgram};
 use std::ffi::{CString};
 use std::ptr;
 use std::str;
@@ -126,7 +126,7 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 
 pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderProgramID, texture_store: &mut GLTextureIDs) {
 	let mut texture_slot = 0;
-	
+
 	uniforms
 		.iter_mut()
 		.enumerate()
@@ -134,7 +134,7 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 			if shader_program.uniform_locations.get(i).is_none() {
 				let c_name = CString::new(uniform.name.as_bytes()).unwrap();
 				let location;
-				
+
 				gl_call!({
 					location = gl::GetUniformLocation(shader_program.id, c_name.as_ptr());
 				});
@@ -184,35 +184,46 @@ pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
 }
 
 
-fn set_definitions_fragment(code: &String, bind_context: &mut BindContext) -> String {
+fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_context: &mut BindContext) -> String {
 
 	let core_definitions = format!("#define NUM_POINT_LIGHTS {}\n", bind_context.render_settings.num_point_lights);
 
-	let definitions: String = bind_context.definitions.iter()
-		.filter(|e| e.0 == ProgramType::Fragment )
+	let definitions: String = bind_context.tags
+		.iter()
+		.chain(shader.get_tags())
 		.map(|e| {
-			format!("#define {} {}\n", e.1, e.2)
+			format!("#define {}\n", e)
 		})
 		.collect();
-	
+
 	format!("#version 330 core\n{}\n{}\n{}",core_definitions,  definitions, code)
 }
 
 
-fn set_definitions_vertex(code: &String, bind_context: &mut BindContext) -> String {	
-	format!("#version 330 core\n{}", code)
+fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_context: &mut BindContext) -> String {
+
+	let definitions: String = bind_context.tags
+		.iter()
+		.chain(shader.get_tags())
+		.map(|e| {
+			format!("#define {}\n", e)
+		})
+		.collect();
+
+
+	format!("#version 330 core\n{}\n{}", code, definitions)
 }
 
 
 
-pub fn get_program(src: &str, bind_context: &mut BindContext) -> GLShaderProgramID {
-	let code = read_shader_file(&vec!("src/render/open_gl/shaders"), src);
+pub fn get_program<T: ShaderProgram>(shader: &T, bind_context: &mut BindContext) -> GLShaderProgramID {
+	let code = read_shader_file(&vec!("src/render/open_gl/shaders"), shader.get_src());
 
 	let mut shader_program = GLShaderProgramID {
 		fs_source: String::from(""),
 		vs_source: String::from(""),
 		id: 0,
-		uniform_locations: Vec::new(),
+		uniform_locations: Vec::with_capacity(shader.get_uniforms().len()),
 	};
 
 	let mut write_to_prog = ProgramType::None;
@@ -237,17 +248,17 @@ pub fn get_program(src: &str, bind_context: &mut BindContext) -> GLShaderProgram
 		}
 	}
 
-	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, bind_context);
-	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, bind_context);
+	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, shader, bind_context);
+	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, shader, bind_context);
 
 	shader_program
 }
 
 
-pub fn compile_shader_program(src: &str, uniforms: &mut[UniformItem], bind_context: &mut BindContext ) -> GLShaderProgramID {
-	println!("compile shader: {}", src);
+pub fn compile_shader_program<T:ShaderProgram>(shader: &mut T, bind_context: &mut BindContext ) -> GLShaderProgramID {
+	println!("compile shader: {}", shader.get_src());
 
-	let mut program = get_program(src, bind_context);
+	let mut program = get_program(shader, bind_context);
 	let id;
 	// let fs_source = &program.fs_source;
 
@@ -255,8 +266,8 @@ pub fn compile_shader_program(src: &str, uniforms: &mut[UniformItem], bind_conte
 		id = gl::CreateProgram();
 		program.id = id;
 
-		let vs = compile_shader(gl::VERTEX_SHADER, &program.vs_source[..], src);
-		let fs = compile_shader(gl::FRAGMENT_SHADER, &program.fs_source[..], src);
+		let vs = compile_shader(gl::VERTEX_SHADER, &program.vs_source[..], shader.get_src());
+		let fs = compile_shader(gl::FRAGMENT_SHADER, &program.fs_source[..], shader.get_src());
 
 		gl::AttachShader(id, fs);
 		gl::AttachShader(id, vs);
@@ -276,7 +287,7 @@ pub fn compile_shader_program(src: &str, uniforms: &mut[UniformItem], bind_conte
 			);
 			println!(
 				"ERROR::SHADER::PROGRAM::COMPILATION_FAILED: {}\n{}",
-				src,
+				shader.get_src(),
 				info_log.to_string_lossy()
 			);
 		}
@@ -290,9 +301,7 @@ pub fn compile_shader_program(src: &str, uniforms: &mut[UniformItem], bind_conte
 		gl::UseProgram(program.id);
 	});
 
-	let uniform_locations = Vec::<UniformLocation>::with_capacity(uniforms.len());
-
-	program.uniform_locations = uniform_locations;
+	let uniforms = shader.get_uniforms_slice_mut();
 	set_uniforms(uniforms, &mut program, bind_context.gl_texture_ids);
 	program
 }

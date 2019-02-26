@@ -11,8 +11,19 @@ use project::{
 	glutin,
 	render,
 	math::{Vector3, Vector, Vector4},
-	core::{SharedGeometry, PerspectiveCamera, Transform, SharedTexture2D, Material, SharedMaterial, Uniform, create_world, ShaderProgram, BufferType, BufferGeometry},
-	helpers::{load_obj, geometry_generators},
+	core::{SharedGeometry,
+		PerspectiveCamera,
+		Transform,
+		SharedTexture2D,
+		Material,
+		SharedMaterial,
+		Uniform,
+		create_world,
+		ShaderProgram,
+		PointLight,
+		SystemTransform,
+	},
+	helpers::{load_obj, geometry_generators, Nums},
 };
 
 
@@ -28,7 +39,9 @@ pub struct WindowState {
 fn main(){
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
+	let mut system_transform = SystemTransform::new();
+	// let mut system_light = SystemLight::new();
 
 
 	gl_call!({
@@ -47,7 +60,6 @@ fn main(){
 	let mut camera = PerspectiveCamera::new();
 	let mut transform_camera = Transform::default();
 	transform_camera.position.z = 6.0;
-	transform_camera.update();
 	camera.view.enabled = false;
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
@@ -60,14 +72,13 @@ fn main(){
 		.build();
 
 
-	let path = Path::new("models/untitled.obj");
+	let path = Path::new("models/Predator.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
 	let mut test_mat = Material::new_test_mat();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
 	test_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
 	let shared_test_mat = SharedMaterial::new(test_mat);
-
 
 	for mut object in objects {
 
@@ -78,7 +89,6 @@ fn main(){
 		let geom = SharedGeometry::new(object);
 
 		let mut transform = Transform::default();
-		transform.update();
 
 		let mut mat = shared_test_mat.clone();
 		{
@@ -97,34 +107,29 @@ fn main(){
 	}
 
 
-	for i in  0..4 {
-		let mut mat = shared_test_mat.clone();
-		let mut material = mat.lock().unwrap();
-
+	let mut lights = Vec::new();
+	for _ in  0..4 {
 		let mut transform = Transform::default();
 		transform.scale.set(0.2,0.2,0.2);
 		transform.position
 			.randomize()
 			.multiply_scalar(5.0)
 			.sub_scalar(2.5);
-		transform.update();
 
 		let mut color = Vector3::random();
-		// color.set_length(2.0);
-
-		material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(transform.position.clone()));
-		material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(color.clone()));
-		material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(40.0));
-		material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(1.0));
+		let point_light = PointLight::new(&color, 10.0, 1.0);
 
 		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,1.0)));
 
-		world
+		let e_light = world
 			.create_entity()
 			.with(transform)
 			.with(geom_light.clone())
 			.with(material_light.clone())
+			.with(point_light.clone())
 			.build();
+
+		lights.push(e_light);
 	}
 
 
@@ -132,6 +137,8 @@ fn main(){
 	render_system.window.set_resizable(true);
 	let hidpi_factor = render_system.window.get_hidpi_factor().round();
 	let mut window_state = WindowState::default();
+
+	let mut prev_time = 0.0;
 
 	while running {
 
@@ -154,7 +161,7 @@ fn main(){
 						},
 						glutin::WindowEvent::MouseWheel{ delta, .. } => {
 							match delta {
-								MouseScrollDelta::LineDelta(x,y) => {
+								MouseScrollDelta::LineDelta(_, y) => {
 									if y > 0.0 { radius -= zoom_speed } else {radius += zoom_speed};
 								}
 								MouseScrollDelta::PixelDelta(_) => {}
@@ -192,11 +199,33 @@ fn main(){
 				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;;
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
-				transform_camera.update();
 			}
 		}
 
-		render_system.run_now(&world.res);
+		let time = render_system.get_duration();
 
+		if time - prev_time > 0.1 {
+			prev_time = time;
+
+			let mut transform_store = world.write_storage::<Transform>();
+			let mut light_store = world.write_storage::<PointLight>();
+
+			for e_light in &lights {
+				if let Some(transform) = transform_store.get_mut(*e_light) {
+					transform.position
+						.randomize()
+						.sub_scalar(0.5)
+						.multiply_scalar(7.0);
+				}
+				if let Some(light) = light_store.get_mut(*e_light) {
+					light.color.randomize();
+					light.decay = f32::random();
+				}
+			}
+		}
+
+		system_transform.run_now(&world.res);
+		// system_light.run_now(&world.res);
+		render_system.run_now(&world.res);
 	}
 }

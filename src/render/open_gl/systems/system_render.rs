@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 extern crate gl;
 extern crate glutin;
 extern crate rand;
@@ -10,14 +8,16 @@ use std::time::{Instant, Duration};
 use std::os::raw::c_void;
 use std::ffi::CStr;
 
-// use core::BufferGeometry;
-use core::SharedGeometry;
-// use core::Material;
-use core::SharedMaterial;
-use core::Transform;
-use core::Uniform;
-use core::PerspectiveCamera;
-use core::ShaderProgram;
+use core::{
+	SharedGeometry,
+	SharedMaterial,
+	Transform,
+	Uniform,
+	PerspectiveCamera,
+	ShaderProgram,
+	PointLight,
+};
+
 
 use self::gl::types::*;
 use self::gl::GetString;
@@ -27,20 +27,14 @@ use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join, World}
 use self::uuid::Uuid;
 
 use math::{Matrix3, Matrix4, Vector4, Vector3, Vector};
-use super::super::Renderer;
-use super::gl_geometry::VertexArraysIDs;
-use super::gl_material::GLMaterialIDs;
-use super::gl_texture::GLTextureIDs;
-use super::GLGeometry;
-use super::GLMaterial;
-use super::gl_shaderProgram::ProgramType;
-// #[allow(dead_code)]
-// pub struct GLRenderer {
-// 	pub window: GlWindow,
-// 	pub events_loop: EventsLoop,
-// }
+use super::super::{
+	gl_geometry::VertexArraysIDs,
+	gl_material::GLMaterialIDs,
+	gl_texture::GLTextureIDs,
+	GLGeometry,
+	GLMaterial,
+};
 
-// use self::specs::{Component, ReadStorage, RunNow, System, VecStorage, World, Write, WriteStorage};
 
 pub struct RenderSettings {
 	pub num_point_lights: usize,
@@ -57,7 +51,7 @@ impl Default for RenderSettings {
 }
 
 pub struct BindContext<'z> {
-	pub definitions: &'z Vec<(ProgramType, String, String)>,
+	pub tags: &'z Vec<String>,
 	pub render_settings: &'z RenderSettings,
 	pub gl_material_ids: &'z mut GLMaterialIDs,
 	pub gl_texture_ids: &'z mut GLTextureIDs,
@@ -74,7 +68,7 @@ pub struct RenderSystem {
 	pub delta_max: Option<Duration>,
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
-	pub definitions: Vec<(ProgramType, String, String)>,
+	pub tags: Vec<String>,
 	pub render_settings: RenderSettings,
 }
 
@@ -117,7 +111,7 @@ impl RenderSystem {
 			delta_max: None,
 			clear_color: Vector4::new_zero(),
 			clear_color_need_update: true,
-			definitions: Vec::new(),
+			tags: Vec::new(),
 			render_settings: RenderSettings::default(),
 		}
 	}
@@ -159,12 +153,14 @@ impl<'a> System<'a> for RenderSystem {
 		ReadStorage<'a, Transform>,
 		WriteStorage<'a, SharedGeometry>,
 		WriteStorage<'a, SharedMaterial>,
+		WriteStorage<'a, PointLight>,
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
 		Write<'a, GLTextureIDs>,
 	);
 
 	fn run(&mut self, data: Self::SystemData) {
+
 		Self::gl_clear_error();
 
 		// let mut prev_mat = Uuid::new_v4();
@@ -198,6 +194,7 @@ impl<'a> System<'a> for RenderSystem {
 			transform_coll,
 			mut geometry_coll,
 			mut material_coll,
+			light_coll,
 			mut vertex_arrays_ids,
 			mut gl_material_ids,
 			mut gl_texture_ids,
@@ -206,7 +203,7 @@ impl<'a> System<'a> for RenderSystem {
 		let mut bind_context = BindContext{
 			gl_texture_ids: &mut gl_texture_ids,
 			gl_material_ids: &mut gl_material_ids,
-			definitions: &self.definitions,
+			tags: &self.tags,
 			render_settings: &self.render_settings,
 		};
 
@@ -234,6 +231,28 @@ impl<'a> System<'a> for RenderSystem {
 			}
 		}
 
+		let lights: Vec<_> = (&light_coll, &transform_coll)
+			.join()
+			.take(self.render_settings.num_point_lights)
+			.map(|(light, transform)| {
+				let mut pos = transform.position.clone();
+				pos.apply_matrix_4(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+				(light, pos)
+			})
+			.collect();
+
+		for (_, shared_material) in (&transform_coll, &mut material_coll).join() {
+			lights.iter().enumerate()
+				.for_each(|(i, (light, pos))| {
+					let mut material = shared_material.lock().unwrap();
+
+					material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(pos.clone()));
+					material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(light.color.clone()));
+					material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(light.distance));
+					material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(light.decay));
+				});
+		}
+
 		for (transform, geometry, shared_material) in (&transform_coll, &mut geometry_coll, &mut material_coll).join() {
 			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
 			let mut matrix_normal = Matrix3::new();
@@ -258,10 +277,6 @@ impl<'a> System<'a> for RenderSystem {
 
 			material
 				.set_uniform("time", &Uniform::Float(time));
-
-			// material
-			// 	.set_uniform("matrix_normal", &Uniform::Matrix4(matrix_normal));
-			// println!("{:?}", matrix_normal);
 
 			if prev_geom != geom.uuid {
 				geom.bind(&mut vertex_arrays_ids);

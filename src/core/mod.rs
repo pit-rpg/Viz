@@ -7,6 +7,7 @@ mod light;
 mod shaderProgram;
 mod rectangle;
 mod world;
+mod systems;
 
 pub use self::buffer_geometry::*;
 pub use self::material::*;
@@ -17,3 +18,4 @@ pub use self::light::*;
 pub use self::shaderProgram::*;
 pub use self::rectangle::*;
 pub use self::world::create_world;
+pub use self::systems::*;

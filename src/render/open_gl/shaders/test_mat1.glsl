@@ -176,7 +176,7 @@ void main()
 	IncidentLight directLight;
 	GeometricContext geometry;
 
-	geometry.position = - v_pos;
+	geometry.position = v_pos;
 	geometry.normal = v_normal;
 	geometry.viewDir = normalize( v_pos );
 

@@ -8,12 +8,23 @@ use project::{
 	glutin,
 	render,
 	math::{Vector3, Vector, Vector4},
-	core::{SharedGeometry, PerspectiveCamera, Transform, SharedTexture2D, Material, SharedMaterial, Uniform, create_world, ShaderProgram},
+	core::{SharedGeometry,
+		PerspectiveCamera,
+		Transform,
+		SharedTexture2D,
+		Material,
+		SharedMaterial,
+		Uniform,
+		create_world,
+		ShaderProgram,
+		SystemTransform,
+	},
 	helpers::{geometry_generators},
 };
 
 
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
+#[derive(Copy,
+	Clone, PartialEq, Debug, Default)]
 pub struct WindowState {
 	pub pointer_pos: (f64, f64),
 	pub pointer_pressed: (bool, bool, bool),
@@ -25,8 +36,9 @@ pub struct WindowState {
 fn main(){
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::gl_render::RenderSystem::new(&mut world);
-	
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
+	let mut system_transform = SystemTransform::new();
+
 	let count = 400;
 	let mut boxes = Vec::with_capacity(count);
 
@@ -249,7 +261,7 @@ fn main(){
 			}
 		}
 
+		system_transform.run_now(&world.res);
 		render_system.run_now(&world.res);
-
 	}
 }

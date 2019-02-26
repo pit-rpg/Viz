@@ -115,8 +115,9 @@ pub trait ShaderProgram {
 	}
 
 	fn get_src(&self) -> &str;
-	fn get_uniforms(&mut self) -> &Vec<UniformItem>;
+	fn get_uniforms(&self) -> &Vec<UniformItem>;
 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
+	fn get_tags(&self) -> &Vec<String>;
 }
 
