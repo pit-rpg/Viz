@@ -22,6 +22,7 @@ use project::{
 		ShaderProgram,
 		PointLight,
 		SystemTransform,
+		// Relation,
 	},
 	helpers::{load_obj, geometry_generators, Nums},
 };
@@ -52,9 +53,6 @@ fn main(){
 	let mut radius = 10.0;
 	let zoom_speed = 0.5;
 	let mut running = true;
-
-
-
 
 	let mut camera = PerspectiveCamera::new();
 	let mut transform_camera = Transform::default();
@@ -87,7 +85,8 @@ fn main(){
 
 		let geom = SharedGeometry::new(object);
 
-		let mut transform = Transform::default();
+		let transform1 = Transform::default();
+		let mut transform2 = Transform::default();
 
 		let mut mat = shared_test_mat.clone();
 		{
@@ -97,12 +96,19 @@ fn main(){
 			material.set_uniform("shininess", &Uniform::Float(1.0));
 		}
 
-		world
+		let child = world
 			.create_entity()
-			.with(transform)
+			.with(transform2)
 			.with(geom)
 			.with(mat)
 			.build();
+
+
+		let parent = world
+			.create_entity()
+			.with(transform1)
+			.build();
+
 	}
 
 
@@ -201,25 +207,7 @@ fn main(){
 
 		let time = render_system.get_duration();
 
-		if time - prev_time > 0.1 {
-			prev_time = time;
 
-			let mut transform_store = world.write_storage::<Transform>();
-			let mut light_store = world.write_storage::<PointLight>();
-
-			for e_light in &lights {
-				if let Some(transform) = transform_store.get_mut(*e_light) {
-					transform.position
-						.randomize()
-						.sub_scalar(0.5)
-						.multiply_scalar(7.0);
-				}
-				if let Some(light) = light_store.get_mut(*e_light) {
-					light.color.randomize();
-					light.decay = f32::random();
-				}
-			}
-		}
 
 		system_transform.run_now(&world.res);
 		render_system.run_now(&world.res);
