@@ -1,12 +1,16 @@
 extern crate uuid;
 use self::uuid::Uuid;
-use helpers::Nums;
-use math::{Vector, Vector2, Vector3, Vector4};
 use std::vec::Vec;
 use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 use super::{Box3};
 
+use math::{
+	Vector,
+	Vector2,
+	Vector3,
+	Vector4
+};
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -192,7 +196,7 @@ impl BufferGeometry {
 	pub fn get_attribute(&self, name: &str) -> Option<&BufferAttribute> {
 		self.attributes.iter().find(|e| e.name == name)
 	}
-	
+
 	pub fn has_attribute(&self, name: &str) -> bool {
 		self.attributes.iter().any(|e| e.name == name)
 	}
@@ -209,7 +213,7 @@ impl BufferGeometry {
 			if let BufferType::Vector3(data) = &attribute.data {
 				let mut calc_normals = vec![Vec::new(); data.len()];
 				let indices = self.indices.as_ref().unwrap();
-				
+
 				let il = indices.len();
 				let mut i = 0;
 				while i < il {
@@ -225,9 +229,6 @@ impl BufferGeometry {
 					calc_normals[ indices[i]   as usize ].push(cb.clone());
 					calc_normals[ indices[i+1] as usize ].push(cb.clone());
 					calc_normals[ indices[i+2] as usize ].push(cb);
-					// calc_normals.push(cb.clone());
-					// calc_normals.push(cb.clone());
-					// calc_normals.push(cb);
 
 					i+=3;
 				}
@@ -296,7 +297,6 @@ impl Drop for BufferGeometry {
 }
 
 
-// pub type Geometry = Arc<Mutex<BufferGeometry>>;
 
 #[derive(Clone)]
 pub struct SharedGeometry (Arc<Mutex<BufferGeometry>>);
@@ -315,6 +315,3 @@ impl SharedGeometry {
 impl Component for SharedGeometry {
 	type Storage = VecStorage<Self>;
 }
-// impl Component for BufferGeometry {
-// 	type Storage = VecStorage<Self>;
-// }

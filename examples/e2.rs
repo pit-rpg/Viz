@@ -68,13 +68,11 @@ fn main(){
 	let mut camera = PerspectiveCamera::new();
 	let mut transform_camera = Transform::default();
 	transform_camera.position.z = 6.0;
-	transform_camera.update();
 	camera.view.enabled = false;
 	println!("{:?}", camera);
 
 	let mut transform_light = Transform::default();
 	transform_light.scale.set(0.2, 0.2, 0.2);
-	transform_light.update();
 
 	let texture2 = SharedTexture2D::new_from_path("images/awesomeface.png");
 
@@ -82,7 +80,7 @@ fn main(){
 	let texture_container_specular = SharedTexture2D::new_from_path("images/container2_specular.png");
 
 
-	let mut material2 = Material::new_basic_texture(&Vector4::random());
+	let mut material2 = Material::new_basic_texture();
 	material2.set_uniform("texture_color", &Uniform::Texture2D(Some(texture2.clone())));
 	let material2 = SharedMaterial::new(material2);
 
@@ -145,9 +143,6 @@ fn main(){
 		} else {
 			geom = geom_light.clone();
 		}
-
-
-		transform.update();
 
 		let m_box = world
 			.create_entity()
@@ -220,7 +215,6 @@ fn main(){
 				transform.position.x += 0.001;
 				transform.position.y += 0.001;
 				transform.position.z -= 0.01;
-				transform.update();
 			}
 			{
 				for m_box in boxes.iter() {
@@ -230,14 +224,12 @@ fn main(){
 							transform.rotation.x -= 0.001;
 							transform.rotation.y -= 0.002;
 							transform.rotation.z -= 0.003;
-							transform.update();
 						}
 
 					} else {
 						transform.rotation.x += 0.01;
 						transform.rotation.y += 0.02;
 						transform.rotation.z += 0.03;
-						transform.update();
 					}
 				}
 			}
@@ -257,7 +249,6 @@ fn main(){
 				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;;
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
-				transform_camera.update();
 			}
 		}
 

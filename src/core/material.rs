@@ -3,10 +3,23 @@ use self::uuid::Uuid;
 
 extern crate specs;
 use self::specs::{Component, VecStorage};
-use super::{Texture2D, SharedTexture2D, UniformItem, Uniform, ShaderProgram};
-use math::*;
-use std::sync::{Arc, Mutex, MutexGuard, LockResult};
+use super::{
+	UniformItem,
+	Uniform,
+	ShaderProgram
+};
 
+use math::{
+	Vector3,
+	Vector4
+};
+
+use std::sync::{
+	Arc,
+	Mutex,
+	MutexGuard,
+	LockResult
+};
 
 
 #[allow(dead_code)]
@@ -71,7 +84,7 @@ impl Material {
 		)
 	}
 
-	pub fn new_basic_texture(color: &Vector4<f32>) -> Self {
+	pub fn new_basic_texture() -> Self {
 		Material::new(
 			"basic-texture",
 			vec!["LIGHTING".to_string()],

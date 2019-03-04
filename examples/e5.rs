@@ -22,7 +22,8 @@ use project::{
 		ShaderProgram,
 		PointLight,
 		SystemTransform,
-		// Relation,
+		Parent,
+		EntityRelations,
 	},
 	helpers::{load_obj, geometry_generators, Nums},
 };
@@ -111,6 +112,12 @@ fn main(){
 
 	}
 
+		let lights_parent = world
+			.create_entity()
+			.with(Transform::default())
+			.build();
+
+
 
 	let mut lights = Vec::new();
 	for _ in  0..4 {
@@ -118,8 +125,8 @@ fn main(){
 		transform.scale.set(0.2,0.2,0.2);
 		transform.position
 			.randomize()
-			.multiply_scalar(5.0)
-			.sub_scalar(2.5);
+			.multiply_scalar(10.0)
+			.sub_scalar(5.0);
 
 		let mut color = Vector3::random();
 		let point_light = PointLight::new(&color, 10.0, 1.0);
@@ -133,6 +140,8 @@ fn main(){
 			.with(material_light.clone())
 			.with(point_light.clone())
 			.build();
+
+		world.add_child(lights_parent, e_light);
 
 		lights.push(e_light);
 	}
@@ -184,6 +193,8 @@ fn main(){
 			});
 		}
 
+		let time = render_system.get_duration();
+
 		{
 			let mut transform_store = world.write_storage::<Transform>();
 			let mut cam_store = world.write_storage::<PerspectiveCamera>();
@@ -203,11 +214,13 @@ fn main(){
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
+			{
+				let transform = transform_store.get_mut(lights_parent).unwrap();
+				transform.rotation.y = time * 0.5;
+				transform.rotation.x = time * 0.3;
+				transform.rotation.z = time * 0.1;
+			}
 		}
-
-		let time = render_system.get_duration();
-
-
 
 		system_transform.run_now(&world.res);
 		render_system.run_now(&world.res);

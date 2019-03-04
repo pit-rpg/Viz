@@ -10,7 +10,3 @@ pub mod components;
 #[macro_use] pub mod render;
 pub mod helpers;
 
-
-// pub use self::specs;
-
-use core::BufferGeometry;

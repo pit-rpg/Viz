@@ -3,8 +3,15 @@ extern crate specs;
 
 use self::uuid::Uuid;
 
-use math::{Vector, Vector2, Vector3, Vector4};
-use self::specs::{Component, VecStorage};
+use math::{
+	Vector,
+	Vector3,
+};
+
+use self::specs::{
+	Component,
+	VecStorage
+};
 
 
 #[allow(dead_code)]
@@ -15,7 +22,6 @@ pub struct PointLight
 	pub color: Vector3<f32>,
 	pub distance: f32,
 	pub decay: f32,
-	// pub power: f32,
 }
 
 

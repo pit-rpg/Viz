@@ -1,5 +1,4 @@
 use helpers::Nums;
-use std::ops::{Sub};
 
 
 pub trait Vector<T>

@@ -45,7 +45,6 @@ impl Default for RenderSettings {
 	fn default() -> Self {
 		RenderSettings{
 			num_point_lights: 4,
-			// num_directional_lights: 4,
 		}
 	}
 }

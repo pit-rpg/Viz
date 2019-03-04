@@ -75,7 +75,7 @@ fn main(){
 	let texture_container_specular = SharedTexture2D::new_from_path("images/container2_specular.png");
 
 
-	let mut material2 = Material::new_basic_texture(&Vector4::random());
+	let mut material2 = Material::new_basic_texture();
 	material2.set_uniform("texture_color", &Uniform::Texture2D(Some(texture2.clone())));
 	let mut material2 = SharedMaterial::new(material2);
 

@@ -1,11 +1,20 @@
 extern crate uuid;
-use self::uuid::Uuid;
+// use self::uuid::Uuid;
 
 extern crate specs;
-use self::specs::{Component, VecStorage};
-use super::{Texture2D, SharedTexture2D};
-use math::*;
-use std::sync::{Arc, Mutex, MutexGuard, LockResult};
+
+use super::{
+	SharedTexture2D
+};
+
+use math::{
+	Matrix3,
+	Matrix4,
+	Vector2,
+	Vector3,
+	Vector4,
+	Vector,
+};
 
 
 #[allow(dead_code)]

@@ -3,8 +3,10 @@ extern crate uuid;
 
 use self::gl::types::*;
 use self::uuid::Uuid;
-use core::{Texture2D, TextureColorType, SharedTexture2D};
-// use core::{Texture, TextureColorType, TextureDimensions};
+use core::{
+	Texture2D,
+	TextureColorType
+};
 use std::collections::HashMap;
 use std::os::raw::c_void;
 

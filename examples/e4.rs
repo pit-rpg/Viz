@@ -52,6 +52,7 @@ fn main(){
 	let mut radius = 10.0;
 	let zoom_speed = 0.5;
 	let mut running = true;
+	let lights_count = 4;
 
 
 
@@ -107,7 +108,7 @@ fn main(){
 
 
 	let mut lights = Vec::new();
-	for _ in  0..4 {
+	for _ in  0..lights_count {
 		let mut transform = Transform::default();
 		transform.scale.set(0.2,0.2,0.2);
 		transform.position
