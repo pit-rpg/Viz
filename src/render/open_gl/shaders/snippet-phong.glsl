@@ -7,29 +7,6 @@ struct BlinnPhongMaterial {
 };
 
 
-float punctualLightIntensityToIrradianceFactor( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
-	if( cutoffDistance > 0.0 ) {
-		return pow( saturate( -lightDistance / cutoffDistance + 1.0 ), decayExponent );
-	}
-	return 1.0;
-}
-
-
-// directLight is an out parameter as having it as a return value caused compiler errors on some devices
-void getPointDirectLightIrradiance( const in PointLight pointLight, const in GeometricContext geometry, out IncidentLight directLight ) {
-
-	vec3 lVector = pointLight.position - geometry.position;
-	directLight.direction = normalize( lVector );
-
-	float lightDistance = length( lVector );
-
-	directLight.color = pointLight.color;
-	directLight.color *= punctualLightIntensityToIrradianceFactor( lightDistance, pointLight.distance, pointLight.decay );
-	directLight.visible = ( directLight.color != vec3( 0.0 ) );
-
-}
-
-
 vec3 BRDF_Diffuse_Lambert( const in vec3 diffuseColor ) {
 	return RECIPROCAL_PI * diffuseColor;
 } // validated

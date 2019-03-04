@@ -28,7 +28,7 @@ void main() {
 
 #include <snippet-common>
 #include <snippet-common-lighting>
-#include <snippet-phong>
+#include <snippet-standart>
 
 
 layout (location = 0) out vec4 FragColor;
@@ -39,10 +39,13 @@ in vec3 v_normal;
 in vec2 v_uv;
 
 uniform vec3 diffuse;
-uniform vec3 emissive;
 uniform vec3 specular;
-uniform float shininess;
-uniform float opacity;
+uniform float roughness;
+uniform float metalness;
+
+uniform vec3 ambientLightColor;
+// uniform vec3 emissive;
+// uniform float opacity;
 
 
 // uniform vec3 viewPos;
@@ -52,7 +55,6 @@ uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
 void main()
 {
 
-	PointLight pointLight;
 	IncidentLight directLight;
 	GeometricContext geometry;
 
@@ -62,21 +64,83 @@ void main()
 
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 
-	BlinnPhongMaterial material;
-	material.diffuseColor = diffuse;
-	material.specularColor = specular;
-	material.specularShininess = shininess;
-	material.specularStrength = 1.0;
+	// PhysicalMaterial material;
+	// material.diffuseColor = diffuse;
+	// material.specularColor = specular;
+	// material.specularRoughness = roughness;
 
-	#pragma unroll_loop
-	for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
+	float metalnessFactor = metalness;
+	float roughnessFactor = roughness;
+	// float metalnessFactor = metalness;
+	// float roughnessFactor = roughness;
+	vec3 diffuseColor = diffuse;
 
-		pointLight = pointLights[ i ];
+PhysicalMaterial material;
+material.diffuseColor = diffuseColor.rgb * ( 1.0 - metalnessFactor );
+material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
+// #ifdef STANDARD
+	material.specularColor = mix( vec3( DEFAULT_SPECULAR_COEFFICIENT ), diffuseColor.rgb, metalnessFactor );
+// #else
+// 	material.specularColor = mix( vec3( MAXIMUM_SPECULAR_COEFFICIENT * pow2( reflectivity ) ), diffuseColor.rgb, metalnessFactor );
+// 	material.clearCoat = saturate( clearCoat ); // Burley clearcoat model
+// 	material.clearCoatRoughness = clamp( clearCoatRoughness, 0.04, 1.0 );
+// #endif
 
-		getPointDirectLightIrradiance( pointLight, geometry, directLight );
 
-		RE_Direct_BlinnPhong( directLight, geometry, material, reflectedLight );
-	}
+
+	#if ( NUM_POINT_LIGHTS > 0 )
+		PointLight pointLight;
+
+		#pragma unroll_loop
+		for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
+
+			pointLight = pointLights[ i ];
+
+			getPointDirectLightIrradiance( pointLight, geometry, directLight );
+
+			// #ifdef USE_SHADOWMAP
+			// directLight.color *= all( bvec2( pointLight.shadow, directLight.visible ) ) ? getPointShadow( pointShadowMap[ i ], pointLight.shadowMapSize, pointLight.shadowBias, pointLight.shadowRadius, vPointShadowCoord[ i ], pointLight.shadowCameraNear, pointLight.shadowCameraFar ) : 1.0;
+			// #endif
+
+			RE_Direct_Physical( directLight, geometry, material, reflectedLight );
+
+		}
+	#endif
+
+
+
+
+
+
+// #if defined( RE_IndirectDiffuse )
+	vec3 irradiance = getAmbientLightIrradiance( ambientLightColor );
+	// #if ( NUM_HEMI_LIGHTS > 0 )
+	// 	#pragma unroll_loop
+	// 	for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+
+	// 		irradiance += getHemisphereLightIrradiance( hemisphereLights[ i ], geometry );
+
+	// 	}
+	// #endif
+// #endif
+
+
+
+	// #if defined( RE_IndirectDiffuse )
+	RE_IndirectDiffuse_Physical( irradiance, geometry, material, reflectedLight );
+	// #endif
+
+
+	vec3 radiance = vec3( 0.0 );
+	vec3 clearCoatRadiance = vec3( 0.0 );
+
+	// #if defined( RE_IndirectSpecular )
+	RE_IndirectSpecular_Physical( radiance, clearCoatRadiance, geometry, material, reflectedLight );
+	// #endif
+
+
+
+
 
 	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular ;
 	FragColor = vec4(outgoingLight, 1.0);
