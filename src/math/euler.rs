@@ -39,6 +39,14 @@ where
 	}
 
 
+	pub fn set(&mut self, x: T, y: T, z: T) -> &mut Self {
+		self.x = x;
+		self.y = y;
+		self.z = z;
+		self
+	}
+
+
 	pub fn set_from_rotation_matrix(&mut self, m: &Matrix4<T>) -> &mut Self {
 		// assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
 

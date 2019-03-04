@@ -75,7 +75,7 @@ fn main(){
 	let path = Path::new("models/Predator.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
-	let mut test_mat = Material::new_test_mat();
+	let mut test_mat = Material::new_mesh_phong();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
 	test_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
 	let shared_test_mat = SharedMaterial::new(test_mat);
@@ -96,6 +96,7 @@ fn main(){
 			material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
 			material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
 			material.set_uniform("shininess", &Uniform::Float(1.0));
+			material.set_uniform("specularStrength", &Uniform::Float(1.0));
 		}
 
 		world

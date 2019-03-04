@@ -211,7 +211,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 		.collect();
 
 
-	format!("#version 330 core\n{}\n{}", code, definitions)
+	format!("#version 330 core\n{}\n{}", definitions, code)
 }
 
 
@@ -250,6 +250,12 @@ pub fn get_program<T: ShaderProgram>(shader: &T, bind_context: &mut BindContext)
 
 	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, shader, bind_context);
 	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, shader, bind_context);
+
+	println!("=============================================");
+	println!("{}", shader_program.vs_source);
+	println!(">>>>>>>>>>>>>>>>>>>>");
+	println!("{}", shader_program.fs_source);
+	println!("=============================================");
 
 	shader_program
 }

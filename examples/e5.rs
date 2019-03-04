@@ -73,10 +73,20 @@ fn main(){
 	let path = Path::new("models/Predator.obj");
 	let objects = load_obj(&path).expect("cant load file");
 
-	let mut test_mat = Material::new_test_mat();
-	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
-	test_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
-	let shared_test_mat = SharedMaterial::new(test_mat);
+
+	let mut mat_phong1 = Material::new_mesh_phong();
+	let shared_mat_phong1 = SharedMaterial::new(mat_phong1);
+
+	let mut mat_standard2 = Material::new_mesh_standard();
+	let shared_mat_standard2 = SharedMaterial::new(mat_standard2);
+
+
+	let obj_parent = world
+		.create_entity()
+		.with(Transform::default())
+		.build();
+
+
 
 	for mut object in objects {
 
@@ -86,30 +96,48 @@ fn main(){
 
 		let geom = SharedGeometry::new(object);
 
-		let transform1 = Transform::default();
+		let mut transform1 = Transform::default();
 		let mut transform2 = Transform::default();
 
-		let mut mat = shared_test_mat.clone();
+		transform1.position.x -= 0.5;
+		transform2.position.x += 0.5;
+		transform1.scale.set_scalar(0.4);
+		transform2.scale.set_scalar(0.4);
+
+		let mut mat1 = shared_mat_phong1.clone();
+		let mut mat2 = shared_mat_standard2.clone();
+
 		{
-			let mut material = mat.lock().unwrap();
+			let mut material = mat1.lock().unwrap();
 			material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
 			material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
 			material.set_uniform("shininess", &Uniform::Float(1.0));
+			material.set_uniform("specularStrength", &Uniform::Float(1.0));
+		}
+		{
+			let mut material = mat2.lock().unwrap();
+			material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
+			material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+			material.set_uniform("shininess", &Uniform::Float(1.0));
+			material.set_uniform("specularStrength", &Uniform::Float(1.0));
 		}
 
-		let child = world
+		let elem1 = world
+			.create_entity()
+			.with(transform1)
+			.with(geom.clone())
+			.with(mat1)
+			.build();
+
+		let elem2 = world
 			.create_entity()
 			.with(transform2)
 			.with(geom)
-			.with(mat)
+			.with(mat2)
 			.build();
 
-
-		let parent = world
-			.create_entity()
-			.with(transform1)
-			.build();
-
+		world.add_child(obj_parent, elem1);
+		world.add_child(obj_parent, elem2);
 	}
 
 		let lights_parent = world
@@ -220,6 +248,11 @@ fn main(){
 				transform.rotation.x = time * 0.3;
 				transform.rotation.z = time * 0.1;
 			}
+			// {
+			// 	let transform = transform_store.get_mut(obj_parent).unwrap();
+			// 	let scale = (time * 0.4).sin();
+			// 	transform.scale.set(scale,scale,scale);
+			// }
 		}
 
 		system_transform.run_now(&world.res);

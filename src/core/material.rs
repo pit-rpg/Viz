@@ -148,9 +148,17 @@ impl Material {
 
 
 
-	pub fn new_test_mat() -> Self {
+	pub fn new_mesh_phong() -> Self {
 		Material::new(
-			"test_mat1",
+			"mesh_phong",
+			vec!["LIGHTING".to_string()],
+			&[]
+		)
+	}
+
+	pub fn new_mesh_standard() -> Self {
+		Material::new(
+			"mesh_standard",
 			vec!["LIGHTING".to_string()],
 			&[]
 		)
