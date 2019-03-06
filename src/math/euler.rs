@@ -130,6 +130,14 @@ where
 		matrix.make_rotation_from_quaternion(q);
 		self.set_from_rotation_matrix(&matrix)
 	}
+
+	pub fn from_quaternion(q: &Quaternion<T>) -> Self {
+		let mut e = Self::new( T::zero(), T::zero(), T::zero(), RotationOrders::XYZ );
+		let mut matrix = Matrix4::new();
+		matrix.make_rotation_from_quaternion(q);
+		e.set_from_rotation_matrix(&matrix);
+		e
+	}
 }
 
 impl<T> Default for Euler<T>

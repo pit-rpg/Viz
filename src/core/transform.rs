@@ -37,6 +37,22 @@ impl Transform {
 		// self.update();
 		self
 	}
+
+
+	pub fn from_matrix (matrix: Matrix4<f32>) -> Self {
+
+		let (pos, rotQ, scale) = matrix.decompose_to_new();
+		let rotE = Euler::from_quaternion(&rotQ);
+
+		Self {
+			matrix_local: matrix,
+			matrix_world: Matrix4::new(),
+			position: pos,
+			scale: scale,
+			rotation: rotE,
+			quaternion: rotQ,
+		}
+	}
 }
 
 

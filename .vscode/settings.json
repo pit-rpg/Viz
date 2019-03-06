@@ -6,6 +6,7 @@
 		"g",
 		"geometry",
 		"gl",
+		"gltf",
 		"glutin",
 		"lchar",
 		"lenum",

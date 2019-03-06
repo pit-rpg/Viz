@@ -139,9 +139,9 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 					location = gl::GetUniformLocation(shader_program.id, c_name.as_ptr());
 				});
 
-				println!(">>...........{} {}", uniform.name, location);
+				// println!(">>...........{} {}", uniform.name, location);
 				if let Uniform::Texture2D( _ ) = uniform.uniform {
-					println!("...........{} {}", texture_slot, uniform.name);
+					// println!("...........{} {}", texture_slot, uniform.name);
 					gl_call!({
 						gl::Uniform1i(location, texture_slot as i32);
 					});
@@ -251,18 +251,18 @@ pub fn get_program<T: ShaderProgram>(shader: &T, bind_context: &mut BindContext)
 	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, shader, bind_context);
 	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, shader, bind_context);
 
-	println!("=============================================");
-	println!("{}", shader_program.vs_source);
-	println!(">>>>>>>>>>>>>>>>>>>>");
-	println!("{}", shader_program.fs_source);
-	println!("=============================================");
+	// println!("=============================================");
+	// println!("{}", shader_program.vs_source);
+	// println!(">>>>>>>>>>>>>>>>>>>>");
+	// println!("{}", shader_program.fs_source);
+	// println!("=============================================");
 
 	shader_program
 }
 
 
 pub fn compile_shader_program<T:ShaderProgram>(shader: &mut T, bind_context: &mut BindContext ) -> GLShaderProgramID {
-	println!("compile shader: {}", shader.get_src());
+	// println!("compile shader: {}", shader.get_src());
 
 	let mut program = get_program(shader, bind_context);
 	let id;
