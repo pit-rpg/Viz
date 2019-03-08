@@ -95,7 +95,7 @@ where T:Nums
 	fn new_max() -> Self {
         Self { x: T::max_val(), y: T::max_val(), z: T::max_val() }
     }
-	
+
 	fn new_min() -> Self{
         Self { x: T::min_val(), y: T::min_val(), z: T::min_val() }
     }
@@ -287,6 +287,11 @@ where T:Nums
         self.z = array[ 2 ];
         self
     }
+
+    fn new_from_array (array: &[T] ) -> Self {
+        Self::new(array[0], array[1], array[2])
+    }
+
 
     // fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self {
     // 	let x = self.x; let y = self.y; let z = self.z;

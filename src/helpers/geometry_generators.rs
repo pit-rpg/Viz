@@ -1,4 +1,4 @@
-use core::{BufferGeometry, BufferType};
+use core::{BufferGeometry, BufferData, BufferType};
 use math::{Vector2, Vector3, Vector};
 use std::f32::consts::PI;
 
@@ -13,7 +13,7 @@ pub fn param_sphere (radius: f32, width_segments: usize, height_segments: usize,
 	let len = (width_segments * height_segments) as usize;
 
 	// buffers
-	let mut indices = Vec::<i32>::with_capacity(len);
+	let mut indices = Vec::with_capacity(len);
 	let mut vertices = Vec::with_capacity(len);
 	let mut normals = Vec::with_capacity(len);
 	let mut uvs = Vec::with_capacity(len);
@@ -84,9 +84,9 @@ pub fn param_sphere (radius: f32, width_segments: usize, height_segments: usize,
 
 	// build geometry
 	let mut geom = BufferGeometry::new();
-	geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(vertices));
-	geom.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normals));
-	geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uvs));
+	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
+	geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normals));
+	geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(uvs));
 	geom.set_indices(indices);
 	geom
 }
@@ -102,7 +102,7 @@ pub fn sphere (radius: f32, width_segments: usize, height_segments: usize) -> Bu
 pub fn param_box(width: f32, height: f32, depth: f32, width_segments: usize, height_segments: usize, depth_segments: usize ) -> BufferGeometry {
 
 	// buffers
-	let mut indices = Vec::<i32>::new();
+	let mut indices = Vec::new();
 	let mut vertices = Vec::new();
 	let mut normals = Vec::new();
 	let mut uvs = Vec::new();
@@ -173,10 +173,10 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: usize, hei
 			for iy in 0..grid_y {
 				for ix in 0..grid_x {
 
-					let a = (number_of_vertices + ix + grid_x1 * iy) as i32;
-					let b = (number_of_vertices + ix + grid_x1 * ( iy + 1 )) as i32;
-					let c = (number_of_vertices + ( ix + 1 ) + grid_x1 * ( iy + 1 )) as i32;
-					let d = (number_of_vertices + ( ix + 1 ) + grid_x1 * iy) as i32;
+					let a = (number_of_vertices + ix + grid_x1 * iy) as u32;
+					let b = (number_of_vertices + ix + grid_x1 * ( iy + 1 )) as u32;
+					let c = (number_of_vertices + ( ix + 1 ) + grid_x1 * ( iy + 1 )) as u32;
+					let d = (number_of_vertices + ( ix + 1 ) + grid_x1 * iy) as u32;
 
 					// faces
 					indices.push( a );
@@ -213,9 +213,9 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: usize, hei
 	}
 
 	let mut geom = BufferGeometry::new();
-	geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(vertices));
-	geom.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normals));
-	geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uvs));
+	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
+	geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normals));
+	geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(uvs));
 	geom.set_indices(indices);
 	geom
 }
@@ -267,10 +267,10 @@ pub fn plane_buffer_geometry( width: f32, height: f32, grid_x: usize, grid_y: us
 	// indices
 	for iy in 0..grid_y {
 		for ix in 0..grid_x {
-			let a = ( ix + grid_x1 * iy )as i32;
-			let b = ( ix + grid_x1 * ( iy + 1 ) )as i32;
-			let c = ( ( ix + 1 ) + grid_x1 * ( iy + 1 ) )as i32;
-			let d = ( ( ix + 1 ) + grid_x1 * iy )as i32;
+			let a = ( ix + grid_x1 * iy ) as u32;
+			let b = ( ix + grid_x1 * ( iy + 1 ) ) as u32;
+			let c = ( ( ix + 1 ) + grid_x1 * ( iy + 1 ) ) as u32;
+			let d = ( ( ix + 1 ) + grid_x1 * iy ) as u32;
 
 			// faces
 			indices.push( a );
@@ -286,9 +286,9 @@ pub fn plane_buffer_geometry( width: f32, height: f32, grid_x: usize, grid_y: us
 
 	// build geometry
 	let mut geom = BufferGeometry::new();
-	geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(vertices));
-	geom.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normals));
-	geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(uvs));
+	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
+	geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normals));
+	geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(uvs));
 	geom.set_indices(indices);
 	geom
 }

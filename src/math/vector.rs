@@ -39,6 +39,7 @@ where T: Nums, Self: Sized
 	fn is_zero(&self) -> bool;
     // fn set_from_matrix_column (&mut self, m: &Matrix4<T>, index: usize ) -> &mut Self;
     fn from_array (&mut self, array: &[T] ) -> &mut Self;
+    fn new_from_array (array: &[T] ) -> Self;
     // fn apply_matrix_4 (&mut self, m: &Matrix4<T> ) -> &mut Self;
     // fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self;
 

@@ -46,7 +46,7 @@ where T:Nums
 			self.w.as_u8(),
 		)
 	}
-	
+
 	pub fn as_u8_color(&self) -> [u8;4] {
 		[	self.x.as_u8(),
 			self.y.as_u8(),
@@ -72,7 +72,7 @@ where T:Nums
 	fn new_max() -> Self {
         Self { x: T::max_val(), y: T::max_val(), z: T::max_val(), w: T::max_val() }
     }
-	
+
 	fn new_min() -> Self{
         Self { x: T::min_val(), y: T::min_val(), z: T::min_val(), w: T::min_val() }
     }
@@ -276,4 +276,9 @@ where T:Nums
         self.w = array[ 3 ];
         self
     }
+
+    fn new_from_array (array: &[T] ) -> Self {
+        Self::new(array[0], array[1], array[2], array[3])
+    }
 }
+

@@ -85,6 +85,37 @@ impl Texture2D {
 	}
 
 
+	pub fn new_from_bytes (path: Option<String>, bytes: &[u8]) -> Self {
+		let img = image::load_from_memory(bytes).unwrap();
+
+		let color_type = match img.color() {
+			ColorType::Gray(d) => TextureColorType::Gray(d),
+			ColorType::RGB(d) =>  TextureColorType::RGB(d),
+			ColorType::RGBA(d) => TextureColorType::RGBA(d),
+			_ =>{  panic!( format!("unknown color type for: {}", path.unwrap_or("<Unknown path (bytes)>".to_string()) ) )}
+		};
+
+		let data = img.raw_pixels();
+		let (width, height) = img.dimensions();
+
+		Self {
+			path: None,
+			uuid: Uuid::new_v4(),
+			wrapping_x: Wrapping::Repeat,
+			wrapping_y: Wrapping::Repeat,
+			filtering: Filtering::NEAREST,
+			texture_data: Some(TextureData {
+				data,
+				width,
+				height,
+				color_type,
+			}),
+			auto_clear_texture_data: true,
+			need_update: true,
+		}
+	}
+
+
 	pub fn load (&mut self) -> Result<&TextureData, (String)> {
 
 		match (&self.path, self.texture_data.is_none()) {

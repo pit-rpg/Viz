@@ -4,33 +4,117 @@ use std::vec::Vec;
 use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 use super::{Box3};
+use std::mem;
 
 use math::{
 	Vector,
 	Vector2,
 	Vector3,
-	Vector4
+	Vector4,
+	Matrix2,
+	Matrix3,
+	Matrix4,
 };
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
-pub enum BufferType {
+pub enum BufferData {
+	Matrix2(Vec<Matrix2<f32>>),
+	Matrix3(Vec<Matrix3<f32>>),
+	Matrix4(Vec<Matrix4<f32>>),
+	Vector2(Vec<Vector2<f32>>),
 	Vector3(Vec<Vector3<f32>>),
 	Vector4(Vec<Vector4<f32>>),
-	Vector2(Vec<Vector2<f32>>),
+	F32(Vec<f32>),
+	I32(Vec<i32>),
+	U32(Vec<u32>),
+	I16(Vec<i16>),
+	U16(Vec<u16>),
+	I8(Vec<i8>),
+	U8(Vec<u8>),
 }
 
-#[allow(dead_code)]
+impl BufferData {
+	pub fn item_size(&self) -> usize {
+		match self {
+			BufferData::Matrix2(_) => 4,
+			BufferData::Matrix3(_) => 9,
+			BufferData::Matrix4(_) => 16,
+			BufferData::Vector2(_) => 2,
+			BufferData::Vector3(_) => 3,
+			BufferData::Vector4(_) => 4,
+			BufferData::F32(_) => 1,
+			BufferData::I32(_) => 1,
+			BufferData::U32(_) => 1,
+			BufferData::I16(_) => 1,
+			BufferData::U16(_) => 1,
+			BufferData::I8(_) => 1,
+			BufferData::U8(_) => 1,
+		}
+	}
+
+	pub fn len(&self) -> usize {
+		match self {
+			BufferData::Matrix2(a) => a.len(),
+			BufferData::Matrix3(a) => a.len(),
+			BufferData::Matrix4(a) => a.len(),
+			BufferData::Vector2(a) => a.len(),
+			BufferData::Vector3(a) => a.len(),
+			BufferData::Vector4(a) => a.len(),
+			BufferData::F32(a) => a.len(),
+			BufferData::I32(a) => a.len(),
+			BufferData::U32(a) => a.len(),
+			BufferData::I16(a) => a.len(),
+			BufferData::U16(a) => a.len(),
+			BufferData::I8(a) => a.len(),
+			BufferData::U8(a) => a.len(),
+		}
+	}
+
+	pub fn elem_byte_len(&self) -> usize {
+		let bytes = match self {
+			BufferData::Matrix2(_) => mem::size_of::<f32>(),
+			BufferData::Matrix3(_) => mem::size_of::<f32>(),
+			BufferData::Matrix4(_) => mem::size_of::<f32>(),
+			BufferData::Vector2(_) => mem::size_of::<f32>(),
+			BufferData::Vector3(_) => mem::size_of::<f32>(),
+			BufferData::Vector4(_) => mem::size_of::<f32>(),
+			BufferData::F32(_) => mem::size_of::<f32>(),
+			BufferData::I32(_) => mem::size_of::<i32>(),
+			BufferData::U32(_) => mem::size_of::<u32>(),
+			BufferData::I16(_) => mem::size_of::<i16>(),
+			BufferData::U16(_) => mem::size_of::<u16>(),
+			BufferData::I8(_) => mem::size_of::<i8>(),
+			BufferData::U8(_) => mem::size_of::<u8>(),
+		};
+		self.item_size() * bytes
+	}
+}
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BufferType {
+	Position,
+	Normal,
+	UV,
+	Color,
+	Tangent,
+	Joint,
+	Weight,
+	Other(String),
+}
+
+
 #[derive(Clone, Debug)]
 pub struct BufferAttribute {
-	pub data: BufferType,
-	pub name: String,
+	pub data: BufferData,
+	pub buffer_type: BufferType,
 	pub dynamic: bool,
 	pub normalized: bool,
-	pub version: usize,
+	// pub version: usize,
 }
 
-#[allow(dead_code)]
+
 impl BufferAttribute {
 	pub fn count(&self) -> usize {
 		let l = self.len();
@@ -38,19 +122,11 @@ impl BufferAttribute {
 	}
 
 	pub fn item_size(&self) -> usize {
-		match self.data {
-			BufferType::Vector3(_) => 3,
-			BufferType::Vector4(_) => 4,
-			BufferType::Vector2(_) => 2,
-		}
+		self.data.item_size()
 	}
 
 	pub fn len(&self) -> usize {
-		match &self.data {
-			&BufferType::Vector4(ref a) => a.len(),
-			&BufferType::Vector3(ref a) => a.len(),
-			&BufferType::Vector2(ref a) => a.len(),
-		}
+		self.data.len()
 	}
 
 	pub fn set_normalized(&mut self, normalized: bool) -> &mut Self {
@@ -58,10 +134,10 @@ impl BufferAttribute {
 		self
 	}
 
-	pub fn set_version(&mut self, version: usize) -> &mut Self {
-		self.version = version;
-		self
-	}
+	// pub fn set_version(&mut self, version: usize) -> &mut Self {
+	// 	self.version = version;
+	// 	self
+	// }
 
 	pub fn set_dynamic(&mut self, dynamic: bool) -> &mut Self {
 		self.dynamic = dynamic;
@@ -84,9 +160,10 @@ pub struct BufferGeometry {
 	pub uuid: Uuid,
 	pub name: String,
 	pub groups: Vec<BufferGroup>,
-	pub indices: Option<Vec<i32>>,
+	pub indices: Option<Vec<u32>>,
 	pub attributes: Vec<BufferAttribute>,
 	callbacks: Vec<fn(&mut BufferGeometry)>,
+	pub buffer_order: Vec<BufferType>,
 }
 
 
@@ -127,10 +204,17 @@ impl BufferGeometry {
 			uuid: Uuid::new_v4(),
 			callbacks: Vec::new(),
 			name: "".to_string(),
+			buffer_order: vec![BufferType::Position, BufferType::Normal, BufferType::UV, BufferType::Joint, BufferType::Weight],
 		}
 	}
 
-	pub fn set_indices(&mut self, indices: Vec<i32>) -> &mut Self {
+	// pub fn iter_attributes(&self) -> std::iter::Filter<_, _> {
+	// 	self.buffer_order.iter()
+	// 		.map(|e| self.get_attribute(e.clone()) )
+	// 		.filter(|e| e.is_some() )
+	// }
+
+	pub fn set_indices(&mut self, indices: Vec<u32>) -> &mut Self {
 		self.indices = Some(indices);
 		self
 	}
@@ -138,16 +222,16 @@ impl BufferGeometry {
 	pub fn gen_indices(&mut self) -> Result<(), &str> {
 		let mut len = 0;
 
-		match self.get_attribute("positions") {
+		match self.get_attribute(BufferType::Position) {
 			None => {
-				return Err("BufferGeometry: cant find positions");
+				return Err("BufferGeometry: cant find position");
 			}
 			Some(positions) => {
 				len = positions.len();
 			}
 		};
 
-		let indices = (0..len as i32).collect();
+		let indices = (0..len as u32).collect();
 
 		self.set_indices(indices);
 
@@ -158,7 +242,7 @@ impl BufferGeometry {
 		&mut self,
 		buffer_attribute: BufferAttribute,
 	) -> &mut BufferAttribute {
-		let index = self.attributes.iter().position( |attr| attr.name == buffer_attribute.name);
+		let index = self.attributes.iter().position( |attr| attr.buffer_type == buffer_attribute.buffer_type);
 
 		if let Some(index) = index {
 			self.attributes.remove(index);
@@ -175,15 +259,15 @@ impl BufferGeometry {
 
 	pub fn create_buffer_attribute(
 		&mut self,
-		name: String,
-		data: BufferType,
+		buffer_type: BufferType,
+		data: BufferData,
 	) -> &mut BufferAttribute {
 		let buffer_attribute = BufferAttribute {
-			name,
+			buffer_type,
 			data,
 			normalized: false,
 			dynamic: false,
-			version: 0,
+			// version: 0,
 		};
 
 		self.add_buffer_attribute(buffer_attribute)
@@ -193,24 +277,24 @@ impl BufferGeometry {
 		self.callbacks.push(cb);
 	}
 
-	pub fn get_attribute(&self, name: &str) -> Option<&BufferAttribute> {
-		self.attributes.iter().find(|e| e.name == name)
+	pub fn get_attribute(&self, buffer_type: BufferType) -> Option<&BufferAttribute> {
+		self.attributes.iter().find(|e| e.buffer_type == buffer_type)
 	}
 
-	pub fn has_attribute(&self, name: &str) -> bool {
-		self.attributes.iter().any(|e| e.name == name)
+	pub fn has_attribute(&self, buffer_type: BufferType) -> bool {
+		self.attributes.iter().any(|e| e.buffer_type == buffer_type)
 	}
 
-	pub fn get_attribute_mut(&mut self, name: &str) -> Option<&mut BufferAttribute> {
-		self.attributes.iter_mut().find(|e| e.name == name)
+	pub fn get_attribute_mut(&mut self, buffer_type: BufferType) -> Option<&mut BufferAttribute> {
+		self.attributes.iter_mut().find(|e| e.buffer_type == buffer_type)
 	}
 
 
 	pub fn generate_normals(&mut self) {
 		let mut normals = None;
 		{
-			let attribute = self.get_attribute("positions").unwrap();
-			if let BufferType::Vector3(data) = &attribute.data {
+			let attribute = self.get_attribute(BufferType::Position).unwrap();
+			if let BufferData::Vector3(data) = &attribute.data {
 				let mut calc_normals = vec![Vec::new(); data.len()];
 				let indices = self.indices.as_ref().unwrap();
 
@@ -249,7 +333,7 @@ impl BufferGeometry {
 		}
 
 		if let Some(normal) = normals {
-			self.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normal));
+			self.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normal));
 		}
 	}
 
@@ -260,8 +344,8 @@ impl BufferGeometry {
 	}
 
 	pub fn create_box3 (&self) -> Option<Box3<f32>> {
-		if let Some(attr) = self.get_attribute("positions") {
-			if let BufferType::Vector3(positions) = &attr.data {
+		if let Some(attr) = self.get_attribute(BufferType::Position) {
+			if let BufferData::Vector3(positions) = &attr.data {
 				let mut b = Box3::new_empty();
 				b.set_from_array(&positions[..]);
 				return Some(b);
@@ -272,8 +356,8 @@ impl BufferGeometry {
 	}
 
 	pub fn scale_positions_by_vec(&mut self, v: &Vector3<f32>) -> Option<()> {
-		if let Some(attr) = self.get_attribute_mut("positions") {
-			if let BufferType::Vector3(positions) = &mut attr.data {
+		if let Some(attr) = self.get_attribute_mut(BufferType::Position) {
+			if let BufferData::Vector3(positions) = &mut attr.data {
 				positions
 					.iter_mut()
 					.for_each(|e| {

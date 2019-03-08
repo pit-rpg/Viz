@@ -1,7 +1,11 @@
 use super::{Vector, Vector3, Quaternion};
 use helpers::Nums;
 
-use std::ops::{ Mul, };
+use std::ops::{
+	Mul,
+	Index,
+	IndexMut,
+};
 
 
 #[repr(C)]
@@ -579,6 +583,32 @@ where T:Nums
 						e[0][3], e[1][3], e[2][3], e[3][3]]
 		}
 	}
+
+	pub fn from_array(data: &[T]) -> Self {
+		Self {
+			elements: [
+				data[0],
+				data[1],
+				data[2],
+				data[3],
+
+				data[4],
+				data[5],
+				data[6],
+				data[7],
+
+				data[8],
+				data[9],
+				data[10],
+				data[11],
+
+				data[12],
+				data[13],
+				data[14],
+				data[15],
+			]
+		}
+	}
 }
 
 
@@ -775,3 +805,26 @@ where T:Nums
 // 	}
 // } );
 // export { Matrix4 };
+
+
+
+
+impl <T> Index<usize> for Matrix4<T>
+where T: Nums
+{
+    type Output = T;
+
+    fn index(&self, c: usize) -> &T {
+        &self.elements[c]
+    }
+}
+
+impl <T> IndexMut<usize> for Matrix4<T>
+where T: Nums
+{
+    // type Output = T;
+
+    fn index_mut(&mut self, c: usize) -> &mut T {
+        &mut self.elements[c]
+    }
+}

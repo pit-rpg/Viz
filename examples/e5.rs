@@ -24,6 +24,7 @@ use project::{
 		SystemTransform,
 		Parent,
 		EntityRelations,
+		BufferType,
 	},
 	helpers::{load_obj, geometry_generators, Nums},
 };
@@ -90,7 +91,7 @@ fn main(){
 
 	for mut object in objects {
 
-		if !object.has_attribute("normal") {
+		if !object.has_attribute(BufferType::Normal) {
 			object.generate_normals();
 		}
 

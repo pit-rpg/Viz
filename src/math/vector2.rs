@@ -42,7 +42,7 @@ where T:Nums
 	fn new_max() -> Self {
         Self { x: T::max_val(), y: T::max_val() }
     }
-	
+
 	fn new_min() -> Self{
         Self { x: T::min_val(), y: T::min_val() }
     }
@@ -206,5 +206,8 @@ where T:Nums
         self.x = array[ 0 ];
         self.y = array[ 1 ];
         self
+    }
+    fn new_from_array (array: &[T] ) -> Self {
+        Self::new(array[0], array[1])
     }
 }

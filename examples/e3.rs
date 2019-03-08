@@ -22,6 +22,7 @@ use project::{
 		create_world,
 		ShaderProgram,
 		SystemTransform,
+		BufferType,
 	},
 	helpers::{load_obj},
 };
@@ -82,7 +83,7 @@ fn main(){
 
 	for mut object in objects {
 
-		if !object.has_attribute("normal") {
+		if !object.has_attribute(BufferType::Normal) {
 			object.generate_normals();
 		}
 

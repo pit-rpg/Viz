@@ -3,6 +3,12 @@ use math::Matrix4;
 // use std::cmp::Ord;
 // use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+
+use std::ops::{
+	Index,
+	IndexMut,
+};
+
 #[repr(C)]
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -160,7 +166,47 @@ where
 		true
 	}
 
+	pub fn from_array(data: &[T]) -> Self {
+		Self {
+			elements: [
+				data[0],
+				data[1],
+				data[2],
+
+				data[3],
+				data[4],
+				data[5],
+
+				data[6],
+				data[7],
+				data[8],
+			]
+		}
+	}
 }
+
+
+
+impl <T> Index<usize> for Matrix3<T>
+where T: Nums
+{
+    type Output = T;
+
+    fn index(&self, c: usize) -> &T {
+        &self.elements[c]
+    }
+}
+
+impl <T> IndexMut<usize> for Matrix3<T>
+where T: Nums
+{
+    // type Output = T;
+
+    fn index_mut(&mut self, c: usize) -> &mut T {
+        &mut self.elements[c]
+    }
+}
+
 
 // import { Vector3 } from './Vector3.js';
 //

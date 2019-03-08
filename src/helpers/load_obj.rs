@@ -1,6 +1,6 @@
 extern crate obj;
 
-use core::{BufferGeometry, BufferType, BufferGroup};
+use core::{BufferGeometry, BufferData, BufferGroup, BufferType};
 use math::{Vector3, Vector2};
 use self::obj::{Obj, SimplePolygon, IndexTuple};
 use std::path::Path;
@@ -19,11 +19,11 @@ fn add_elem (
 	index_tuple: &IndexTuple,
 	data_map: &mut Vec<Option<TmpIndex>>,
 	data_order: &mut Vec<usize>,
-	indices: &mut Vec<i32>,
+	indices: &mut Vec<u32>,
 	obj: &Obj<SimplePolygon>
 ) {
 	if let Some(vertex) = &data_map[index_tuple.0] {
-		indices.push(vertex.index_new as i32);
+		indices.push(vertex.index_new as u32);
 		return;
 	}
 
@@ -34,7 +34,7 @@ fn add_elem (
 		let e = obj.normal[index];
 		Some(Vector3::new(e[0], e[1], e[2]))
 	} else {None};
-	
+
 	let t = if let Some(index) = index_tuple.1 {
 		let e = obj.texture[index];
 		Some(Vector2::new(e[0], e[1]))
@@ -47,8 +47,8 @@ fn add_elem (
 		normal: n,
 		uv: t,
 	};
-	
-	indices.push(tmp_index.index_new as i32);
+
+	indices.push(tmp_index.index_new as u32);
 	data_map[index_tuple.0] = Some(tmp_index);
 	data_order.push(index_tuple.0);
 }
@@ -60,7 +60,7 @@ pub fn load_obj( path: &Path ) -> Result<Vec<BufferGeometry>, String>{
 		Ok(obj_data) => {
 
 			let mut result = Vec::new();
-			
+
 			for object in &obj_data.objects  {
 				let mut geom = BufferGeometry::new();
 				geom.name = object.name.clone();
@@ -106,18 +106,18 @@ pub fn load_obj( path: &Path ) -> Result<Vec<BufferGeometry>, String>{
 				}
 
 				let positions = data_order.iter().map(|i| data_map[*i].as_ref().unwrap().position.clone() ).collect();
-				geom.create_buffer_attribute("positions".to_string(), BufferType::Vector3(positions));
+				geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(positions));
 
 				let elem = data_map[data_order[0]].as_ref().unwrap();
-				
+
 				if elem.normal.is_some() {
 					let normal = data_order.iter().map(|i| data_map[*i].as_ref().unwrap().normal.as_ref().unwrap().clone() ).collect();
-					geom.create_buffer_attribute("normal".to_string(), BufferType::Vector3(normal));
+					geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normal));
 				}
 
 				if elem.uv.is_some() {
 					let normal = data_order.iter().map(|i| data_map[*i].as_ref().unwrap().uv.as_ref().unwrap().clone() ).collect();
-					geom.create_buffer_attribute("uv".to_string(), BufferType::Vector2(normal));
+					geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(normal));
 				}
 
 				geom.set_indices(indices);

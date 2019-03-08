@@ -2,10 +2,10 @@ extern crate byteorder;
 extern crate gl;
 extern crate uuid;
 
-use self::byteorder::{BigEndian, LittleEndian, WriteBytesExt};
+use self::byteorder::{LittleEndian, WriteBytesExt};
 use self::gl::types::*;
 use self::uuid::Uuid;
-use core::{BufferAttribute, BufferGeometry, BufferType};
+use core::{BufferAttribute, BufferGeometry, BufferData, BufferType};
 use std::collections::HashMap;
 use std::mem;
 use std::os::raw::c_void;
@@ -55,43 +55,105 @@ pub trait GLGeometry {
 		let buffer_size = geom.attributes
 			.iter()
 			.map(|e| {
-				let size = Self::elem_byte_len(e);
+				let size = e.data.elem_byte_len();
 				size * &e.len()
 			})
 			.fold(0, |a, b| a + b);
 
 		let vertex_byte_len = geom.attributes
 			.iter()
-			.map(|e| Self::elem_byte_len(e))
+			.map(|e| e.data.elem_byte_len())
 			.fold(0, |a, b| a + b);
 
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
-		let positions_len = geom.get_attribute("positions").unwrap().len();
+		let positions_len = geom.get_attribute(BufferType::Position).unwrap().len();
 
 		for i in 0..positions_len {
 			for buffer_data in geom.attributes.iter() {
 				match &buffer_data.data {
-					&BufferType::Vector4(ref v) => {
+					BufferData::Matrix4(v) => {
+						buffer.write_f32::<LittleEndian>(v[i][0]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][1]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][2]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][3]).unwrap();
+
+						buffer.write_f32::<LittleEndian>(v[i][4]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][5]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][6]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][7]).unwrap();
+
+						buffer.write_f32::<LittleEndian>(v[i][8]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][9]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][10]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][11]).unwrap();
+
+						buffer.write_f32::<LittleEndian>(v[i][12]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][13]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][14]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][15]).unwrap();
+					}
+					BufferData::Matrix3(v) => {
+						buffer.write_f32::<LittleEndian>(v[i][0]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][1]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][2]).unwrap();
+
+						buffer.write_f32::<LittleEndian>(v[i][3]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][4]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][5]).unwrap();
+
+						buffer.write_f32::<LittleEndian>(v[i][6]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][7]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][8]).unwrap();
+					}
+					BufferData::Matrix2(v) => {
+						buffer.write_f32::<LittleEndian>(v[i][0]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][1]).unwrap();
+
+						buffer.write_f32::<LittleEndian>(v[i][2]).unwrap();
+						buffer.write_f32::<LittleEndian>(v[i][3]).unwrap();
+					}
+					BufferData::Vector4(v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].w).unwrap();
 					}
-					&BufferType::Vector3(ref v) => {
+					BufferData::Vector3(v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].z).unwrap();
 					}
-					&BufferType::Vector2(ref v) => {
+					BufferData::Vector2(v) => {
 						buffer.write_f32::<LittleEndian>(v[i].x).unwrap();
 						buffer.write_f32::<LittleEndian>(v[i].y).unwrap();
+					}
+					BufferData::F32(v) => {
+						buffer.write_f32::<LittleEndian>(v[i]).unwrap();
+					}
+					BufferData::I32(v) => {
+						buffer.write_i32::<LittleEndian>(v[i]).unwrap();
+					}
+					BufferData::U32(v) => {
+						buffer.write_u32::<LittleEndian>(v[i]).unwrap();
+					}
+					BufferData::I16(v) => {
+						buffer.write_i16::<LittleEndian>(v[i]).unwrap();
+					}
+					BufferData::U16(v) => {
+						buffer.write_u16::<LittleEndian>(v[i]).unwrap();
+					}
+					BufferData::I8(v) => {
+						buffer.write_i8(v[i]).unwrap();
+					}
+					BufferData::U8(v) => {
+						buffer.write_u8(v[i]).unwrap();
 					}
 				}
 			}
 		}
 
-		let indices: &Vec<i32> = geom.indices.as_ref().unwrap();
+		let indices: &Vec<u32> = geom.indices.as_ref().unwrap();
 
 		let mut vertex_array = 0;
 		let mut array_buffer = 0;
@@ -118,7 +180,7 @@ pub trait GLGeometry {
 			gl::BufferData(
 				gl::ELEMENT_ARRAY_BUFFER,
 				(mem::size_of::<GLint>() * indices.len()) as GLsizeiptr,
-				&indices[0] as *const i32 as *const c_void,
+				&indices[0] as *const u32 as *const c_void,
 				gl::STATIC_DRAW,
 			);
 		});
@@ -126,21 +188,48 @@ pub trait GLGeometry {
 		let mut byte_offset = 0;
 		for i in 0..geom.attributes.len() {
 			let ref buffer_data = geom.attributes[i];
-			let vals;
+			let vals = buffer_data.data.item_size() as i32;
 			let val_type;
 
 			match buffer_data.data {
-				BufferType::Vector3(_) => {
-					vals = 3;
+				BufferData::Matrix2(_) => {
 					val_type = gl::FLOAT;
 				}
-				BufferType::Vector4(_) => {
-					vals = 4;
+				BufferData::Matrix3(_) => {
 					val_type = gl::FLOAT;
 				}
-				BufferType::Vector2(_) => {
-					vals = 2;
+				BufferData::Matrix4(_) => {
 					val_type = gl::FLOAT;
+				}
+				BufferData::Vector2(_) => {
+					val_type = gl::FLOAT;
+				}
+				BufferData::Vector3(_) => {
+					val_type = gl::FLOAT;
+				}
+				BufferData::Vector4(_) => {
+					val_type = gl::FLOAT;
+				}
+				BufferData::F32(_) => {
+					val_type = gl::FLOAT;
+				}
+				BufferData::I32(_) => {
+					val_type = gl::INT;
+				}
+				BufferData::U32(_) => {
+					val_type = gl::UNSIGNED_INT;
+				}
+				BufferData::I16(_) => {
+					val_type = gl::SHORT;
+				}
+				BufferData::U16(_) => {
+					val_type = gl::UNSIGNED_SHORT;
+				}
+				BufferData::I8(_) => {
+					val_type = gl::BYTE;
+				}
+				BufferData::U8(_) => {
+					val_type = gl::UNSIGNED_BYTE;
 				}
 			}
 
@@ -158,21 +247,13 @@ pub trait GLGeometry {
 				gl::EnableVertexAttribArray(i as GLuint);
 			});
 
-			byte_offset += Self::elem_byte_len(buffer_data);
+			byte_offset += buffer_data.data.elem_byte_len();
 		}
 
 		Buffers {
 			vertex_array,
 			array_buffer,
 			element_array_buffer,
-		}
-	}
-
-	fn elem_byte_len(attribute: &BufferAttribute) -> usize {
-		match &attribute.data {
-			&BufferType::Vector2(_) => mem::size_of::<f32>() * 2,
-			&BufferType::Vector3(_) => mem::size_of::<f32>() * 3,
-			&BufferType::Vector4(_) => mem::size_of::<f32>() * 4,
 		}
 	}
 }
