@@ -37,7 +37,10 @@ use self::gltf::{
 		Dimensions,
 	},
 	mesh::{
-		Semantic
+		Semantic,
+		Reader,
+		util::ReadTexCoords,
+		util::ReadColors,
 	},
 	buffer::{
 		Source,
@@ -47,11 +50,13 @@ use self::gltf::{
 	// },
 	// image,
 	image::Image,
+	Document,
 };
 
 use self::specs::{
 	World,
 	Builder,
+	Entity
 };
 
 use core::{
@@ -64,67 +69,60 @@ use core::{
 	Material,
 	SharedMaterial,
 	SharedGeometry,
+	EntityRelations,
 };
 
 struct Context {
-	blob: Option<Vec<u8>>,
 	path: PathBuf,
-	uris: Vec<(String, Vec<u8>)>,
-	images: Vec<Texture2D>,
 	material: SharedMaterial,
+	doc: Document,
+	images: Vec<gltf::image::Data>,
+	buffers: Vec<gltf::buffer::Data>,
 }
 
 
-pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<(), Box<StdError>> {
+pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdError>> {
 	println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
 
-	let file = fs::File::open(&path)?;
-    let reader = io::BufReader::new(file);
-    let mut gltf = gltf::Gltf::from_reader(reader)?;
+	let (doc, buffers, images) = gltf::import(path.clone())?;
 
-	let mut context = Context {
-		blob: gltf.blob.take(),
+	let context = Context {
+		doc,
+		buffers,
+		images,
 		path: path.clone(),
-		uris: vec![],
-		images: vec![],
 		material: SharedMaterial::new(Material::new_normal()),
 	};
 
+	let root = world.create_entity()
+		.with(Transform::default())
+		.build();
 
-	// preload uris
-	gltf.buffers().for_each(|buffer| {
-		if let Source::Uri(uri) = buffer.source() {
-			let bin = read_file( &path.parent().unwrap().join(uri) );
-			context.uris.push((uri.to_string(), bin));
-		}
+	context.doc.materials().for_each(|m|{
+		println!("<><><><><><><><><>{:?}", m.extras());
 	});
-	// preload uris
 
-	// preload images
-	context.images = gltf.images().map(|img| load_image(&img, &context) ).collect();
-	// /preload images
-
-    for scene in gltf.scenes() {
-        print!("Scene {}", scene.index());
-        // #[cfg(feature = "names")]
-        print!(" ({})", scene.name().unwrap_or("<Unnamed>"));
-        println!();
-        for node in scene.nodes() {
-            load_node(world, &node, &context, 1);
-            // print_tree(&node, 1);
-        }
-    }
+	for scene in context.doc.scenes() {
+		print!("Scene {}", scene.index());
+		// #[cfg(feature = "names")]
+		print!(" ({})", scene.name().unwrap_or("<Unnamed>"));
+		println!();
+		for node in scene.nodes() {
+			load_node(world, &node, &context, 1, root);
+			// print_tree(&node, 1);
+		}
+	}
 
 	println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
 
-	Ok(())
+	Ok(root)
 }
 
 
-fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32) {
-    print!(" Node {}", node.index());
-    print!(" ({})", node.name().unwrap_or("<dimensions {:?}>"));
-
+fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32, parent: Entity) {
+	print!(" Node {}", node.index());
+	print!(" ({})", node.name().unwrap_or("<dimensions {:?}>"));
+	println!();
 
 	// Transform
 	let matrix = Matrix4::from_column_row_array( node.transform().matrix() );
@@ -138,27 +136,89 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 		let primitives: Vec<_> = mesh.primitives()
 			.map(|primitive| {
 				println!();
-				let indices = primitive.indices()
-					.map(|accessor|{
-						println!("INDICES =================================");
-						let data: Vec<u32> = match load_accessor(&accessor, context) {
 
-							BufferData::U32(items) => { items }
-							BufferData::I32(items) => { items.into_iter().map(|e| e as u32 ).collect() }
-							BufferData::I16(items) => { items.into_iter().map(|e| e as u32 ).collect() }
-							BufferData::U16(items) => { items.into_iter().map(|e| e as u32 ).collect() }
-							BufferData::I8(items) => { items.into_iter().map(|e| e as u32 ).collect() }
-							BufferData::U8(items) => { items.into_iter().map(|e| e as u32 ).collect() }
+				let reader = primitive.reader(|buffer| Some(&context.buffers[buffer.index()]));
 
-							_=> {panic!(format!("wrong indices: {}", context.path.to_str().unwrap()))}
-						};
-						data
+				let indices = reader
+					.read_indices()
+					.map(|read_indices| {
+						read_indices.into_u32().collect::<Vec<_>>()
 					});
+
 
 				let attributes: Vec<_> = primitive.attributes()
 					.map(|(semantic, accessor)|{
 						println!("ATTRIBUTES {:?} =================================", semantic);
-						let data = load_accessor(&accessor, context);
+
+						let data = match semantic {
+							Semantic::Positions => {
+								let positions: Vec<_> = reader.read_positions()
+									.expect("cant find positions")
+									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
+									.collect();
+								BufferData::Vector3(positions)
+							}
+							Semantic::Normals => {
+								let normals: Vec<_> = reader.read_normals()
+									.expect("cant find normals")
+									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
+									.collect();
+								BufferData::Vector3(normals)
+							}
+							Semantic::TexCoords(n) => {
+								let en = reader.read_tex_coords(n).expect("cant find uv");
+								let uv: Vec<_> = match en {
+									ReadTexCoords::U8(iter)=>{
+										iter.map(|e| Vector2::new(e[0] as f32, e[1] as f32) ).collect()
+									}
+									ReadTexCoords::U16(iter)=>{
+										iter.map(|e| Vector2::new(e[0] as f32, e[1] as f32) ).collect()
+									}
+									ReadTexCoords::F32(iter)=>{
+										iter.map(|e| Vector2::new(e[0], e[1]) ).collect()
+									}
+								};
+								BufferData::Vector2(uv)
+							}
+							Semantic::Colors(n) => {
+								let en = reader.read_colors(n).expect("cant find colors");
+								match en {
+									ReadColors::RgbU8(iter) => {
+										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
+										BufferData::Vector3(color)
+									},
+									ReadColors::RgbU16(iter) => {
+										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
+										BufferData::Vector3(color)
+									},
+									ReadColors::RgbF32(iter) => {
+										let color: Vec<_> = iter.map(|e| Vector3::new( e[0], e[1], e[2]) ).collect();
+										BufferData::Vector3(color)
+									},
+									ReadColors::RgbaU8(iter) => {
+										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
+										BufferData::Vector4(color)
+									},
+									ReadColors::RgbaU16(iter) => {
+										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
+										BufferData::Vector4(color)
+									},
+									ReadColors::RgbaF32(iter) => {
+										let color: Vec<_> = iter.map(|e| Vector4::new( e[0], e[1], e[2], e[3] ) ).collect();
+										BufferData::Vector4(color)
+									},
+								}
+							}
+							Semantic::Joints(_) => {unimplemented!()}
+							Semantic::Tangents => {
+								let tangents: Vec<_> = reader.read_tangents()
+									.expect("cant find tangents")
+									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
+									.collect();
+								BufferData::Vector3(tangents)
+							}
+							Semantic::Weights(_) => {unimplemented!()}
+						};
 
 						BufferAttribute {
 							data,
@@ -181,6 +241,15 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 	});
 	// /Mesh
 
+	let current = world.create_entity()
+		.with(transform)
+		.build();
+
+	world.add_child(parent, current);
+	let parent = current;
+
+	let mut child_node = parent.clone();
+
 	if let Some(meshes) = meshes {
 		println!("++++++++++++++++++++++++++++++++++++++++++");
 		println!("++++++++++++++++++++++++++++++++++++++++++");
@@ -192,227 +261,23 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 		println!("++++++++++++++++++++++++++++++++++++++++++");
 		println!("++++++++++++++++++++++++++++++++++++++++++");
 
-
 		for mesh in meshes {
-			let e = world.create_entity()
+			let e  = world.create_entity()
+				// .with(transform.clone())
 				.with(Transform::default())
 				.with(context.material.clone())
 				.with(SharedGeometry::new(mesh))
 				.build();
+			world.add_child(current, e);
 		}
 	}
 
-    // println!();
+	// println!();
 
-    for child in node.children() {
-        load_node(world, &child, context, depth + 1);
-    }
-}
-
-
-
-fn load_image(img: &Image, context: &Context) -> Texture2D {
-	match img.source() {
-		gltf::image::Source::Uri {uri, ..}  => {
-			let img_path = context.path.parent().unwrap().join(uri);
-			let bin = read_file(&img_path);
-
-			Texture2D::new_from_bytes(Some(img_path.to_str().unwrap().to_string()), &bin)
-		}
-		gltf::image::Source::View {view, ..} => {
-			let offset = view.offset();
-			let length = view.length();
-			let buffer = view.buffer();
-			if let Some(_) = view.stride() { unimplemented!(); }
-			if let Some(_) = view.target() { unimplemented!(); }
-			let slice = get_buffer_slice(offset..offset+length, buffer, context);
-
-			Texture2D::new_from_bytes(Some(view.name().unwrap_or("<Unnamed>").to_string()), slice)
-		}
+	for child in node.children() {
+		load_node(world, &child, context, depth + 1, current);
 	}
 }
-
-
-// fn load_material(material: &Material, context: &Context) {
-
-// }
-
-fn read_file(path: &Path) -> Vec<u8> {
-	let mut f = File::open(path).unwrap();
-	let mut bin = Vec::new();
-	f.read_to_end(&mut bin).unwrap();
-	bin
-}
-
-
-fn get_buffer_slice<'a>(range: Range<usize>, buffer: gltf::Buffer, context: &'a Context) -> &'a [u8] {
-	match buffer.source() {
-		Source::Bin => {
-			&context.blob
-				.as_ref()
-				.unwrap()
-				[range]
-		}
-		Source::Uri(uri) => {
-			&context.uris.iter()
-				.find(|(uri_path, _)| uri_path == uri )
-				.unwrap()
-				.1[range]
-		}
-	}
-}
-
-
-fn load_accessor( accessor: &Accessor, context: &Context ) -> BufferData {
-	let view = accessor.view();
-	let buffer = view.buffer();
-
-	println!("ACCESSOR: name: {}, dimensions: {:?}, data_type: {:?}, count: {}, size: {}, offset:{}, sparse: {}, normalized: {}, extras {:?}",
-		accessor.name().unwrap_or("<Unnamed>"),
-		accessor.dimensions().multiplicity(),
-		accessor.data_type(),
-		accessor.count(),
-		accessor.size(),
-		accessor.offset(),
-		accessor.sparse().is_some(),
-		accessor.normalized(),
-		accessor.extras(),
-	);
-
-	println!("VIEW: name: {}, offset:{}, length:{}, stride:{:?}, target:{:?}, extras {:?}",
-		view.name().unwrap_or("<Unnamed>"),
-		view.offset(),
-		view.length(),
-		view.stride(),
-		view.target(),
-		view.extras(),
-	);
-
-	println!("BUFFER: name: {}, length:{}, extras {:?}",
-		buffer.name().unwrap_or("<Unnamed>"),
-		buffer.length(),
-		buffer.extras(),
-	);
-
-	if accessor.sparse().is_some() { unimplemented!("accessor.sparse()") }
-	// if view.stride().is_some() { unimplemented!("view.stride()") }
-
-	let stride = view.stride().unwrap_or(0);
-	let offset = accessor.offset() + view.offset();
-	let count = accessor.count();
-	let data_type = accessor.data_type();
-	let dimensions = accessor.dimensions();
-	// let dimensions2 = accessor.dimensions() as usize;
-	let multiplicity = dimensions.multiplicity();
-	let size = accessor.size();
-	// let slice = &context.blob[offset..offset+(count*size)];
-	let slice = get_buffer_slice(offset..buffer.length(), buffer, context);
-	let stride = stride as i64;
-	let mut rdr = Cursor::new(&slice);
-
-	let mut data = match data_type {
-		DataType::F32 => {
-			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|i|{
-					// if i != 0 && (i-1)%multiplicity == 0 {rdr.seek(SeekFrom::Current(stride));}
-					let val = rdr.read_f32::<LittleEndian>().unwrap();
-					if i != count*multiplicity && i%multiplicity == 0 {rdr.seek(SeekFrom::Current(stride));}
-					val
-				})
-				.collect();
-			BufferData::F32(data)
-		}
-		DataType::U32 => {
-			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{
-					rdr.read_u32::<LittleEndian>().unwrap()
-				})
-				.collect();
-			BufferData::U32(data)
-		}
-		DataType::I16 => {
-			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{
-					rdr.read_i16::<LittleEndian>().unwrap()
-				})
-				.collect();
-			BufferData::I16(data)
-		}
-		DataType::U16 => {
-			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{
-					rdr.read_u16::<LittleEndian>().unwrap()
-				})
-				.collect();
-			BufferData::U16(data)
-		}
-		DataType::I8 => {
-			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{ rdr.read_i8().unwrap() })
-				.collect();
-			BufferData::I8(data)
-		}
-		DataType::U8 => {
-			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{ rdr.read_u8().unwrap() })
-				.collect();
-			BufferData::U8(data)
-		}
-	};
-
-	{
-		if let BufferData::F32(floats) = data {
-			match dimensions {
-				Dimensions::Vec2 => {
-					let vectors: Vec<Vector2<f32>> = floats.chunks(2).map(|c|{
-						Vector2::new_from_array(c)
-					})
-					.collect();
-					data = BufferData::Vector2(vectors);
-				}
-				Dimensions::Vec3 => {
-					let vectors: Vec<Vector3<f32>> = floats.chunks(3).map(|c|{
-						Vector3::new_from_array(c)
-					})
-					.collect();
-					data = BufferData::Vector3(vectors);
-				}
-				Dimensions::Vec4 => {
-					let vectors: Vec<Vector4<f32>> = floats.chunks(4).map(|c|{
-						Vector4::new_from_array(c)
-					})
-					.collect();
-					data = BufferData::Vector4(vectors);
-				}
-				Dimensions::Mat2 => {
-					let mats: Vec<Matrix2<f32>> = floats.chunks(4).map(|c|{
-						Matrix2::from_array(c)
-					})
-					.collect();
-					data = BufferData::Matrix2(mats);
-				}
-				Dimensions::Mat3 => {
-					let mats: Vec<Matrix3<f32>> = floats.chunks(9).map(|c|{
-						Matrix3::from_array(c)
-					})
-					.collect();
-					data = BufferData::Matrix3(mats);
-				}
-				Dimensions::Mat4 => {
-					let mats: Vec<Matrix4<f32>> = floats.chunks(16).map(|c|{
-						Matrix4::from_array(c)
-					})
-					.collect();
-					data = BufferData::Matrix4(mats);
-				}
-				_=>{ data = BufferData::F32(floats) }
-			};
-		};
-	}
-
-	data
-}
-
 
 
 trait SemanticToBufferType {
@@ -424,11 +289,11 @@ impl SemanticToBufferType for Semantic {
 		match self {
 			Semantic::Positions => BufferType::Position,
 			Semantic::Normals => BufferType::Normal,
-			Semantic::TexCoords(_) => BufferType::UV,
 			Semantic::Tangents => BufferType::Tangent,
-			Semantic::Colors(_) => BufferType::Color,
-			Semantic::Joints(_) => BufferType::Joint,
-			Semantic::Weights(_) => BufferType::Weight,
+			Semantic::TexCoords(i) => BufferType::UV(*i as usize),
+			Semantic::Colors(i) => BufferType::Color(*i as usize),
+			Semantic::Joints(i) => BufferType::Joint(*i as usize),
+			Semantic::Weights(i) => BufferType::Weight(*i as usize),
 		}
 	}
 }

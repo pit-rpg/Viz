@@ -47,12 +47,14 @@ pub trait GLGeometry {
 	fn unbind(&self);
 
 	fn alloc_gl_gom(geom: &BufferGeometry) -> Buffers {
-		let len = geom.attributes.len();
+		let buffers: Vec<_> = geom.iter_attributes().collect();
+
+		let len = buffers.len();
 		if len == 0 {
 			panic!("empty Geometry");
 		}
 
-		let buffer_size = geom.attributes
+		let buffer_size = buffers
 			.iter()
 			.map(|e| {
 				let size = e.data.elem_byte_len();
@@ -60,7 +62,7 @@ pub trait GLGeometry {
 			})
 			.fold(0, |a, b| a + b);
 
-		let vertex_byte_len = geom.attributes
+		let vertex_byte_len = buffers
 			.iter()
 			.map(|e| e.data.elem_byte_len())
 			.fold(0, |a, b| a + b);
@@ -68,7 +70,6 @@ pub trait GLGeometry {
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
 		let positions_len = geom.get_attribute(BufferType::Position).unwrap().len();
-		let buffers: Vec<_> = geom.iter_attributes().collect();
 		buffers.iter().for_each(|b| {
 			println!("BUFFER_DATA: {:?}", b.buffer_type);
 		});

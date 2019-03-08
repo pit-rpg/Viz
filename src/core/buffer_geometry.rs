@@ -101,11 +101,11 @@ impl BufferData {
 pub enum BufferType {
 	Position,
 	Normal,
-	UV,
-	Color,
 	Tangent,
-	Joint,
-	Weight,
+	UV(usize),
+	Color(usize),
+	Joint(usize),
+	Weight(usize),
 	Other(String),
 }
 
@@ -208,7 +208,7 @@ impl BufferGeometry {
 			callbacks: Vec::new(),
 			name: "".to_string(),
 			b_box: None,
-			buffer_order: vec![BufferType::Position, BufferType::Normal, BufferType::UV, BufferType::Joint, BufferType::Weight],
+			buffer_order: vec![BufferType::Position, BufferType::Normal, BufferType::UV(0), BufferType::Color(0), BufferType::Joint(0), BufferType::Weight(0)],
 		}
 	}
 

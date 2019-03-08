@@ -86,7 +86,7 @@ pub fn param_sphere (radius: f32, width_segments: usize, height_segments: usize,
 	let mut geom = BufferGeometry::new();
 	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
 	geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normals));
-	geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(uvs));
+	geom.create_buffer_attribute(BufferType::UV(0), BufferData::Vector2(uvs));
 	geom.set_indices(indices);
 	geom
 }
@@ -215,7 +215,7 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: usize, hei
 	let mut geom = BufferGeometry::new();
 	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
 	geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normals));
-	geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(uvs));
+	geom.create_buffer_attribute(BufferType::UV(0), BufferData::Vector2(uvs));
 	geom.set_indices(indices);
 	geom
 }
@@ -288,7 +288,7 @@ pub fn plane_buffer_geometry( width: f32, height: f32, grid_x: usize, grid_y: us
 	let mut geom = BufferGeometry::new();
 	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
 	geom.create_buffer_attribute(BufferType::Normal, BufferData::Vector3(normals));
-	geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(uvs));
+	geom.create_buffer_attribute(BufferType::UV(0), BufferData::Vector2(uvs));
 	geom.set_indices(indices);
 	geom
 }

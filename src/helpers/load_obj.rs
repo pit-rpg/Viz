@@ -117,7 +117,7 @@ pub fn load_obj( path: &Path ) -> Result<Vec<BufferGeometry>, String>{
 
 				if elem.uv.is_some() {
 					let normal = data_order.iter().map(|i| data_map[*i].as_ref().unwrap().uv.as_ref().unwrap().clone() ).collect();
-					geom.create_buffer_attribute(BufferType::UV, BufferData::Vector2(normal));
+					geom.create_buffer_attribute(BufferType::UV(0), BufferData::Vector2(normal));
 				}
 
 				geom.set_indices(indices);
