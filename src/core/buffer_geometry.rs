@@ -3,8 +3,9 @@ use self::uuid::Uuid;
 use std::vec::Vec;
 use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
-use super::{Box3};
 use std::mem;
+use std::error::Error;
+
 
 use math::{
 	Vector,
@@ -14,6 +15,10 @@ use math::{
 	Matrix2,
 	Matrix3,
 	Matrix4,
+};
+
+use core::{
+	BBox3,
 };
 
 #[allow(dead_code)]
@@ -134,11 +139,6 @@ impl BufferAttribute {
 		self
 	}
 
-	// pub fn set_version(&mut self, version: usize) -> &mut Self {
-	// 	self.version = version;
-	// 	self
-	// }
-
 	pub fn set_dynamic(&mut self, dynamic: bool) -> &mut Self {
 		self.dynamic = dynamic;
 		self
@@ -162,8 +162,9 @@ pub struct BufferGeometry {
 	pub groups: Vec<BufferGroup>,
 	pub indices: Option<Vec<u32>>,
 	pub attributes: Vec<BufferAttribute>,
-	callbacks: Vec<fn(&mut BufferGeometry)>,
 	pub buffer_order: Vec<BufferType>,
+	pub b_box: Option<BBox3<f32>>,
+	callbacks: Vec<fn(&mut BufferGeometry)>,
 }
 
 
@@ -173,6 +174,7 @@ impl fmt::Debug for BufferGeometry {
 BufferGeometry: {}
 uuid: {}
 groups: {:?}
+b_box: {:?}
 callbacks: {}
 indices: {:?}
 attributes: {:?}
@@ -180,6 +182,7 @@ attributes: {:?}
 		self.name,
 		self.uuid,
 		self.groups,
+		self.b_box,
 		self.callbacks.len(),
 		self.indices,
 		self.attributes,
@@ -204,14 +207,23 @@ impl BufferGeometry {
 			uuid: Uuid::new_v4(),
 			callbacks: Vec::new(),
 			name: "".to_string(),
+			b_box: None,
 			buffer_order: vec![BufferType::Position, BufferType::Normal, BufferType::UV, BufferType::Joint, BufferType::Weight],
 		}
 	}
 
-	// pub fn iter_attributes(&self) -> std::iter::Filter<_, _> {
+	pub fn iter_attributes<'a>(&'a self) -> impl Iterator<Item= &'a BufferAttribute> {
+		self.buffer_order.iter()
+			.map(move |e| self.get_attribute(e.clone()) )
+			.filter(|e| e.is_some() )
+			.map(|e| e.unwrap() )
+	}
+
+	// pub fn iter_attributes_mut<'a>(&'a mut self) -> impl Iterator<Item= &'a mut BufferAttribute> {
 	// 	self.buffer_order.iter()
-	// 		.map(|e| self.get_attribute(e.clone()) )
+	// 		.map(move |e| self.get_attribute_mut(e.clone()) )
 	// 		.filter(|e| e.is_some() )
+	// 		.map(|e| e.unwrap() )
 	// }
 
 	pub fn set_indices(&mut self, indices: Vec<u32>) -> &mut Self {
@@ -343,16 +355,27 @@ impl BufferGeometry {
 		data
 	}
 
-	pub fn create_box3 (&self) -> Option<Box3<f32>> {
+	pub fn update_box3 (&mut self) -> Result <(), Box<Error>> {
+		let mut b_box = None;
 		if let Some(attr) = self.get_attribute(BufferType::Position) {
 			if let BufferData::Vector3(positions) = &attr.data {
-				let mut b = Box3::new_empty();
+				let mut b = BBox3::new_empty();
 				b.set_from_array(&positions[..]);
-				return Some(b);
+				b_box = Some(b);
 			}
-			return None;
 		}
-		None
+		if b_box.is_none() {return Err( Box::from("cant update b_box") ); }
+		self.b_box = b_box;
+		Ok(())
+	}
+
+	pub fn get_b_box(&mut self) -> Result<BBox3<f32>, Box<Error>> {
+		if self.b_box.is_some() {
+			return Ok(self.b_box.as_ref().unwrap().clone())
+		}
+
+		self.update_box3()?;
+		Ok(self.b_box.as_ref().unwrap().clone())
 	}
 
 	pub fn scale_positions_by_vec(&mut self, v: &Vector3<f32>) -> Option<()> {

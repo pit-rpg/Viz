@@ -3,7 +3,7 @@ extern crate specs;
 extern crate byteorder;
 extern crate regex;
 
-use std::io::Cursor;
+use std::io::{Cursor, SeekFrom};
 use self::byteorder::{LittleEndian, ReadBytesExt};
 
 use std::io;
@@ -82,7 +82,7 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<(), Box<StdError>> 
     let reader = io::BufReader::new(file);
     let mut gltf = gltf::Gltf::from_reader(reader)?;
 
-	let mut context = Context{
+	let mut context = Context {
 		blob: gltf.blob.take(),
 		path: path.clone(),
 		uris: vec![],
@@ -294,39 +294,55 @@ fn load_accessor( accessor: &Accessor, context: &Context ) -> BufferData {
 		buffer.extras(),
 	);
 
+	if accessor.sparse().is_some() { unimplemented!("accessor.sparse()") }
+	// if view.stride().is_some() { unimplemented!("view.stride()") }
+
+	let stride = view.stride().unwrap_or(0);
 	let offset = accessor.offset() + view.offset();
 	let count = accessor.count();
 	let data_type = accessor.data_type();
 	let dimensions = accessor.dimensions();
+	// let dimensions2 = accessor.dimensions() as usize;
 	let multiplicity = dimensions.multiplicity();
 	let size = accessor.size();
 	// let slice = &context.blob[offset..offset+(count*size)];
-	let slice = get_buffer_slice(offset..offset+(count*size), buffer, context);
-
+	let slice = get_buffer_slice(offset..buffer.length(), buffer, context);
+	let stride = stride as i64;
 	let mut rdr = Cursor::new(&slice);
 
 	let mut data = match data_type {
 		DataType::F32 => {
 			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{ rdr.read_f32::<LittleEndian>().unwrap() })
+				.map(|i|{
+					// if i != 0 && (i-1)%multiplicity == 0 {rdr.seek(SeekFrom::Current(stride));}
+					let val = rdr.read_f32::<LittleEndian>().unwrap();
+					if i != count*multiplicity && i%multiplicity == 0 {rdr.seek(SeekFrom::Current(stride));}
+					val
+				})
 				.collect();
 			BufferData::F32(data)
 		}
 		DataType::U32 => {
 			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{ rdr.read_u32::<LittleEndian>().unwrap() })
+				.map(|_|{
+					rdr.read_u32::<LittleEndian>().unwrap()
+				})
 				.collect();
 			BufferData::U32(data)
 		}
 		DataType::I16 => {
 			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{ rdr.read_i16::<LittleEndian>().unwrap() })
+				.map(|_|{
+					rdr.read_i16::<LittleEndian>().unwrap()
+				})
 				.collect();
 			BufferData::I16(data)
 		}
 		DataType::U16 => {
 			let data: Vec<_> = (0..count*multiplicity).step_by(1)
-				.map(|_|{ rdr.read_u16::<LittleEndian>().unwrap() })
+				.map(|_|{
+					rdr.read_u16::<LittleEndian>().unwrap()
+				})
 				.collect();
 			BufferData::U16(data)
 		}

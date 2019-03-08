@@ -57,7 +57,7 @@ fn main(){
 
 	let up = Vector3::new(0.0, 1.0, 0.0);
 	let center = Vector3::new_zero();
-	let mut radius = 10.0;
+	let mut radius = 20.0;
 	let zoom_speed = 0.5;
 	let mut running = true;
 
@@ -79,88 +79,15 @@ fn main(){
 
 
 
-	load_gltf(&mut world, PathBuf::from("models/Duck.glb"));
-	// load_gltf(&mut world, PathBuf::from("models/girl_speedsculpt/scene.gltf"));
+	// load_gltf(&mut world, PathBuf::from("models/Duck.glb"));
+	load_gltf(&mut world, PathBuf::from("models/girl_speedsculpt/scene.gltf"));
 	// load_gltf(&mut world, PathBuf::from("models/pony_cartoon/scene.gltf"));
 
 
-
-
-	// let path = Path::new("models/Predator.obj");
-	// let objects = load_obj(&path).expect("cant load file");
-
-
-	// let mut mat_phong1 = Material::new_mesh_phong();
-	// let shared_mat_phong1 = SharedMaterial::new(mat_phong1);
-
-	// let mut mat_standard2 = Material::new_mesh_standard();
-	// let shared_mat_standard2 = SharedMaterial::new(mat_standard2);
-
-
-	// let obj_parent = world
-	// 	.create_entity()
-	// 	.with(Transform::default())
-	// 	.build();
-
-
-
-	// for mut object in objects {
-
-	// 	if !object.has_attribute("normal") {
-	// 		object.generate_normals();
-	// 	}
-
-	// 	let geom = SharedGeometry::new(object);
-
-	// 	let mut transform1 = Transform::default();
-	// 	let mut transform2 = Transform::default();
-
-	// 	transform1.position.x -= 0.5;
-	// 	transform2.position.x += 0.5;
-	// 	transform1.scale.set_scalar(0.4);
-	// 	transform2.scale.set_scalar(0.4);
-
-	// 	let mut mat1 = shared_mat_phong1.clone();
-	// 	let mut mat2 = shared_mat_standard2.clone();
-
-	// 	{
-	// 		let mut material = mat1.lock().unwrap();
-	// 		material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
-	// 		material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
-	// 		material.set_uniform("shininess", &Uniform::Float(1.0));
-	// 		material.set_uniform("specularStrength", &Uniform::Float(1.0));
-	// 	}
-	// 	{
-	// 		let mut material = mat2.lock().unwrap();
-	// 		material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
-	// 		material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
-	// 		material.set_uniform("roughness", &Uniform::Float(1.0));
-	// 		material.set_uniform("metalness", &Uniform::Float(0.0));
-	// 		material.set_uniform("ambientLightColor", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
-	// 	}
-
-	// 	let elem1 = world
-	// 		.create_entity()
-	// 		.with(transform1)
-	// 		.with(geom.clone())
-	// 		.with(mat1)
-	// 		.build();
-
-	// 	let elem2 = world
-	// 		.create_entity()
-	// 		.with(transform2)
-	// 		.with(geom)
-	// 		.with(mat2)
-	// 		.build();
-
-	// 	world.add_child(obj_parent, elem1);
-	// 	world.add_child(obj_parent, elem2);
-	// }
-
-		let lights_parent = world
-			.create_entity()
-			.with(Transform::default())
-			.build();
+	let lights_parent = world
+		.create_entity()
+		.with(Transform::default())
+		.build();
 
 
 
@@ -209,13 +136,16 @@ fn main(){
 					glutin::Event::WindowEvent{ event, .. } => match event {
 						glutin::WindowEvent::CloseRequested => running = false,
 						glutin::WindowEvent::Resized(logical_size) => {
-							println!("{:?}", logical_size);
 							window_state.window_size.0 = logical_size.width;
 							window_state.window_size.1 = logical_size.height;
 
+							let dpi_factor = window.get_hidpi_factor();
+							window.resize(logical_size.to_physical(dpi_factor));
+
 							gl_call!({
-								gl::Viewport(0,0, logical_size.width as i32, logical_size.height as i32);
+								gl::Viewport(0,0, (logical_size.width * dpi_factor) as i32, (logical_size.height * dpi_factor) as i32);
 							});
+							println!("logical_size: {:?}, dpi_factor: {:?}", logical_size, dpi_factor);
 						},
 						glutin::WindowEvent::MouseWheel{ delta, .. } => {
 							match delta {

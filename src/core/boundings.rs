@@ -10,8 +10,10 @@ where T: Nums,
 	pub y: T,
 }
 
-pub struct Box3<T>
-where 
+
+#[derive(Clone, Debug)]
+pub struct BBox3<T>
+where
 	T:Nums
 {
 	min: Vector3<T>,
@@ -25,7 +27,7 @@ where
 // 	max: Vector2<T>,
 // }
 
-impl <T> Box3<T>
+impl <T> BBox3<T>
 where
 	T:Nums
 	// V: Vector<T>,
@@ -43,7 +45,7 @@ where
 		self.max = max;
 		self
 	}
-	
+
 	pub fn set_from_array (&mut self, data: &[Vector3<T>] ) -> &mut Self {
 		let mut max = Vector3::new_max();
 		let mut min = Vector3::new_max();
@@ -62,7 +64,7 @@ where
 	pub fn is_empty(&self) -> bool {
 		self.min.is_zero() && self.max.is_zero()
 	}
-	
+
 	pub fn diff(&self, other: &Self) -> Vector3<T>  {
 		let mut d1 = self.max.clone();
 		let mut d2 = other.max.clone();
@@ -70,5 +72,24 @@ where
 		d2.sub(&other.min);
 		d1.divide(&d2);
 		d1
+	}
+}
+
+
+
+pub struct BSphare<T>
+where
+	T:Nums
+{
+	center: Vector3<T>,
+	radius: T,
+}
+
+impl <T> BSphare<T>
+where
+	T:Nums
+{
+	pub fn new(center: Vector3<T>, radius: T) -> Self {
+		Self{center, radius}
 	}
 }

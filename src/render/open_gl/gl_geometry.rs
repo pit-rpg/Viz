@@ -68,9 +68,13 @@ pub trait GLGeometry {
 		let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
 		let positions_len = geom.get_attribute(BufferType::Position).unwrap().len();
+		let buffers: Vec<_> = geom.iter_attributes().collect();
+		buffers.iter().for_each(|b| {
+			println!("BUFFER_DATA: {:?}", b.buffer_type);
+		});
 
 		for i in 0..positions_len {
-			for buffer_data in geom.attributes.iter() {
+			for buffer_data in buffers.iter() {
 				match &buffer_data.data {
 					BufferData::Matrix4(v) => {
 						buffer.write_f32::<LittleEndian>(v[i][0]).unwrap();
@@ -186,8 +190,8 @@ pub trait GLGeometry {
 		});
 
 		let mut byte_offset = 0;
-		for i in 0..geom.attributes.len() {
-			let ref buffer_data = geom.attributes[i];
+		for i in 0..buffers.len() {
+			let ref buffer_data = buffers[i];
 			let vals = buffer_data.data.item_size() as i32;
 			let val_type;
 
