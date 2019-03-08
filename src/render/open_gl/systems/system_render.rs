@@ -16,6 +16,7 @@ use core::{
 	PerspectiveCamera,
 	ShaderProgram,
 	PointLight,
+	ShaderTag,
 };
 
 
@@ -50,7 +51,7 @@ impl Default for RenderSettings {
 }
 
 pub struct BindContext<'z> {
-	pub tags: &'z Vec<String>,
+	pub tags: &'z Vec<ShaderTag>,
 	pub render_settings: &'z RenderSettings,
 	pub gl_material_ids: &'z mut GLMaterialIDs,
 	pub gl_texture_ids: &'z mut GLTextureIDs,
@@ -67,7 +68,7 @@ pub struct RenderSystem {
 	pub delta_max: Option<Duration>,
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
-	pub tags: Vec<String>,
+	pub tags: Vec<ShaderTag>,
 	pub render_settings: RenderSettings,
 }
 

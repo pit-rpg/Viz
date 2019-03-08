@@ -5,7 +5,12 @@ extern crate regex;
 
 use self::gl::types::*;
 
-use core::{Uniform, UniformItem, ShaderProgram};
+use core::{
+	Uniform,
+	UniformItem,
+	ShaderProgram,
+	ShaderTag,
+};
 use std::ffi::{CString};
 use std::ptr;
 use std::str;
@@ -192,7 +197,7 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 		.iter()
 		.chain(shader.get_tags())
 		.map(|e| {
-			format!("#define {}\n", e)
+			format!("#define {}\n", e.definition())
 		})
 		.collect();
 
@@ -206,7 +211,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 		.iter()
 		.chain(shader.get_tags())
 		.map(|e| {
-			format!("#define {}\n", e)
+			format!("#define {}\n", e.definition())
 		})
 		.collect();
 
@@ -363,4 +368,19 @@ pub fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
 }
 
 
+trait GLShaderTag {
+	fn definition(&self) -> &str;
+}
 
+impl GLShaderTag for ShaderTag {
+	fn definition(&self) -> &str {
+		match self {
+			ShaderTag::Lighting => "LIGHTING",
+			ShaderTag::VertexColour => "VERTEX_COLOUR",
+			ShaderTag::TextureCoordinates => "TEXTURE_COORDINATES",
+			ShaderTag::Other(data) => data,
+		}
+
+		// unimplemented!()
+	}
+}

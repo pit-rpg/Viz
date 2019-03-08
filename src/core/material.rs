@@ -6,12 +6,14 @@ use self::specs::{Component, VecStorage};
 use super::{
 	UniformItem,
 	Uniform,
-	ShaderProgram
+	ShaderProgram,
+	ShaderTag,
 };
 
 use math::{
 	Vector3,
-	Vector4
+	Vector4,
+	Vector,
 };
 
 use std::sync::{
@@ -21,6 +23,7 @@ use std::sync::{
 	LockResult
 };
 
+use std::collections::HashSet;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -28,7 +31,7 @@ pub struct Material {
 	pub uuid: Uuid,
 	src: String,
 	uniforms: Vec<UniformItem>,
-	tags: Vec<String>,
+	tags: HashSet<ShaderTag>,
 }
 
 
@@ -49,16 +52,21 @@ impl ShaderProgram for Material {
 		&mut self.uniforms
 	}
 
-	fn get_tags(&self) -> &Vec<String> {
+	fn get_tags(&self) -> &HashSet<ShaderTag> {
 		&self.tags
 	}
+
+	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag> {
+		&mut self.tags
+	}
+
 }
 
 
 #[allow(dead_code)]
 impl Material {
 
-	pub fn new(src: &str, tags: Vec<String>, new_uniforms: &[UniformItem]) -> Self {
+	pub fn new(src: &str, tags: HashSet<ShaderTag>, new_uniforms: &[UniformItem]) -> Self {
 		let uniforms = new_uniforms.iter().map(|u| u.clone()).collect();
 
 		Self {
@@ -73,7 +81,7 @@ impl Material {
 	pub fn new_basic(color: &Vector4<f32>) -> Self {
 		Material::new(
 			"basic",
-			vec![],
+			HashSet::new(),
 			&[
 				UniformItem {
 					name: "color".to_string(),
@@ -85,9 +93,11 @@ impl Material {
 	}
 
 	pub fn new_basic_texture() -> Self {
+		let mut set = HashSet::new();
+		set.insert(ShaderTag::Lighting);
 		Material::new(
 			"basic-texture",
-			vec!["LIGHTING".to_string()],
+			set,
 			&[
 				UniformItem {
 					name: "texture_color".to_string(),
@@ -101,7 +111,7 @@ impl Material {
 	pub fn new_normal() -> Self {
 		Material::new(
 			"normal",
-			vec![],
+			HashSet::new(),
 			&[]
 		)
 	}
@@ -110,7 +120,7 @@ impl Material {
 	pub fn new_mat_cup() -> Self {
 		Material::new(
 			"mat_cup2",
-			vec![],
+			HashSet::new(),
 			&[
 				UniformItem {
 					name: "texture_color".to_string(),
@@ -123,9 +133,12 @@ impl Material {
 
 
 	pub fn new_light(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+		let mut set = HashSet::new();
+		set.insert(ShaderTag::Lighting);
+
 		Material::new(
 			"light",
-			vec!["LIGHTING".to_string()],
+			set,
 			&[
 				UniformItem {
 					name: "color".to_string(),
@@ -149,26 +162,43 @@ impl Material {
 
 
 	pub fn new_mesh_phong() -> Self {
+		let mut set = HashSet::new();
+		set.insert(ShaderTag::Lighting);
+
 		Material::new(
 			"mesh_phong",
-			vec!["LIGHTING".to_string()],
+			set,
 			&[]
 		)
 	}
 
 	pub fn new_mesh_standard() -> Self {
-		Material::new(
+		let mut set = HashSet::new();
+		set.insert(ShaderTag::Lighting);
+
+		let mut mat = Material::new(
 			"mesh_standard",
-			vec!["LIGHTING".to_string()],
+			set,
 			&[]
-		)
+		);
+
+		mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
+		mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+		mat.set_uniform("roughness", &Uniform::Float(1.0));
+		mat.set_uniform("metalness", &Uniform::Float(0.0));
+		mat.set_uniform("ambientLightColor", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
+
+		mat
 	}
 
 
 	pub fn new_light_texture(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+		let mut set = HashSet::new();
+		set.insert(ShaderTag::Lighting);
+
 		Material::new(
 			"light_texture",
-			vec!["LIGHTING".to_string()],
+			set,
 			&[
 				UniformItem {
 					name: "color".to_string(),
@@ -201,9 +231,12 @@ impl Material {
 
 
 	pub fn new_phong(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
+		let mut set = HashSet::new();
+		set.insert(ShaderTag::Lighting);
+
 		let mut m = Material::new(
 			"phong",
-			vec!["LIGHTING".to_string()],
+			set,
 			&[
 				UniformItem {
 					name: "color".to_string(),

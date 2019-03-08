@@ -10,6 +10,7 @@ use std::io;
 use std::io::prelude::*;
 use std::fs::File;
 use std::string::ToString;
+use std::collections::HashSet;
 use std::{
 	fs,
 	// io
@@ -70,11 +71,12 @@ use core::{
 	SharedMaterial,
 	SharedGeometry,
 	EntityRelations,
+	ShaderTag,
+	ShaderProgram,
 };
 
 struct Context {
 	path: PathBuf,
-	material: SharedMaterial,
 	doc: Document,
 	images: Vec<gltf::image::Data>,
 	buffers: Vec<gltf::buffer::Data>,
@@ -91,16 +93,11 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 		buffers,
 		images,
 		path: path.clone(),
-		material: SharedMaterial::new(Material::new_normal()),
 	};
 
 	let root = world.create_entity()
 		.with(Transform::default())
 		.build();
-
-	context.doc.materials().for_each(|m|{
-		println!("<><><><><><><><><>{:?}", m.extras());
-	});
 
 	for scene in context.doc.scenes() {
 		print!("Scene {}", scene.index());
@@ -138,6 +135,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 				println!();
 
 				let reader = primitive.reader(|buffer| Some(&context.buffers[buffer.index()]));
+				let mut shader_tags = HashSet::new();
 
 				let indices = reader
 					.read_indices()
@@ -167,6 +165,9 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							}
 							Semantic::TexCoords(n) => {
 								let en = reader.read_tex_coords(n).expect("cant find uv");
+
+								shader_tags.insert(ShaderTag::TextureCoordinates);
+
 								let uv: Vec<_> = match en {
 									ReadTexCoords::U8(iter)=>{
 										iter.map(|e| Vector2::new(e[0] as f32, e[1] as f32) ).collect()
@@ -182,6 +183,9 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							}
 							Semantic::Colors(n) => {
 								let en = reader.read_colors(n).expect("cant find colors");
+
+								shader_tags.insert(ShaderTag::VertexColour);
+
 								match en {
 									ReadColors::RgbU8(iter) => {
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
@@ -234,7 +238,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 				let mut geom = BufferGeometry::new();
 				attributes.into_iter().for_each(|e| {geom.add_buffer_attribute(e);} );
 				indices.map(|data| {geom.set_indices(data)} );
-				geom
+				(geom, shader_tags)
 			})
 			.collect();
 			primitives
@@ -251,21 +255,31 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 	let mut child_node = parent.clone();
 
 	if let Some(meshes) = meshes {
-		println!("++++++++++++++++++++++++++++++++++++++++++");
-		println!("++++++++++++++++++++++++++++++++++++++++++");
-		meshes.iter().for_each(|mesh|{
-			mesh.attributes.iter().for_each(|attr|{
-				println!("NAME: {:?}", attr.buffer_type);
-			});
-		});
-		println!("++++++++++++++++++++++++++++++++++++++++++");
-		println!("++++++++++++++++++++++++++++++++++++++++++");
+		// println!("++++++++++++++++++++++++++++++++++++++++++");
+		// println!("++++++++++++++++++++++++++++++++++++++++++");
+		// meshes.iter().for_each(|mesh|{
+		// 	mesh.attributes.iter().for_each(|attr|{
+		// 		println!("NAME: {:?}", attr.buffer_type);
+		// 	});
+		// });
+		// println!("++++++++++++++++++++++++++++++++++++++++++");
+		// println!("++++++++++++++++++++++++++++++++++++++++++");
 
-		for mesh in meshes {
+
+		for (mesh, mut shader_tags) in meshes {
+			let mut mat = Material::new_mesh_standard();
+
+			{
+				let tags = mat.get_tags_mut();
+				tags.extend(shader_tags.drain());
+			}
+
+
+			let shard_mat = SharedMaterial::new(mat);
 			let e  = world.create_entity()
 				// .with(transform.clone())
 				.with(Transform::default())
-				.with(context.material.clone())
+				.with(shard_mat)
 				.with(SharedGeometry::new(mesh))
 				.build();
 			world.add_child(current, e);

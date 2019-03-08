@@ -3,6 +3,8 @@ extern crate uuid;
 
 extern crate specs;
 
+use std::collections::HashSet;
+
 use super::{
 	SharedTexture2D
 };
@@ -29,6 +31,14 @@ pub enum Uniform {
 	Int(i32),
 	UInt(u32),
 	Texture2D(Option<SharedTexture2D>),
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum ShaderTag {
+	Lighting,
+	VertexColour,
+	TextureCoordinates,
+	Other(String),
 }
 
 
@@ -127,6 +137,7 @@ pub trait ShaderProgram {
 	fn get_uniforms(&self) -> &Vec<UniformItem>;
 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
-	fn get_tags(&self) -> &Vec<String>;
+	fn get_tags(&self) -> &HashSet<ShaderTag>;
+	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
 }
 
