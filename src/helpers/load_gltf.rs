@@ -194,32 +194,32 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 								match en {
 									ReadColors::RgbU8(iter) => {
-										shader_tags.insert(ShaderTag::B_Colour_3);
+										shader_tags.insert(ShaderTag::B_Color_3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbU16(iter) => {
-										shader_tags.insert(ShaderTag::B_Colour_3);
+										shader_tags.insert(ShaderTag::B_Color_3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbF32(iter) => {
-										shader_tags.insert(ShaderTag::B_Colour_3);
+										shader_tags.insert(ShaderTag::B_Color_3);
 										let color: Vec<_> = iter.map(|e| Vector3::new( e[0], e[1], e[2]) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbaU8(iter) => {
-										shader_tags.insert(ShaderTag::B_Colour_4);
+										shader_tags.insert(ShaderTag::B_Color_4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaU16(iter) => {
-										shader_tags.insert(ShaderTag::B_Colour_4);
+										shader_tags.insert(ShaderTag::B_Color_4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaF32(iter) => {
-										shader_tags.insert(ShaderTag::B_Colour_4);
+										shader_tags.insert(ShaderTag::B_Color_4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0], e[1], e[2], e[3] ) ).collect();
 										BufferData::Vector4(color)
 									},
@@ -280,6 +280,12 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 		for (mesh, mut shader_tags) in meshes {
 			let mut mat = Material::new_mesh_standard();
+			// mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
+			// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+			// mat.set_uniform("roughness", &Uniform::Float(1.0));
+			// mat.set_uniform("metalness", &Uniform::Float(0.0));
+			// mat.set_uniform("ambientLightColor", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
+
 
 			{
 				let tags = mat.get_tags_mut();

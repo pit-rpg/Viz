@@ -256,11 +256,11 @@ pub fn get_program<T: ShaderProgram>(shader: &T, bind_context: &mut BindContext)
 	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, shader, bind_context);
 	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, shader, bind_context);
 
-	// println!("=============================================");
-	// println!("{}", shader_program.vs_source);
-	// println!(">>>>>>>>>>>>>>>>>>>>");
-	// println!("{}", shader_program.fs_source);
-	// println!("=============================================");
+	println!("=============================================");
+	println!("{}", shader_program.vs_source);
+	println!(">>>>>>>>>>>>>>>>>>>>");
+	println!("{}", shader_program.fs_source);
+	println!("=============================================");
 
 	shader_program
 }
@@ -377,8 +377,8 @@ impl GLShaderTag for ShaderTag {
 		match self {
 			ShaderTag::B_UV => "B_UV",
 			ShaderTag::Lighting => "LIGHTING",
-			ShaderTag::B_Colour_4 => "B_COLOUR_4",
-			ShaderTag::B_Colour_3 => "B_COLOUR_3",
+			ShaderTag::B_Color_4 => "B_COLOR_4",
+			ShaderTag::B_Color_3 => "B_COLOR_3",
 			ShaderTag::B_Normal => "B_NORMAL",
 			ShaderTag::B_Position => "B_POSITION",
 			ShaderTag::Other(data) => data,

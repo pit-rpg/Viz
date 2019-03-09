@@ -37,8 +37,8 @@ pub enum Uniform {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ShaderTag {
 	Lighting,
-	B_Colour_4,
-	B_Colour_3,
+	B_Color_4,
+	B_Color_3,
 	B_Position,
 	B_UV,
 	B_Normal,

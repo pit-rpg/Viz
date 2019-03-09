@@ -81,16 +81,12 @@ fn main(){
 		let entity = load_gltf(&mut world, PathBuf::from("models/girl_speedsculpt/scene.gltf")).unwrap();
 		let mut transform_store = world.write_storage::<Transform>();
 		let transform = transform_store.get_mut(entity).unwrap();
-		transform.position.y += 2.0;
+		transform.position.y += 2.2;
 		transform.position.x -= 2.0;
 		transform.scale.set_scalar(0.4);
 	}
 	{
 		let entity = load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
-		// let mut transform_store = world.write_storage::<Transform>();
-		// let transform = transform_store.get_mut(entity).unwrap();
-		// transform.scale.set_scalar();
-		// transform.position.x -= 5.0;
 	}
 
 	{
