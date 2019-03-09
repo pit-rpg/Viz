@@ -150,6 +150,10 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 						let data = match semantic {
 							Semantic::Positions => {
+
+								shader_tags.insert(ShaderTag::B_Position);
+
+
 								let positions: Vec<_> = reader.read_positions()
 									.expect("cant find positions")
 									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
@@ -157,6 +161,9 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 								BufferData::Vector3(positions)
 							}
 							Semantic::Normals => {
+
+								shader_tags.insert(ShaderTag::B_Normal);
+
 								let normals: Vec<_> = reader.read_normals()
 									.expect("cant find normals")
 									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
@@ -166,7 +173,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							Semantic::TexCoords(n) => {
 								let en = reader.read_tex_coords(n).expect("cant find uv");
 
-								shader_tags.insert(ShaderTag::TextureCoordinates);
+								shader_tags.insert(ShaderTag::B_UV);
 
 								let uv: Vec<_> = match en {
 									ReadTexCoords::U8(iter)=>{
@@ -184,30 +191,35 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							Semantic::Colors(n) => {
 								let en = reader.read_colors(n).expect("cant find colors");
 
-								shader_tags.insert(ShaderTag::VertexColour);
 
 								match en {
 									ReadColors::RgbU8(iter) => {
+										shader_tags.insert(ShaderTag::B_Colour_3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbU16(iter) => {
+										shader_tags.insert(ShaderTag::B_Colour_3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbF32(iter) => {
+										shader_tags.insert(ShaderTag::B_Colour_3);
 										let color: Vec<_> = iter.map(|e| Vector3::new( e[0], e[1], e[2]) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbaU8(iter) => {
+										shader_tags.insert(ShaderTag::B_Colour_4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaU16(iter) => {
+										shader_tags.insert(ShaderTag::B_Colour_4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaF32(iter) => {
+										shader_tags.insert(ShaderTag::B_Colour_4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0], e[1], e[2], e[3] ) ).collect();
 										BufferData::Vector4(color)
 									},

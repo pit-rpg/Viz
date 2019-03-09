@@ -1,7 +1,16 @@
 #<vertex>
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCoords;
+in vec3 B_Pos;
+in vec3 B_Normal;
+#ifdef B_UV
+in vec2 B_uv;
+#endif
+#ifdef B_COLOR_4
+in vec4 B_Color;
+#endif
+#ifdef B_COLOR_3
+in vec3 B_Color;
+#endif
+
 
 uniform mat4 matrix_model;
 uniform mat4 matrix_view;
@@ -9,12 +18,27 @@ uniform mat3 matrix_normal;
 
 out vec3 v_pos;
 out vec3 v_normal;
+#ifdef B_UV
 out vec2 v_uv;
+#endif
+#ifdef B_COLOR_4
+out vec4 v_color;
+#endif
+#ifdef B_COLOR_3
+out vec3 v_color;
+#endif
+
 
 void main() {
-	v_pos = vec3(matrix_model * vec4(aPos, 1.0));
-	v_normal = matrix_normal * aNormal;
-	v_uv = aTexCoords;
+	v_pos = vec3(matrix_model * vec4(B_Pos, 1.0));
+	v_normal = matrix_normal * B_Normal;
+
+	#ifdef B_UV
+	v_uv = B_uv;
+	#endif
+	#if defined B_COLOR_4 || defined B_COLOR_3
+	v_color = B_Color;
+	#endif
 
 	gl_Position = matrix_view * vec4(v_pos, 1.0);
 }
@@ -31,12 +55,19 @@ void main() {
 #include <snippet-standart>
 
 
-layout (location = 0) out vec4 FragColor;
-
+out vec4 FragColor;
 
 in vec3 v_pos;
 in vec3 v_normal;
+#ifdef B_UV
 in vec2 v_uv;
+#endif
+#ifdef B_COLOR_4
+in vec4 v_color;
+#endif
+#ifdef B_COLOR_3
+in vec3 v_color;
+#endif
 
 uniform vec3 diffuse;
 uniform vec3 specular;
@@ -86,6 +117,9 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 // 	material.clearCoatRoughness = clamp( clearCoatRoughness, 0.04, 1.0 );
 // #endif
 
+	#if defined B_COLOR_4 || defined B_COLOR_3
+	material.diffuseColor *= v_color.xyz;
+	#endif
 
 
 	#if ( NUM_POINT_LIGHTS > 0 )

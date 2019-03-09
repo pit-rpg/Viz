@@ -175,6 +175,7 @@ impl Material {
 	pub fn new_mesh_standard() -> Self {
 		let mut set = HashSet::new();
 		set.insert(ShaderTag::Lighting);
+		set.insert(ShaderTag::B_Position);
 
 		let mut mat = Material::new(
 			"mesh_standard",

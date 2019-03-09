@@ -33,11 +33,15 @@ pub enum Uniform {
 	Texture2D(Option<SharedTexture2D>),
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ShaderTag {
 	Lighting,
-	VertexColour,
-	TextureCoordinates,
+	B_Colour_4,
+	B_Colour_3,
+	B_Position,
+	B_UV,
+	B_Normal,
 	Other(String),
 }
 

@@ -375,9 +375,12 @@ trait GLShaderTag {
 impl GLShaderTag for ShaderTag {
 	fn definition(&self) -> &str {
 		match self {
+			ShaderTag::B_UV => "B_UV",
 			ShaderTag::Lighting => "LIGHTING",
-			ShaderTag::VertexColour => "VERTEX_COLOUR",
-			ShaderTag::TextureCoordinates => "TEXTURE_COORDINATES",
+			ShaderTag::B_Colour_4 => "B_COLOUR_4",
+			ShaderTag::B_Colour_3 => "B_COLOUR_3",
+			ShaderTag::B_Normal => "B_NORMAL",
+			ShaderTag::B_Position => "B_POSITION",
 			ShaderTag::Other(data) => data,
 		}
 
