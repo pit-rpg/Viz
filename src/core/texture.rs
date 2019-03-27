@@ -8,7 +8,7 @@ use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Wrapping {
 	Repeat,
 	MirroredRepeat,
@@ -16,17 +16,29 @@ pub enum Wrapping {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
-pub enum Filtering {
-	NEAREST,
-	LINEAR,
+#[derive(Debug, Clone, Copy)]
+pub enum MagFilter {
+    Nearest,
+    Linear,
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
+pub enum MinFilter {
+    Nearest,
+    Linear,
+    NearestMipmapNearest,
+    LinearMipmapNearest,
+    NearestMipmapLinear,
+    LinearMipmapLinear,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub enum TextureColorType {
 	None,
-	Gray(u8),
+	R(u8),
+	RG(u8),
 	RGB(u8),
 	RGBA(u8),
 }
@@ -39,14 +51,15 @@ pub struct Texture2D {
 	pub uuid: Uuid,
 	pub wrapping_x: Wrapping,
 	pub wrapping_y: Wrapping,
-	pub filtering: Filtering,
+	pub mag_filter: MagFilter,
+	pub min_filter: MinFilter,
 	pub auto_clear_texture_data: bool,
 	pub need_update: bool,
 	texture_data: Option<TextureData>,
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TextureData {
 	pub color_type: TextureColorType,
 	pub width: u32,
@@ -58,30 +71,16 @@ pub struct TextureData {
 impl Texture2D {
 
 	pub fn new (path: &str) -> Self {
-		Self {
-			path: Some(path.to_string()),
-			uuid: Uuid::new_v4(),
-			wrapping_x: Wrapping::Repeat,
-			wrapping_y: Wrapping::Repeat,
-			filtering: Filtering::NEAREST,
-			texture_data: None,
-			auto_clear_texture_data: true,
-			need_update: true,
-		}
+		let mut e = Self::default();
+		e.path = Some(path.to_string());
+		e
 	}
 
 
 	pub fn new_from (data: TextureData) -> Self {
-		Self {
-			path: None,
-			uuid: Uuid::new_v4(),
-			wrapping_x: Wrapping::Repeat,
-			wrapping_y: Wrapping::Repeat,
-			filtering: Filtering::NEAREST,
-			texture_data: Some(data),
-			auto_clear_texture_data: true,
-			need_update: true,
-		}
+		let mut e = Self::default();
+		e.texture_data = Some(data);
+		e
 	}
 
 
@@ -89,7 +88,7 @@ impl Texture2D {
 		let img = image::load_from_memory(bytes).unwrap();
 
 		let color_type = match img.color() {
-			ColorType::Gray(d) => TextureColorType::Gray(d),
+			ColorType::Gray(d) => TextureColorType::R(d),
 			ColorType::RGB(d) =>  TextureColorType::RGB(d),
 			ColorType::RGBA(d) => TextureColorType::RGBA(d),
 			_ =>{  panic!( format!("unknown color type for: {}", path.unwrap_or("<Unknown path (bytes)>".to_string()) ) )}
@@ -98,21 +97,14 @@ impl Texture2D {
 		let data = img.raw_pixels();
 		let (width, height) = img.dimensions();
 
-		Self {
-			path: None,
-			uuid: Uuid::new_v4(),
-			wrapping_x: Wrapping::Repeat,
-			wrapping_y: Wrapping::Repeat,
-			filtering: Filtering::NEAREST,
-			texture_data: Some(TextureData {
+		let mut e = Self::default();
+		e.texture_data = Some(TextureData {
 				data,
 				width,
 				height,
 				color_type,
-			}),
-			auto_clear_texture_data: true,
-			need_update: true,
-		}
+			});
+		e
 	}
 
 
@@ -129,7 +121,7 @@ impl Texture2D {
 				};
 
 				let color_type = match img.color() {
-					ColorType::Gray(d) => TextureColorType::Gray(d),
+					ColorType::Gray(d) => TextureColorType::R(d),
 					ColorType::RGB(d) =>  TextureColorType::RGB(d),
 					ColorType::RGBA(d) => TextureColorType::RGBA(d),
 					_ =>{ return Err( format!("unknown color type for: {}", path) )}
@@ -182,5 +174,21 @@ impl SharedTexture2D {
 
 	pub fn lock(&mut self) -> LockResult<MutexGuard<Texture2D>> {
 		self.0.lock()
+	}
+}
+
+impl Default for Texture2D {
+	fn default() -> Self {
+		Self {
+			path: None,
+			uuid: Uuid::new_v4(),
+			wrapping_x: Wrapping::Repeat,
+			wrapping_y: Wrapping::Repeat,
+			min_filter: MinFilter::LinearMipmapLinear,
+			mag_filter: MagFilter::Linear,
+			auto_clear_texture_data: true,
+			need_update: true,
+			texture_data: None,
+		}
 	}
 }

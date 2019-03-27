@@ -69,7 +69,8 @@ fn to_gl_color_type(color_type: &TextureColorType) -> u32 {
 	match color_type {
 		TextureColorType::RGB(_) => gl::RGB,
 		TextureColorType::RGBA(_) => gl::RGBA,
-		TextureColorType::Gray(_) => gl::DEPTH_COMPONENT,
+		TextureColorType::R(_) => gl::RED,
+		TextureColorType::RG(_) => gl::RG,
 		_ => gl::RGBA,
 	}
 }

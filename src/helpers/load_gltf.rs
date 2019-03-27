@@ -2,9 +2,11 @@ extern crate gltf;
 extern crate specs;
 extern crate byteorder;
 extern crate regex;
+extern crate uuid;
 
 use std::io::{Cursor, SeekFrom};
 use self::byteorder::{LittleEndian, ReadBytesExt};
+use self::uuid::Uuid;
 
 use std::io;
 use std::io::prelude::*;
@@ -50,7 +52,7 @@ use self::gltf::{
 	// 	Material,
 	// },
 	// image,
-	image::Image,
+	image,
 	Document,
 };
 
@@ -73,13 +75,23 @@ use core::{
 	EntityRelations,
 	ShaderTag,
 	ShaderProgram,
+	TextureData,
+	TextureColorType,
+	Wrapping,
+	MagFilter,
+	MinFilter,
+	SharedTexture2D,
+	Uniform,
 };
 
 struct Context {
 	path: PathBuf,
 	doc: Document,
-	images: Vec<gltf::image::Data>,
+	images: Vec<TextureData>,
+	textures: Vec<SharedTexture2D>,
 	buffers: Vec<gltf::buffer::Data>,
+	materials: Vec<SharedMaterial>,
+	defaultMaterial: SharedMaterial,
 }
 
 
@@ -88,7 +100,49 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 
 	let (doc, buffers, images) = gltf::import(path.clone())?;
 
+	let images: Vec<TextureData> = images
+		.iter()
+		.map(|e| TextureData::from(e) )
+		.collect();
+
+	let textures: Vec<SharedTexture2D> = doc.textures()
+		.map(|e|{
+			let index = e.source().index();
+			let mut texture = Texture2D::from(e);
+			texture.set_texture_data( Some(images[ index ].clone()) );
+			SharedTexture2D::new(texture)
+		})
+		.collect();
+
+	println!("<><><><><>==========++++++==========<><><><><>");
+	let materials = doc.materials()
+		.map(|in_mat| {
+			let pbr = in_mat.pbr_metallic_roughness();
+			let mut mat = Material::new_mesh_standard();
+
+			let color_f = pbr.base_color_factor();
+			let diffuse = Vector3::new_from_array(&color_f);
+			let alpha = color_f[3];
+			let roughness = pbr.roughness_factor();
+			let metalness = pbr.metallic_factor();
+
+			mat.set_uniform("diffuse", &Uniform::Vector3(diffuse));
+			mat.set_uniform("roughness", &Uniform::Float(roughness));
+			mat.set_uniform("metalness", &Uniform::Float(metalness));
+			// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+
+
+			// println!("{:?}", pbr);
+
+			SharedMaterial::new(mat)
+		})
+		.collect();
+	println!("<><><><><>==========++++++==========<><><><><>");
+
 	let context = Context {
+		defaultMaterial: SharedMaterial::new(Material::new_normal()),
+		materials,
+		textures,
 		doc,
 		buffers,
 		images,
@@ -250,7 +304,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 				let mut geom = BufferGeometry::new();
 				attributes.into_iter().for_each(|e| {geom.add_buffer_attribute(e);} );
 				indices.map(|data| {geom.set_indices(data)} );
-				(geom, shader_tags)
+				(geom, shader_tags, primitive.material().index())
 			})
 			.collect();
 			primitives
@@ -278,8 +332,12 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 		// println!("++++++++++++++++++++++++++++++++++++++++++");
 
 
-		for (mesh, mut shader_tags) in meshes {
-			let mut mat = Material::new_mesh_standard();
+		for (mesh, mut shader_tags, material_index) in meshes {
+			// let mut mat = Material::new_mesh_standard();
+			let mut shard_mat = match material_index {
+				None => context.defaultMaterial.clone(),
+				Some(index) => context.materials[index].clone(),
+			};
 			// mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
 			// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
 			// mat.set_uniform("roughness", &Uniform::Float(1.0));
@@ -288,12 +346,13 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 
 			{
+				let mut mat = shard_mat.lock().unwrap();
 				let tags = mat.get_tags_mut();
 				tags.extend(shader_tags.drain());
 			}
 
 
-			let shard_mat = SharedMaterial::new(mat);
+			// let shard_mat = SharedMaterial::new(mat);
 			let e  = world.create_entity()
 				// .with(transform.clone())
 				.with(Transform::default())
@@ -327,5 +386,83 @@ impl SemanticToBufferType for Semantic {
 			Semantic::Joints(i) => BufferType::Joint(*i as usize),
 			Semantic::Weights(i) => BufferType::Weight(*i as usize),
 		}
+	}
+}
+
+impl From<&image::Data> for TextureData {
+	fn from(data: &image::Data) -> Self {
+		let color_type = match data.format {
+			image::Format::R8 => TextureColorType::R(8),
+			image::Format::R8G8 => TextureColorType::RG(8),
+			image::Format::R8G8B8 => TextureColorType::RGB(8),
+			image::Format::R8G8B8A8 => TextureColorType::RGBA(8),
+		};
+
+		TextureData{
+			width: data.width,
+			height: data.height,
+			color_type,
+			data: data.pixels.clone(),
+		}
+	}
+}
+
+impl From<gltf::texture::WrappingMode> for Wrapping {
+	fn from(data: gltf::texture::WrappingMode) -> Self {
+		match data {
+			gltf::texture::WrappingMode::ClampToEdge => Wrapping::ClampToEdge,
+			gltf::texture::WrappingMode::MirroredRepeat => Wrapping::MirroredRepeat,
+			gltf::texture::WrappingMode::Repeat => Wrapping::Repeat,
+		}
+	}
+}
+
+impl From<gltf::texture::MagFilter> for MagFilter {
+	fn from(data: gltf::texture::MagFilter) -> Self {
+		match data {
+			gltf::texture::MagFilter::Linear => MagFilter::Linear,
+			gltf::texture::MagFilter::Nearest => MagFilter::Nearest,
+		}
+	}
+}
+
+impl From<gltf::texture::MinFilter> for MinFilter {
+	fn from(data: gltf::texture::MinFilter) -> Self {
+		match data {
+			gltf::texture::MinFilter::Nearest => MinFilter::Nearest,
+			gltf::texture::MinFilter::NearestMipmapLinear => MinFilter::NearestMipmapLinear,
+			gltf::texture::MinFilter::NearestMipmapNearest => MinFilter::NearestMipmapNearest,
+			gltf::texture::MinFilter::Linear => MinFilter::Linear,
+			gltf::texture::MinFilter::LinearMipmapLinear => MinFilter::LinearMipmapLinear,
+			gltf::texture::MinFilter::LinearMipmapNearest => MinFilter::LinearMipmapNearest,
+		}
+	}
+}
+
+impl From<Option<gltf::texture::MinFilter>> for MinFilter {
+	fn from(data: Option<gltf::texture::MinFilter>) -> Self {
+		data.map_or(MinFilter::LinearMipmapLinear, |e| e.into())
+	}
+}
+
+impl From<Option<gltf::texture::MagFilter>> for MagFilter {
+	fn from(data: Option<gltf::texture::MagFilter>) -> Self {
+		data.map_or(MagFilter::Linear, |e| e.into())
+	}
+}
+
+
+impl From<gltf::Texture<'_>> for Texture2D {
+	fn from(data: gltf::texture::Texture) -> Self {
+		let sampler = data.sampler();
+
+		let mut elem = Texture2D::default();
+		elem.wrapping_x = Wrapping::from(sampler.wrap_s());
+		elem.wrapping_y = Wrapping::from(sampler.wrap_t());
+		elem.min_filter = sampler.min_filter().into();
+		elem.mag_filter = sampler.mag_filter().into();
+		elem.path = data.name().map(|e| e.to_string() );
+
+		elem
 	}
 }
