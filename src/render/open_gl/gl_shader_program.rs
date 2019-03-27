@@ -381,9 +381,12 @@ impl GLShaderTag for ShaderTag {
 			ShaderTag::B_Color_3 => "B_COLOR_3",
 			ShaderTag::B_Normal => "B_NORMAL",
 			ShaderTag::B_Position => "B_POSITION",
+			ShaderTag::E_Map_Defuse => "MAP_DEFUSE",
+			ShaderTag::E_Map_Emissive => "MAP_EMISSIVE",
+			ShaderTag::E_Map_Metalness => "MAP_METALNESS",
+			ShaderTag::E_Map_Normal => "MAP_NORMAL",
+			ShaderTag::E_Map_Roughness => "MAP_ROUGHNESS",
 			ShaderTag::Other(data) => data,
 		}
-
-		// unimplemented!()
 	}
 }

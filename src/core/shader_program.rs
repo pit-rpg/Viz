@@ -42,6 +42,11 @@ pub enum ShaderTag {
 	B_Position,
 	B_UV,
 	B_Normal,
+	E_Map_Defuse,
+	E_Map_Normal,
+	E_Map_Roughness,
+	E_Map_Metalness,
+	E_Map_Emissive,
 	Other(String),
 }
 

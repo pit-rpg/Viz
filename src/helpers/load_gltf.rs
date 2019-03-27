@@ -349,6 +349,9 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 				let mut mat = shard_mat.lock().unwrap();
 				let tags = mat.get_tags_mut();
 				tags.extend(shader_tags.drain());
+
+				println!("_______+++++++++++++___________++++++++_________++++++++_______");
+				println!("{:?}", tags);
 			}
 
 
