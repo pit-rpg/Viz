@@ -83,6 +83,9 @@ uniform vec3 ambientLightColor;
 // uniform Material material;
 uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
 
+uniform sampler2D map_color;
+
+
 void main()
 {
 
@@ -105,6 +108,10 @@ void main()
 	// float metalnessFactor = metalness;
 	// float roughnessFactor = roughness;
 	vec3 diffuseColor = diffuse;
+
+#ifdef B_UV
+diffuseColor = vec3(texture(map_color, v_uv));
+#endif
 
 PhysicalMaterial material;
 material.diffuseColor = diffuseColor.rgb * ( 1.0 - metalnessFactor );

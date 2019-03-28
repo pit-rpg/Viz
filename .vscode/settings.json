@@ -12,6 +12,7 @@
 		"lenum",
 		"lerp",
 		"luint",
+		"metalness",
 		"mipmap",
 		"nums",
 		"phong",

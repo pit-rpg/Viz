@@ -122,14 +122,39 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 
 			let color_f = pbr.base_color_factor();
 			let diffuse = Vector3::new_from_array(&color_f);
-			let alpha = color_f[3];
-			let roughness = pbr.roughness_factor();
-			let metalness = pbr.metallic_factor();
+			let emissive = Vector3::new_from_array(&in_mat.emissive_factor());
+			// mat.
 
 			mat.set_uniform("diffuse", &Uniform::Vector3(diffuse));
-			mat.set_uniform("roughness", &Uniform::Float(roughness));
-			mat.set_uniform("metalness", &Uniform::Float(metalness));
-			// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+			mat.set_uniform("roughness", &Uniform::Float(pbr.roughness_factor()));
+			mat.set_uniform("metalness", &Uniform::Float(pbr.metallic_factor()));
+			mat.set_uniform("alpha", &Uniform::Float(color_f[3]));
+			mat.set_uniform("emissive", &Uniform::Vector3(emissive));
+
+			if let Some(name) = in_mat.name() {
+				mat.name = name.to_string();
+			}
+
+			if let Some(map) = pbr.base_color_texture() {
+				let texture = textures[ map.texture().index() ].clone();
+				mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture)));
+			}
+
+			if let Some(map) = in_mat.normal_texture() {
+				let texture = textures[ map.texture().index() ].clone();
+				mat.set_uniform("map_normal", &Uniform::Texture2D(Some(texture)));
+				mat.set_uniform("normal_scale", &Uniform::Float(map.scale()));
+			}
+
+			if let Some(map) = in_mat.emissive_texture() {
+				let texture = textures[ map.texture().index() ].clone();
+				mat.set_uniform("map_emissive", &Uniform::Texture2D(Some(texture)));
+			}
+
+			if let Some(map) = in_mat.occlusion_texture() {
+				let texture = textures[ map.texture().index() ].clone();
+				mat.set_uniform("map_occlusion", &Uniform::Texture2D(Some(texture)));
+			}
 
 
 			// println!("{:?}", pbr);

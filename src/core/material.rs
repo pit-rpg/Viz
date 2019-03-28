@@ -28,7 +28,8 @@ use std::collections::HashSet;
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Material {
-	pub uuid: Uuid,
+	pub name: String,
+	uuid: Uuid,
 	src: String,
 	uniforms: Vec<UniformItem>,
 	tags: HashSet<ShaderTag>,
@@ -60,6 +61,10 @@ impl ShaderProgram for Material {
 		&mut self.tags
 	}
 
+	fn get_uuid(&self) -> Uuid {
+		self.uuid
+	}
+
 }
 
 
@@ -74,6 +79,7 @@ impl Material {
 			src: src.to_string(),
 			uniforms,
 			tags,
+			name: "".to_string(),
 		}
 	}
 

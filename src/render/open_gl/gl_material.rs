@@ -41,7 +41,7 @@ impl GLMaterial for Material {
 
 	fn bind(&mut self, bind_context: &mut BindContext) {
 
-		match bind_context.gl_material_ids.get_mut(&self.uuid) {
+		match bind_context.gl_material_ids.get_mut(&self.get_uuid()) {
 			None => {}
 			Some(program) => {
 				gl_call!({
@@ -58,7 +58,7 @@ impl GLMaterial for Material {
 			program = compile_shader_program(self, bind_context);
 		}
 
-		bind_context.gl_material_ids.insert(self.uuid, program);
+		bind_context.gl_material_ids.insert(self.get_uuid(), program);
 
 		self.bind(bind_context);
 	}

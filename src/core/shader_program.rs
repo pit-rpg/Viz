@@ -1,5 +1,5 @@
 extern crate uuid;
-// use self::uuid::Uuid;
+use self::uuid::Uuid;
 
 extern crate specs;
 
@@ -148,5 +148,6 @@ pub trait ShaderProgram {
 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
 	fn get_tags(&self) -> &HashSet<ShaderTag>;
 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
+	fn get_uuid(&self) -> Uuid;
 }
 
