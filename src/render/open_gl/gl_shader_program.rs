@@ -1,7 +1,7 @@
 extern crate gl;
 extern crate uuid;
 extern crate regex;
-
+extern crate heck;
 
 use self::gl::types::*;
 
@@ -18,6 +18,7 @@ use helpers::{find_file, read_to_string};
 use super::gl_texture::{GLTextureIDs, GLTexture};
 use super::BindContext;
 use self::regex::Regex;
+use self::heck::ShoutySnakeCase;
 
 
 lazy_static! {
@@ -109,7 +110,7 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 				gl::Uniform1ui(loc.location, *data);
 			});
 		}
-		Uniform::Texture2D(data) => {
+		Uniform::Texture2D(data, _) => {
 			gl_call!({
 				gl::ActiveTexture(gl::TEXTURE0 + loc.texture_slot as u32);
 			});
@@ -145,7 +146,7 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 				});
 
 				// println!(">>...........{} {}", uniform.name, location);
-				if let Uniform::Texture2D( _ ) = uniform.uniform {
+				if let Uniform::Texture2D( _, _ ) = uniform.uniform {
 					// println!("...........{} {}", texture_slot, uniform.name);
 					gl_call!({
 						gl::Uniform1i(location, texture_slot as i32);
@@ -159,7 +160,7 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 
 			if shader_program.uniform_locations[i].location != -1 {
 				match uniform.uniform {
-					Uniform::Texture2D( _ ) => {
+					Uniform::Texture2D( _, _ ) => {
 						set_uniform(&mut uniform.uniform, &shader_program.uniform_locations[i], texture_store);
 					}
 					_=> {
@@ -190,8 +191,23 @@ pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
 
 
 fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_context: &mut BindContext) -> String {
-
 	let core_definitions = format!("#define NUM_POINT_LIGHTS {}\n", bind_context.render_settings.num_point_lights);
+	let textures: String = shader.get_uniforms()
+		.iter()
+		.filter(|e| {
+			match e.uniform {
+				Uniform::Texture2D(_, _) => true,
+				_ => false,
+			}
+		})
+		.map(|e| {
+			if let Uniform::Texture2D(_, n) = e.uniform {
+				let texture = e.name.to_shouty_snake_case();
+				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
+			}
+			"".to_string()
+		})
+		.collect();
 
 	let definitions: String = bind_context.tags
 		.iter()
@@ -201,11 +217,27 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 		})
 		.collect();
 
-	format!("#version 330 core\n{}\n{}\n{}",core_definitions,  definitions, code)
+	format!("#version 330 core\n{}\n{}\n{}\n{}", core_definitions,  definitions, textures, code)
 }
 
 
 fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_context: &mut BindContext) -> String {
+	let textures: String = shader.get_uniforms()
+		.iter()
+		.filter(|e| {
+			match e.uniform {
+				Uniform::Texture2D(_, _) => true,
+				_ => false,
+			}
+		})
+		.map(|e| {
+			if let Uniform::Texture2D(_, n) = e.uniform {
+				let texture = e.name.to_shouty_snake_case();
+				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
+			}
+			"".to_string()
+		})
+		.collect();
 
 	let definitions: String = bind_context.tags
 		.iter()
@@ -216,7 +248,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 		.collect();
 
 
-	format!("#version 330 core\n{}\n{}", definitions, code)
+	format!("#version 330 core\n{}\n{}\n{}", definitions, textures, code)
 }
 
 

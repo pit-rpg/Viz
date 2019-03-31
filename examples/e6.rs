@@ -117,9 +117,9 @@ fn main(){
 			.sub_scalar(5.0);
 
 		let mut color = Vector3::random();
-		let point_light = PointLight::new(&color, 30.0, 1.0);
+		let point_light = PointLight::new(&color, 120.0, 1.0);
 
-		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,1.0)));
+		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
 
 		let e_light = world
 			.create_entity()

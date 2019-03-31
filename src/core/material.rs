@@ -33,6 +33,7 @@ pub struct Material {
 	src: String,
 	uniforms: Vec<UniformItem>,
 	tags: HashSet<ShaderTag>,
+	need_update: bool,
 }
 
 
@@ -65,6 +66,13 @@ impl ShaderProgram for Material {
 		self.uuid
 	}
 
+	fn is_need_update(&self) -> bool {
+		self.need_update
+	}
+
+	fn set_need_update(&mut self, update: bool) {
+		self.need_update = update;
+	}
 }
 
 
@@ -80,6 +88,7 @@ impl Material {
 			uniforms,
 			tags,
 			name: "".to_string(),
+			need_update: true,
 		}
 	}
 
@@ -107,7 +116,7 @@ impl Material {
 			&[
 				UniformItem {
 					name: "texture_color".to_string(),
-					uniform: Uniform::Texture2D(None),
+					uniform: Uniform::Texture2D(None, 0),
 					need_update: true,
 				}
 			]
@@ -130,7 +139,7 @@ impl Material {
 			&[
 				UniformItem {
 					name: "texture_color".to_string(),
-					uniform: Uniform::Texture2D(None),
+					uniform: Uniform::Texture2D(None, 0),
 					need_update: true,
 				}
 			]
@@ -224,12 +233,12 @@ impl Material {
 				},
 				UniformItem {
 					name: "texture_specular".to_string(),
-					uniform: Uniform::Texture2D(None),
+					uniform: Uniform::Texture2D(None, 0),
 					need_update: true,
 				},
 				UniformItem {
 					name: "texture_color".to_string(),
-					uniform: Uniform::Texture2D(None),
+					uniform: Uniform::Texture2D(None, 0),
 					need_update: true,
 				}
 			]

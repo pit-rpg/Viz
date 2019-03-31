@@ -137,25 +137,24 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 
 			if let Some(map) = pbr.base_color_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture)));
+				mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture), map.tex_coord()));
 			}
 
 			if let Some(map) = in_mat.normal_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_normal", &Uniform::Texture2D(Some(texture)));
+				mat.set_uniform("map_normal", &Uniform::Texture2D(Some(texture), map.tex_coord()));
 				mat.set_uniform("normal_scale", &Uniform::Float(map.scale()));
 			}
 
 			if let Some(map) = in_mat.emissive_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_emissive", &Uniform::Texture2D(Some(texture)));
+				mat.set_uniform("map_emissive", &Uniform::Texture2D(Some(texture), map.tex_coord()));
 			}
 
 			if let Some(map) = in_mat.occlusion_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_occlusion", &Uniform::Texture2D(Some(texture)));
+				mat.set_uniform("map_occlusion", &Uniform::Texture2D(Some(texture), map.tex_coord()));
 			}
-
 
 			// println!("{:?}", pbr);
 

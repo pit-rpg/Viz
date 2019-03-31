@@ -96,6 +96,12 @@ void main()
 	geometry.normal = normalize( v_normal );
 	geometry.viewDir = normalize( v_pos );
 
+#if defined B_UV && defined MAP_NORMAL
+geometry.normal = normalize(geometry.normal + vec3(texture(map_color, v_uv)));
+// geometry.normal *= normalize(vec3(texture(map_color, v_uv)));
+#endif
+
+
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 
 	// PhysicalMaterial material;
@@ -109,7 +115,7 @@ void main()
 	// float roughnessFactor = roughness;
 	vec3 diffuseColor = diffuse;
 
-#ifdef B_UV
+#if defined B_UV && defined MAP_COLOR
 diffuseColor = vec3(texture(map_color, v_uv));
 #endif
 

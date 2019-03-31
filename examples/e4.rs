@@ -78,7 +78,7 @@ fn main(){
 
 	let mut test_mat = Material::new_mesh_phong();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
-	test_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone())));
+	test_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone()), 0));
 	let shared_test_mat = SharedMaterial::new(test_mat);
 
 	for mut object in objects {

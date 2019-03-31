@@ -160,20 +160,31 @@ impl Texture2D {
 
 
 #[derive(Debug, Clone)]
-pub struct SharedTexture2D (Arc<Mutex<Texture2D>>);
+pub struct SharedTexture2D {
+	data: Arc<Mutex<Texture2D>>,
+	uuid: Uuid,
+}
 
 
 impl SharedTexture2D {
 	pub fn new(texture: Texture2D) -> Self {
-		SharedTexture2D(Arc::new(Mutex::new(texture)))
+		Self {
+			uuid: texture.uuid,
+			data: Arc::new(Mutex::new(texture)),
+		}
 	}
 
 	pub fn new_from_path(path: &str) -> Self {
-		SharedTexture2D(Arc::new(Mutex::new(Texture2D::new(path))))
+		let texture = Texture2D::new(path);
+		Self::new(texture)
 	}
 
 	pub fn lock(&mut self) -> LockResult<MutexGuard<Texture2D>> {
-		self.0.lock()
+		self.data.lock()
+	}
+
+	pub fn get_uuid(&self) -> Uuid {
+		self.uuid
 	}
 }
 
