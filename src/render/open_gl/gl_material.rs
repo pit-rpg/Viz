@@ -41,22 +41,24 @@ impl GLMaterial for Material {
 
 	fn bind(&mut self, bind_context: &mut BindContext) {
 
-		match bind_context.gl_material_ids.get_mut(&self.get_uuid()) {
-			None => {}
-			Some(program) => {
-				gl_call!({
-					gl::UseProgram(program.id);
-				});
+		if self.is_need_update() {
+			bind_context.gl_material_ids.remove(&self.get_uuid());
+			self.set_need_update(false);
+		} else {
+			match bind_context.gl_material_ids.get_mut(&self.get_uuid()) {
+				None => {}
+				Some(program) => {
+					gl_call!({
+						gl::UseProgram(program.id);
+					});
 
-				set_uniforms(self.get_uniforms_slice_mut(), program, bind_context.gl_texture_ids);
-				return;
+					set_uniforms(self.get_uniforms_slice_mut(), program, bind_context.gl_texture_ids);
+					return;
+				}
 			}
 		}
 
-		let program;
-		{
-			program = compile_shader_program(self, bind_context);
-		}
+		let program = compile_shader_program(self, bind_context);
 
 		bind_context.gl_material_ids.insert(self.get_uuid(), program);
 

@@ -8,7 +8,7 @@ use super::{
 	PointLight,
 	Parent,
 	Children,
-	// Relation,
+	DirectionalLight,
 };
 
 pub fn create_world() -> World {
@@ -17,9 +17,12 @@ pub fn create_world() -> World {
 	world.register::<SharedMaterial>();
 	world.register::<Transform>();
 	world.register::<PerspectiveCamera>();
+
 	world.register::<PointLight>();
+	world.register::<DirectionalLight>();
+
 	world.register::<Parent>();
 	world.register::<Children>();
-	// world.register::<Relation>();
+
 	world
 }

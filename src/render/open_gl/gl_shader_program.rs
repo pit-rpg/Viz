@@ -191,7 +191,7 @@ pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
 
 
 fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_context: &mut BindContext) -> String {
-	let core_definitions = format!("#define NUM_POINT_LIGHTS {}\n", bind_context.render_settings.num_point_lights);
+	let core_definitions = format!("#define NUM_POINT_LIGHTS {}\n", bind_context.lights_point_count);
 	let textures: String = shader.get_uniforms()
 		.iter()
 		.filter(|e| {

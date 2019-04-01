@@ -7,6 +7,7 @@ extern crate uuid;
 use std::time::{Instant, Duration};
 use std::os::raw::c_void;
 use std::ffi::CStr;
+use std::collections::HashSet;
 
 use core::{
 	SharedGeometry,
@@ -38,23 +39,26 @@ use super::super::{
 
 
 pub struct RenderSettings {
-	pub num_point_lights: usize,
+	// pub num_point_lights: usize,
 	// pub num_directional_lights: usize,
 }
 
 impl Default for RenderSettings {
 	fn default() -> Self {
 		RenderSettings{
-			num_point_lights: 4,
+			// num_point_lights: 4,
 		}
 	}
 }
 
 pub struct BindContext<'z> {
 	pub tags: &'z Vec<ShaderTag>,
-	pub render_settings: &'z RenderSettings,
+	// pub render_settings: &'z RenderSettings,
 	pub gl_material_ids: &'z mut GLMaterialIDs,
 	pub gl_texture_ids: &'z mut GLTextureIDs,
+
+	pub lights_point_count: usize,
+	pub lights_directional_count: usize,
 }
 
 
@@ -70,6 +74,9 @@ pub struct RenderSystem {
 	pub clear_color_need_update: bool,
 	pub tags: Vec<ShaderTag>,
 	pub render_settings: RenderSettings,
+
+	lights_point_count: usize,
+	lights_directional_count: usize,
 }
 
 
@@ -113,6 +120,8 @@ impl RenderSystem {
 			clear_color_need_update: true,
 			tags: Vec::new(),
 			render_settings: RenderSettings::default(),
+			lights_point_count: 0,
+			lights_directional_count: 0,
 		}
 	}
 
@@ -200,13 +209,6 @@ impl<'a> System<'a> for RenderSystem {
 			mut gl_texture_ids,
 		) = data;
 
-		let mut bind_context = BindContext{
-			gl_texture_ids: &mut gl_texture_ids,
-			gl_material_ids: &mut gl_material_ids,
-			tags: &self.tags,
-			render_settings: &self.render_settings,
-		};
-
 		let mut matrix_cam_position;
 		let matrix_projection;
 		// let matrix_projection_inverse;
@@ -231,9 +233,11 @@ impl<'a> System<'a> for RenderSystem {
 			}
 		}
 
+
+		let mut light_materials_need_update = false;
 		let lights: Vec<_> = (&light_coll, &transform_coll)
 			.join()
-			.take(self.render_settings.num_point_lights)
+			// .take(self.render_settings.num_point_lights)
 			.map(|(light, transform)| {
 				let mut pos = transform.position.clone();
 				pos.apply_matrix_4(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
@@ -241,17 +245,42 @@ impl<'a> System<'a> for RenderSystem {
 			})
 			.collect();
 
+
+		if lights.len() != self.lights_point_count {
+			self.lights_point_count = lights.len();
+			light_materials_need_update = true;
+		}
+
 		for (_, shared_material) in (&transform_coll, &mut material_coll).join() {
+			let mut material = shared_material.lock().unwrap();
+
+			if !material.get_tags().contains(&ShaderTag::Lighting) {
+				continue;
+			}
+
 			lights.iter().enumerate()
 				.for_each(|(i, (light, pos))| {
-					let mut material = shared_material.lock().unwrap();
-
 					material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(pos.clone()));
 					material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(light.color.clone()));
 					material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(light.distance));
 					material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(light.decay));
 				});
+
+			if (light_materials_need_update) {
+				material.set_need_update(true);
+			}
 		}
+
+
+		let mut bind_context = BindContext {
+			gl_texture_ids: &mut gl_texture_ids,
+			gl_material_ids: &mut gl_material_ids,
+			tags: &self.tags,
+
+			lights_point_count: self.lights_point_count,
+			lights_directional_count: self.lights_directional_count,
+		};
+
 
 		for (transform, geometry, shared_material) in (&transform_coll, &mut geometry_coll, &mut material_coll).join() {
 			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;

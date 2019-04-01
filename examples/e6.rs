@@ -68,7 +68,6 @@ fn main(){
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
-
 	let e_cam = world
 		.create_entity()
 		.with(transform_camera)
@@ -108,16 +107,16 @@ fn main(){
 
 
 	let mut lights = Vec::new();
-	for _ in  0..4 {
+	for _ in  0..20 {
 		let mut transform = Transform::default();
 		transform.scale.set(0.2,0.2,0.2);
 		transform.position
 			.randomize()
-			.multiply_scalar(10.0)
-			.sub_scalar(5.0);
+			.multiply_scalar(40.0)
+			.sub_scalar(20.0);
 
 		let mut color = Vector3::random();
-		let point_light = PointLight::new(&color, 120.0, 1.0);
+		let point_light = PointLight::new(color.clone(), 200.0, 1.0);
 
 		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
 
