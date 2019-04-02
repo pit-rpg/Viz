@@ -1,7 +1,7 @@
 
 use std::ops::{Sub, Index, IndexMut};
 use helpers::Nums;
-use super::{Vector, Matrix4};
+use super::{Vector, Matrix4, Matrix3};
 
 #[repr(C)]
 #[derive(Clone, Debug)]
@@ -75,6 +75,15 @@ where T:Nums
 		self.y = ( e[ 1 ] * x + e[ 5 ] * y + e[ 9 ] * z + e[ 13 ] ) * w;
 		self.z = ( e[ 2 ] * x + e[ 6 ] * y + e[ 10 ] * z + e[ 14 ] ) * w;
 
+		self
+	}
+
+	pub fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self {
+		let x = self.x; let y = self.y; let z = self.z;
+		let e = m.elements;
+		self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
+		self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
+		self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
 		self
 	}
 }
@@ -291,16 +300,6 @@ where T:Nums
     fn new_from_array (array: &[T] ) -> Self {
         Self::new(array[0], array[1], array[2])
     }
-
-
-    // fn apply_matrix_3 (&mut self, m: &Matrix3<T> ) -> &mut Self {
-    // 	let x = self.x; let y = self.y; let z = self.z;
-    // 	let e = m.elements;
-    // 	self.x = e[ 0 ] * x + e[ 3 ] * y + e[ 6 ] * z;
-    // 	self.y = e[ 1 ] * x + e[ 4 ] * y + e[ 7 ] * z;
-    // 	self.z = e[ 2 ] * x + e[ 5 ] * y + e[ 8 ] * z;
-    // 	self
-    // }
 }
 
 

@@ -191,7 +191,15 @@ pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
 
 
 fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_context: &mut BindContext) -> String {
-	let core_definitions = format!("#define NUM_POINT_LIGHTS {}\n", bind_context.lights_point_count);
+	let core_definitions = format!(
+		r###"
+		#define NUM_POINT_LIGHTS {}
+		#define NUM_DIR_LIGHTS {}
+		"###,
+		bind_context.lights_point_count,
+		bind_context.lights_directional_count
+	);
+
 	let textures: String = shader.get_uniforms()
 		.iter()
 		.filter(|e| {
@@ -216,6 +224,8 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 			format!("#define {}\n", e.definition())
 		})
 		.collect();
+
+		println!("<><><><<><><><>><><<><><\n{}", core_definitions);
 
 	format!("#version 330 core\n{}\n{}\n{}\n{}", core_definitions,  definitions, textures, code)
 }

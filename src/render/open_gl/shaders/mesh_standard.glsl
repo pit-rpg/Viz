@@ -81,7 +81,14 @@ uniform vec3 ambientLightColor;
 
 // uniform vec3 viewPos;
 // uniform Material material;
-uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
+
+#if ( NUM_POINT_LIGHTS > 0 )
+	uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
+#endif
+#if ( NUM_DIR_LIGHTS > 0 )
+	uniform DirectionalLight directionalLights[ NUM_DIR_LIGHTS ];
+#endif
+
 
 uniform sampler2D map_color;
 
@@ -94,7 +101,7 @@ void main()
 
 	geometry.position = v_pos;
 	geometry.normal = normalize( v_normal );
-	geometry.viewDir = normalize( v_pos );
+	geometry.viewDir = normalize( -v_pos );
 
 #if defined B_UV && defined MAP_NORMAL
 geometry.normal = normalize(geometry.normal + vec3(texture(map_color, v_uv)));
@@ -154,6 +161,23 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 		}
 	#endif
 
+
+
+#if ( NUM_DIR_LIGHTS > 0 )
+	DirectionalLight directionalLight;
+	#pragma unroll_loop
+	for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+		directionalLight = directionalLights[ i ];
+		getDirectionalDirectLightIrradiance( directionalLight, geometry, directLight );
+
+		// #ifdef USE_SHADOWMAP
+		// directLight.color *= all( bvec2( directionalLight.shadow, directLight.visible ) ) ? getShadow( directionalShadowMap[ i ], directionalLight.shadowMapSize, directionalLight.shadowBias, directionalLight.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
+		// #endif
+
+		RE_Direct_Physical( directLight, geometry, material, reflectedLight );
+
+	}
+#endif
 
 
 

@@ -119,8 +119,8 @@ fn main(){
 			let mut material = mat2.lock().unwrap();
 			material.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
 			material.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
-			material.set_uniform("roughness", &Uniform::Float(1.0));
-			material.set_uniform("metalness", &Uniform::Float(0.0));
+			material.set_uniform("roughness", &Uniform::Float(0.5));
+			material.set_uniform("metalness", &Uniform::Float(1.0));
 			material.set_uniform("ambientLightColor", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
 		}
 

@@ -22,6 +22,7 @@ use project::{
 		create_world,
 		ShaderProgram,
 		PointLight,
+		DirectionalLight,
 		SystemTransform,
 		Parent,
 		EntityRelations,
@@ -107,7 +108,7 @@ fn main(){
 
 
 	let mut lights = Vec::new();
-	for _ in  0..20 {
+	for _ in  0..5 {
 		let mut transform = Transform::default();
 		transform.scale.set(0.2,0.2,0.2);
 		transform.position
@@ -132,6 +133,28 @@ fn main(){
 
 		lights.push(e_light);
 	}
+
+	let dir_light = {
+		let mut transform = Transform::default();
+		// transform.rotation.x = -0.3;
+		// transform.rotation.y = -0.3;
+
+
+		let color = Vector3::random();
+		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
+		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 0.0, 1.0));
+
+		world
+			.create_entity()
+			.with(transform)
+			.with(geom_light.clone())
+			.with(material_light.clone())
+			.with(light.clone())
+			.build()
+	};
+
+
+
 
 	render_system.camera = Some(e_cam);
 	render_system.window.set_resizable(true);
@@ -210,6 +233,10 @@ fn main(){
 				transform.rotation.x = time * 0.3;
 				transform.rotation.z = time * 0.1;
 			}
+			// {
+			// 	let transform = transform_store.get_mut(dir_light).unwrap();
+			// 	transform.rotation.y = time * 0.9;
+			// }
 			// {
 			// 	let transform = transform_store.get_mut(obj_parent).unwrap();
 			// 	let scale = (time * 0.4).sin();

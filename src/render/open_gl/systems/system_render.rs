@@ -17,6 +17,7 @@ use core::{
 	PerspectiveCamera,
 	ShaderProgram,
 	PointLight,
+	DirectionalLight,
 	ShaderTag,
 };
 
@@ -163,6 +164,7 @@ impl<'a> System<'a> for RenderSystem {
 		WriteStorage<'a, SharedGeometry>,
 		WriteStorage<'a, SharedMaterial>,
 		WriteStorage<'a, PointLight>,
+		WriteStorage<'a, DirectionalLight>,
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
 		Write<'a, GLTextureIDs>,
@@ -203,7 +205,8 @@ impl<'a> System<'a> for RenderSystem {
 			transform_coll,
 			mut geometry_coll,
 			mut material_coll,
-			light_coll,
+			light_point_coll,
+			light_direct_coll,
 			mut vertex_arrays_ids,
 			mut gl_material_ids,
 			mut gl_texture_ids,
@@ -234,10 +237,12 @@ impl<'a> System<'a> for RenderSystem {
 		}
 
 
+
+
 		let mut light_materials_need_update = false;
-		let lights: Vec<_> = (&light_coll, &transform_coll)
+
+		let lights_point: Vec<_> = (&light_point_coll, &transform_coll)
 			.join()
-			// .take(self.render_settings.num_point_lights)
 			.map(|(light, transform)| {
 				let mut pos = transform.position.clone();
 				pos.apply_matrix_4(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
@@ -245,9 +250,25 @@ impl<'a> System<'a> for RenderSystem {
 			})
 			.collect();
 
+		let lights_direct: Vec<_> = (&light_direct_coll, &transform_coll)
+			.join()
+			.map(|(light, transform)| {
+				let mut direction = light.direction.clone();
+				let mut matrix_normal = Matrix3::new();
+				matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+				direction.apply_matrix_3(&matrix_normal);
+				direction.normalize();
+				(light, direction)
+			})
+			.collect();
 
-		if lights.len() != self.lights_point_count {
-			self.lights_point_count = lights.len();
+
+		if lights_point.len() != self.lights_point_count {
+			self.lights_point_count = lights_point.len();
+			light_materials_need_update = true;
+		}
+		if lights_direct.len() != self.lights_directional_count {
+			self.lights_directional_count = lights_direct.len();
 			light_materials_need_update = true;
 		}
 
@@ -258,15 +279,20 @@ impl<'a> System<'a> for RenderSystem {
 				continue;
 			}
 
-			lights.iter().enumerate()
+			lights_point.iter().enumerate()
 				.for_each(|(i, (light, pos))| {
 					material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(pos.clone()));
 					material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(light.color.clone()));
 					material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(light.distance));
 					material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(light.decay));
 				});
+			lights_direct.iter().enumerate()
+				.for_each(|(i, (light, direction))| {
+					material.set_uniform(&format!("directionalLights[{}].color", i), &Uniform::Vector3(light.color.clone()));
+					material.set_uniform(&format!("directionalLights[{}].direction", i), &Uniform::Vector3(direction.clone()));
+				});
 
-			if (light_materials_need_update) {
+			if light_materials_need_update {
 				material.set_need_update(true);
 			}
 		}

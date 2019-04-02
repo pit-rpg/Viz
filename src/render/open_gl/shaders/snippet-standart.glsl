@@ -96,11 +96,11 @@ void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricC
 	vec3 irradiance = dotNL * directLight.color;
 
 	// #ifndef PHYSICALLY_CORRECT_LIGHTS
-	// 	irradiance *= PI; // punctual light
+		// irradiance *= PI; // punctual light
 	// #endif
 
 	// #ifndef STANDARD
-	// 	float clearCoatDHR = material.clearCoat * clearCoatDHRApprox( material.clearCoatRoughness, dotNL );
+		// float clearCoatDHR = material.clearCoat * clearCoatDHRApprox( material.clearCoatRoughness, dotNL );
 	// #else
 		float clearCoatDHR = 0.0;
 	// #endif

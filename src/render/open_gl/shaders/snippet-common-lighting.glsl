@@ -19,6 +19,16 @@ struct PointLight {
 	float decay;
 };
 
+struct DirectionalLight {
+	vec3 direction;
+	vec3 color;
+
+	// int shadow;
+	// float shadowBias;
+	// float shadowRadius;
+	// vec2 shadowMapSize;
+};
+
 
 float punctualLightIntensityToIrradianceFactor( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
 	if( cutoffDistance > 0.0 ) {
@@ -53,4 +63,10 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 	return irradiance;
 
+}
+
+void getDirectionalDirectLightIrradiance( const in DirectionalLight directionalLight, const in GeometricContext geometry, out IncidentLight directLight ) {
+	directLight.color = directionalLight.color;
+	directLight.direction = directionalLight.direction;
+	directLight.visible = true;
 }
