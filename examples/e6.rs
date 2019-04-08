@@ -117,7 +117,7 @@ fn main(){
 			.sub_scalar(20.0);
 
 		let mut color = Vector3::random();
-		let point_light = PointLight::new(color.clone(), 200.0, 1.0);
+		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
 
 		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
 
@@ -136,13 +136,13 @@ fn main(){
 
 	let dir_light = {
 		let mut transform = Transform::default();
-		// transform.rotation.x = -0.3;
-		// transform.rotation.y = -0.3;
+		transform.rotation.x = 0.3;
+		transform.rotation.y = 0.3;
 
 
 		let color = Vector3::random();
 		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
-		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 0.0, 1.0));
+		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 1.0, 0.0), 3.0);
 
 		world
 			.create_entity()

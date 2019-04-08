@@ -159,7 +159,7 @@ fn main(){
 			.sub_scalar(5.0);
 
 		let mut color = Vector3::random();
-		let point_light = PointLight::new(color.clone(), 10.0, 1.0);
+		let point_light = PointLight::new(color.clone(), 1.0, 10.0, 1.0);
 
 		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,1.0)));
 

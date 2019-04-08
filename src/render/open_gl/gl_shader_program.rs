@@ -175,14 +175,20 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 }
 
 
-pub fn read_shader_file(search_dirs: &Vec<&str>, path: &str) -> String {
-	let path = path.to_string() + ".glsl";
+pub fn read_shader_file(bind_context: &BindContext, path: &str) -> String {
+	// let path = path.to_string() + ".glsl";
 
-	let p = find_file(&["src/render/open_gl/shaders"], &path).unwrap();
-	let mut code = read_to_string(&p);
+	// let p = find_file(&["src/render/open_gl/shaders"], &path).unwrap();
+	// let mut code = read_to_string(&p);
+
+	let mut code = bind_context.shader_sources
+		.iter()
+		.find(|e| e.name == path)
+		.unwrap()
+		.src.to_string();
 
 	while let Some(cap) = RE_INCLUDE.captures(&code.clone()) {
-		let include_data = read_shader_file(search_dirs, &cap[1]);
+		let include_data = read_shader_file(bind_context, &cap[1]);
 		code = code.replace(&cap[0], &include_data);
 	}
 
@@ -264,7 +270,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 
 
 pub fn get_program<T: ShaderProgram>(shader: &T, bind_context: &mut BindContext) -> GLShaderProgramID {
-	let code = read_shader_file(&vec!("src/render/open_gl/shaders"), shader.get_src());
+	let code = read_shader_file(bind_context, shader.get_src());
 
 	let mut shader_program = GLShaderProgramID {
 		fs_source: String::from(""),
