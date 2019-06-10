@@ -176,16 +176,16 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 
 
 pub fn read_shader_file(bind_context: &BindContext, path: &str) -> String {
-	// let path = path.to_string() + ".glsl";
+	let path = path.to_string() + ".glsl";
 
-	// let p = find_file(&["src/render/open_gl/shaders"], &path).unwrap();
-	// let mut code = read_to_string(&p);
+	let p = find_file(&["src/render/open_gl/shaders"], &path).unwrap();
+	let mut code = read_to_string(&p);
 
-	let mut code = bind_context.shader_sources
-		.iter()
-		.find(|e| e.name == path)
-		.unwrap()
-		.src.to_string();
+	// let mut code = bind_context.shader_sources
+	// 	.iter()
+	// 	.find(|e| e.name == path)
+	// 	.unwrap()
+	// 	.src.to_string();
 
 	while let Some(cap) = RE_INCLUDE.captures(&code.clone()) {
 		let include_data = read_shader_file(bind_context, &cap[1]);
@@ -232,6 +232,7 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 		.collect();
 
 		println!("<><><><<><><><>><><<><><\n{}", core_definitions);
+		println!("..................\n{}..................\n", textures);
 
 	format!("#version 330 core\n{}\n{}\n{}\n{}", core_definitions,  definitions, textures, code)
 }

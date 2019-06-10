@@ -26,6 +26,7 @@ use project::{
 		SystemTransform,
 		Parent,
 		EntityRelations,
+		ShaderTag,
 	},
 	helpers::{
 		load_obj,
@@ -54,6 +55,8 @@ fn main(){
 
 	gl_call!({
 		gl::Enable(gl::DEPTH_TEST);
+		gl::Enable(gl::BLEND);
+		gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
 	});
 
 	let up = Vector3::new(0.0, 1.0, 0.0);
@@ -68,6 +71,7 @@ fn main(){
 	camera.view.enabled = false;
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
+	let geom_box = SharedGeometry::new(geometry_generators::box_geometry(2.0, 2.0, 2.0));
 
 	let e_cam = world
 		.create_entity()
@@ -75,36 +79,13 @@ fn main(){
 		.with(camera)
 		.build();
 
-
-
-	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/girl_speedsculpt/scene.gltf")).unwrap();
-		let mut transform_store = world.write_storage::<Transform>();
-		let transform = transform_store.get_mut(entity).unwrap();
-		transform.position.y += 2.2;
-		transform.position.x -= 2.0;
-		transform.scale.set_scalar(0.4);
-	}
-	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
-	}
-
-	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/pony_cartoon/scene.gltf")).unwrap();
-		let mut transform_store = world.write_storage::<Transform>();
-		let transform = transform_store.get_mut(entity).unwrap();
-		transform.scale.set_scalar(0.02);
-		transform.position.y -= 5.0;
-		transform.position.x += 5.0;
-	}
-
-
-
+	//////////////////////////////////////////////////////////////////////////////////
+	////////////// lights ////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////
 	let lights_parent = world
 		.create_entity()
 		.with(Transform::default())
 		.build();
-
 
 
 	let mut lights = Vec::new();
@@ -133,27 +114,41 @@ fn main(){
 
 		lights.push(e_light);
 	}
-
-	let dir_light = {
-		let mut transform = Transform::default();
-		// transform.rotation.x = 0.3;/
-		transform.rotation.x = 3.14/2.0;
-		// transform.rotation.y = 0.3;
+	//////////////////////////////////////////////////////////////////////////////////
+	////////////// lights ////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////
 
 
-		// let color = Vector3::random();
-		let color = Vector3::new_one();
-		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
-		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 1.0, 0.0), 5.0);
+	let texture2 = SharedTexture2D::new_from_path("images/cloud.png");
+	let mut mat = Material::new_mesh_standard();
+	{
+		let tags = mat.get_tags_mut();
+		tags.insert(ShaderTag::B_UV);
+	}
+	mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture2), 0));
 
+
+	let material = SharedMaterial::new(mat);
+
+
+
+	let entries: Vec<Entity> = vec![
+		Vector3::new(4.0, 0.0, 0.0),
+		Vector3::new(0.0, 4.0, 0.0),
+		Vector3::new(0.0, 0.0, 4.0),
+		Vector3::new(-4.0, 0.0, 0.0),
+		Vector3::new(0.0, -4.0, 0.0),
+		Vector3::new(0.0, 0.0, -4.0),
+	].into_iter().map(|item|{
 		world
 			.create_entity()
-			.with(transform)
-			.with(geom_light.clone())
-			.with(material_light.clone())
-			.with(light.clone())
+			.with(Transform::from_position(item))
+			.with(geom_box.clone())
+			.with(material.clone())
 			.build()
-	};
+	}).collect();
+
+
 
 
 
@@ -229,23 +224,15 @@ fn main(){
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
+
+			////////////// lights ////////////////////////////////////////////////////////////
 			{
 				let transform = transform_store.get_mut(lights_parent).unwrap();
 				transform.rotation.y = time * 0.5;
 				transform.rotation.x = time * 0.3;
 				transform.rotation.z = time * 0.1;
 			}
-			// {
-			// 	let transform = transform_store.get_mut(dir_light).unwrap();
-			// 	transform.rotation.y = time * 0.9;
-			// 	transform.rotation.x = time * 0.5;
-			// 	transform.rotation.z = time * 1.2;
-			// }
-			// {
-			// 	let transform = transform_store.get_mut(obj_parent).unwrap();
-			// 	let scale = (time * 0.4).sin();
-			// 	transform.scale.set(scale,scale,scale);
-			// }
+			////////////// lights ////////////////////////////////////////////////////////////
 		}
 
 		system_transform.run_now(&world.res);

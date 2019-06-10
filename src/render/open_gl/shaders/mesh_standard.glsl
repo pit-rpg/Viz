@@ -90,7 +90,14 @@ uniform vec3 ambientLightColor;
 #endif
 
 
+
+
+#ifdef MAP_COLOR
 uniform sampler2D map_color;
+#endif
+#ifdef MAP_NORMAL
+uniform sampler2D map_normal;
+#endif
 
 
 void main()
@@ -104,9 +111,13 @@ void main()
 	geometry.viewDir = normalize( -v_pos );
 
 #if defined B_UV && defined MAP_NORMAL
-geometry.normal = normalize(geometry.normal + vec3(texture(map_color, v_uv)));
+// geometry.normal = -(texture2D( map_normal, v_uv ).xyz * 2.0 - 1.0);
+geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
 // geometry.normal *= normalize(vec3(texture(map_color, v_uv)));
 #endif
+
+
+	float alpha = 1.0;
 
 
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
@@ -124,6 +135,7 @@ geometry.normal = normalize(geometry.normal + vec3(texture(map_color, v_uv)));
 
 #if defined B_UV && defined MAP_COLOR
 diffuseColor = vec3(texture(map_color, v_uv));
+alpha = texture(map_color, v_uv).a;
 #endif
 
 PhysicalMaterial material;
@@ -214,6 +226,11 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 
 
 	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular ;
-	FragColor = vec4(outgoingLight, 1.0);
+	FragColor = vec4(outgoingLight, alpha);
+	// FragColor = vec4(outgoingLight, 1.0);
 
+
+	// #if defined B_UV
+	// FragColor = vec4(v_uv,0,1);
+	// #endif
 }
