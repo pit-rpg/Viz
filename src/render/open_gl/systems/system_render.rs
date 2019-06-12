@@ -127,6 +127,14 @@ impl RenderSystem {
 			gl::ClearColor(0.0, 0.2, 0.2, 1.0);
 		});
 
+
+		// Flags
+		gl_call!({
+			gl::Enable(gl::DEPTH_TEST);
+			gl::Enable(gl::STENCIL_TEST);
+		});
+		// /Flags
+
 		RenderSystem::print_gl_version();
 
 		let mut render_system = Self {
@@ -169,7 +177,7 @@ impl RenderSystem {
 
 	pub fn clear(&self) {
 		gl_call!({
-			gl::Clear(gl::COLOR_BUFFER_BIT|gl::DEPTH_BUFFER_BIT);
+			gl::Clear(gl::COLOR_BUFFER_BIT|gl::DEPTH_BUFFER_BIT|gl::STENCIL_BUFFER_BIT);
 		});
 	}
 

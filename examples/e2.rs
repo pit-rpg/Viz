@@ -42,10 +42,6 @@ fn main(){
 	let count = 400;
 	let mut boxes = Vec::with_capacity(count);
 
-	gl_call!({
-		gl::Enable(gl::DEPTH_TEST);
-	});
-
 	let mut f_count = 0.0;
 	let up = Vector3::new(0.0, 1.0, 0.0);
 	let center = Vector3::new_zero();

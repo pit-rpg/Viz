@@ -95,6 +95,13 @@ uniform sampler2D map_color;
 
 void main()
 {
+	// float zNear = 2000000000.0;
+	// float zFar = 0.1;
+	// float z = gl_FragCoord.z * 2.0 - 1.0;
+    // float d = (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
+
+	// FragColor = vec4(vec3( d ), 1.0);
+	// return;
 
 	IncidentLight directLight;
 	GeometricContext geometry;
