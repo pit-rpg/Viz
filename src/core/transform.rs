@@ -53,6 +53,28 @@ impl Transform {
 			quaternion: rotQ,
 		}
 	}
+
+	pub fn from_position(position: Vector3<f32>) -> Self {
+		Self {
+			matrix_local: Matrix4::new(),
+			matrix_world: Matrix4::new(),
+			position,
+			scale: Vector3::new_one(),
+			rotation: Euler::default(),
+			quaternion: Quaternion::new(),
+		}
+	}
+
+	pub fn new(position: Vector3<f32>, quaternion: Quaternion<f32>, scale: Vector3<f32>) -> Self {
+		Self {
+			matrix_local: Matrix4::new(),
+			matrix_world: Matrix4::new(),
+			position,
+			scale,
+			rotation: Euler::from_quaternion(&quaternion),
+			quaternion,
+		}
+	}
 }
 
 
