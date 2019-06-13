@@ -97,14 +97,14 @@ fn main(){
 
 
 	render_system.camera = Some(e_cam);
-	render_system.window.set_resizable(true);
-	let hidpi_factor = render_system.window.get_hidpi_factor().round();
+	render_system.windowed_context.window().set_resizable(true);
+	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
 	let mut window_state = WindowState::default();
 
 	while running {
 
 		{
-			let window = &render_system.window;
+			let windowed_context = &render_system.windowed_context;
 			use self::glutin::WindowEvent::*;
 
 			render_system.events_loop.poll_events(|event| {
@@ -130,7 +130,7 @@ fn main(){
 						}
 						CursorMoved { position: pos, .. } =>{
 							window_state.pointer_pos = pos
-								.to_physical(window.get_hidpi_factor())
+								.to_physical(windowed_context.window().get_hidpi_factor())
 								.to_logical(hidpi_factor)
 								.into();
 						}

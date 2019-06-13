@@ -423,6 +423,7 @@ impl From<&image::Data> for TextureData {
 			image::Format::R8G8 => TextureColorType::RG(8),
 			image::Format::R8G8B8 => TextureColorType::RGB(8),
 			image::Format::R8G8B8A8 => TextureColorType::RGBA(8),
+			_ => unimplemented!()
 		};
 
 		TextureData{

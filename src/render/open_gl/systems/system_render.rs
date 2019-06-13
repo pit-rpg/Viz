@@ -26,7 +26,7 @@ use core::{
 use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::dpi::*;
-use self::glutin::{EventsLoop, GlContext, GlWindow, ContextError};
+use self::glutin::{EventsLoop, ContextError, Window, ContextWrapper};
 use self::specs::{ReadStorage, System, Write, WriteStorage, Entity, Join, World};
 use self::uuid::Uuid;
 
@@ -84,7 +84,8 @@ pub struct BindContext<'z> {
 
 pub struct RenderSystem {
 	pub camera: Option<Entity>,
-	pub window: GlWindow,
+	// pub window: glutin::WindowBuilder,
+	pub windowed_context: ContextWrapper<glutin::PossiblyCurrent, Window>,
 	pub events_loop: EventsLoop,
 	pub timer: Instant,
 	pub time: Duration,
@@ -110,20 +111,44 @@ impl RenderSystem {
 		// TODO: ensure once /
 
 		let events_loop = glutin::EventsLoop::new();
+
+		// let headless_context = glutin::ContextBuilder::new()
+		// 	.build_headless(&events_loop, PhysicalSize::new(1., 1.))
+		// 	.unwrap();
+
 		let window = glutin::WindowBuilder::new()
 			.with_title("Hello, world!")
 			.with_dimensions(LogicalSize::new(1024.0, 768.0));
 
-		let context = glutin::ContextBuilder::new().with_vsync(true);
+		let windowed_context = glutin::ContextBuilder::new()
+			// .with_shared_lists(&headless_context)
+			.with_vsync(true)
+			.build_windowed(window, &events_loop)
+			.unwrap();
 
-		let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
+		// let headless_id = ct.insert(ContextCurrentWrapper::NotCurrent(
+		// 	ContextWrapper::Headless(headless_context),
+		// ));
+		// let windowed_id = ct.insert(ContextCurrentWrapper::NotCurrent(
+		// 	ContextWrapper::Windowed(windowed_context),
+		// ));
 
-		unsafe {
-			gl_window.make_current().unwrap();
-		}
+
+		// let context = glutin::ContextBuilder::new()
+		// .with_vsync(true)
+		// .build_windowed(window, &events_loop)
+		// .unwrap();
+
+		// let gl_window = glutin::Window::new(&events_loop).unwrap();
+
+		let windowed_context = unsafe {
+		// 	gl_window.make_current().unwrap();
+			windowed_context.make_current().unwrap()
+		};
 
 		gl_call!({
-			gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
+			gl::load_with(|symbol| windowed_context.get_proc_address(symbol) as *const _);
+			// gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
 			gl::ClearColor(0.0, 0.2, 0.2, 1.0);
 		});
 
@@ -139,7 +164,8 @@ impl RenderSystem {
 
 		let mut render_system = Self {
 			camera: None,
-			window: gl_window,
+			// window: window,
+			windowed_context: windowed_context,
 			events_loop,
 			timer: Instant::now(),
 			time: Duration::new(0,0),
@@ -182,7 +208,7 @@ impl RenderSystem {
 	}
 
 	pub fn swap_buffers(&self) -> Result<(), ContextError> {
-		self.window.swap_buffers()
+		self.windowed_context.swap_buffers()
 	}
 
 	pub fn gl_clear_error() {
