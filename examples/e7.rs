@@ -27,6 +27,7 @@ use project::{
 		Parent,
 		EntityRelations,
 		ShaderTag,
+		TransformLock,
 	},
 	helpers::{
 		load_obj,
@@ -47,6 +48,61 @@ pub struct WindowState {
 
 
 fn main(){
+
+	let emojis = vec![
+		"res/emoji/angry-face_1f620.png",
+		"res/emoji/astonished-face_1f632.png",
+		"res/emoji/confused-face_1f615.png",
+		"res/emoji/dizzy-face_1f635.png",
+		"res/emoji/drooling-face_1f924.png",
+		"res/emoji/extraterrestrial-alien_1f47d.png",
+		"res/emoji/eyes_1f440.png",
+		"res/emoji/face-savouring-delicious-food_1f60b.png",
+		"res/emoji/face-with-cowboy-hat_1f920.png",
+		"res/emoji/face-with-finger-covering-closed-lips_1f92b.png",
+		"res/emoji/face-with-monocle_1f9d0.png",
+		"res/emoji/face-with-one-eyebrow-raised_1f928.png",
+		"res/emoji/face-with-open-mouth-vomiting_1f92e.png",
+		"res/emoji/face-with-rolling-eyes_1f644.png",
+		"res/emoji/face-with-tears-of-joy_1f602.png",
+		"res/emoji/face-with-uneven-eyes-and-wavy-mouth_1f974.png",
+		"res/emoji/flushed-face_1f633.png",
+		"res/emoji/ghost_1f47b.png",
+		"res/emoji/grimacing-face_1f62c.png",
+		"res/emoji/grinning-face-with-one-large-and-one-small-eye_1f92a.png",
+		"res/emoji/grinning-face-with-smiling-eyes_1f601.png",
+		"res/emoji/grinning-face-with-star-eyes_1f929.png",
+		"res/emoji/hugging-face_1f917.png",
+		"res/emoji/money-mouth-face_1f911.png",
+		"res/emoji/nerd-face_1f913.png",
+		"res/emoji/neutral-face_1f610.png",
+		"res/emoji/persevering-face_1f623.png",
+		"res/emoji/pouting-face_1f621.png",
+		"res/emoji/rolling-on-the-floor-laughing_1f923.png",
+		"res/emoji/see-no-evil-monkey_1f648.png",
+		"res/emoji/serious-face-with-symbols-covering-mouth_1f92c.png",
+		"res/emoji/shocked-face-with-exploding-head_1f92f.png",
+		"res/emoji/sleeping-face_1f634.png",
+		"res/emoji/sleepy-face_1f62a.png",
+		"res/emoji/smiling-face-with-halo_1f607.png",
+		"res/emoji/smiling-face-with-heart-shaped-eyes_1f60d.png",
+		"res/emoji/smiling-face-with-horns_1f608.png",
+		"res/emoji/smiling-face-with-open-mouth_1f603.png",
+		"res/emoji/smiling-face-with-open-mouth-and-cold-sweat_1f605.png",
+		"res/emoji/smiling-face-with-open-mouth-and-smiling-eyes_1f604.png",
+		"res/emoji/smiling-face-with-open-mouth-and-tightly-closed-eyes_1f606.png",
+		"res/emoji/smiling-face-with-smiling-eyes_1f60a.png",
+		"res/emoji/smiling-face-with-smiling-eyes-and-hand-covering-mouth_1f92d.png",
+		"res/emoji/smiling-face-with-smiling-eyes-and-three-hearts_1f970.png",
+		"res/emoji/smiling-face-with-sunglasses_1f60e.png",
+		"res/emoji/smirking-face_1f60f.png",
+		"res/emoji/sneezing-face_1f927.png",
+		"res/emoji/thinking-face_1f914.png",
+		"res/emoji/unamused-face_1f612.png",
+		"res/emoji/upside-down-face_1f643.png",
+		"res/emoji/winking-face_1f609.png",
+		"res/emoji/zipper-mouth-face_1f910.png"
+	];
 
 	let mut world = create_world();
 	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
@@ -71,7 +127,7 @@ fn main(){
 	camera.view.enabled = false;
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
-	let geom_box = SharedGeometry::new(geometry_generators::box_geometry(2.0, 2.0, 2.0));
+	let geom_plane = SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
 
 	let e_cam = world
 		.create_entity()
@@ -119,31 +175,28 @@ fn main(){
 	//////////////////////////////////////////////////////////////////////////////////
 
 
-	let texture2 = SharedTexture2D::new_from_path("images/cloud.png");
-	let mut mat = Material::new_mesh_standard();
-	{
-		let tags = mat.get_tags_mut();
-		tags.insert(ShaderTag::B_UV);
-	}
-	mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture2), 0));
+
+	let entries: Vec<Entity> = emojis.iter().map(|item|{
+		let mut pos = Vector3::random();
+		pos.multiply_scalar(5.0);
+
+		let texture = SharedTexture2D::new_from_path(item);
+		let mut mat = Material::new_mesh_standard();
+		{
+			let tags = mat.get_tags_mut();
+			tags.insert(ShaderTag::B_UV);
+		}
+		mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture), 0));
 
 
-	let material = SharedMaterial::new(mat);
+		let material = SharedMaterial::new(mat);
+		let mut transform = Transform::from_position(pos);
+		transform.lock = TransformLock::Rotation;
 
-
-
-	let entries: Vec<Entity> = vec![
-		Vector3::new(4.0, 0.0, 0.0),
-		Vector3::new(0.0, 4.0, 0.0),
-		Vector3::new(0.0, 0.0, 4.0),
-		Vector3::new(-4.0, 0.0, 0.0),
-		Vector3::new(0.0, -4.0, 0.0),
-		Vector3::new(0.0, 0.0, -4.0),
-	].into_iter().map(|item|{
 		world
 			.create_entity()
-			.with(Transform::from_position(item))
-			.with(geom_box.clone())
+			.with(transform)
+			.with(geom_plane.clone())
 			.with(material.clone())
 			.build()
 	}).collect();

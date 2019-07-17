@@ -20,6 +20,7 @@ use core::{
 	PointLight,
 	DirectionalLight,
 	ShaderTag,
+	TransformLock
 };
 
 
@@ -395,7 +396,18 @@ impl<'a> System<'a> for RenderSystem {
 
 
 		for (transform, geometry, shared_material) in (&transform_coll, &mut geometry_coll, &mut material_coll).join() {
-			let matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
+			let mut matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
+
+			match transform.lock {
+				TransformLock::Rotation => {
+					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
+					rot.copy(&transform.quaternion);
+					matrix_model.compose(&pos, &rot, &scale);
+				}
+				_ =>{}
+			}
+
+
 			let mut matrix_normal = Matrix3::new();
 			matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
 
