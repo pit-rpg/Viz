@@ -178,7 +178,7 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 pub fn read_shader_file(bind_context: &BindContext, path: &str) -> String {
 	let path = path.to_string() + ".glsl";
 
-	let p = find_file(&["src/render/open_gl/shaders"], &path).unwrap();
+	let p = find_file(&["res/shaders"], &path).unwrap();
 	let mut code = read_to_string(&p);
 
 	// let mut code = bind_context.shader_sources
