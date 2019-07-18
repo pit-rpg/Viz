@@ -191,7 +191,9 @@ fn main(){
 
 		let material = SharedMaterial::new(mat);
 		let mut transform = Transform::from_position(pos);
-		transform.lock = TransformLock::Rotation;
+		transform.lock = TransformLock::RotationScale;
+        transform.scale.multiply_scalar(0.1);
+
 
 		world
 			.create_entity()

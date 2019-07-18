@@ -404,7 +404,20 @@ impl<'a> System<'a> for RenderSystem {
 					rot.copy(&transform.quaternion);
 					matrix_model.compose(&pos, &rot, &scale);
 				}
-				_ =>{}
+				TransformLock::Scale => {
+					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
+                    let length = pos.length();
+                    scale.multiply_scalar(length);
+					matrix_model.compose(&pos, &rot, &scale);
+				}
+				TransformLock::RotationScale => {
+					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
+                    let length = pos.length();
+                    scale.multiply_scalar(length);
+                    rot.copy(&transform.quaternion);
+					matrix_model.compose(&pos, &rot, &scale);
+				}
+				TransformLock::None => {}
 			}
 
 

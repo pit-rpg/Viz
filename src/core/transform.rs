@@ -6,9 +6,9 @@ use self::specs::{Component, VecStorage};
 #[derive(Copy, Clone, Debug)]
 pub enum TransformLock {
 	None,
-	Rotation(bool, bool, bool),
-	Scale(bool, bool, bool),
-	RotationScale(bool, bool, bool, bool, bool, bool),
+	Rotation,
+	Scale,
+	RotationScale,
 }
 
 
