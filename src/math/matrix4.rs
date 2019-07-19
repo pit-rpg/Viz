@@ -546,6 +546,16 @@ where T:Nums
 	}
 
 
+	pub fn get_position(&self, position: &mut Vector3<T>) -> &Self {
+			let te = &self.elements;
+
+			position.x = te[ 12 ];
+			position.y = te[ 13 ];
+			position.z = te[ 14 ];
+			self
+	}
+
+
 	pub fn decompose_to_new(&self) -> (Vector3<T>, Quaternion<T>, Vector3<T>) {
 		let mut position = Vector3::new_zero();
 		let mut rotation = Quaternion::new();

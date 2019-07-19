@@ -3,6 +3,7 @@ extern crate glutin;
 extern crate rand;
 extern crate specs;
 extern crate uuid;
+extern crate rayon;
 
 use std::time::{Instant, Duration};
 use std::os::raw::c_void;
@@ -395,17 +396,40 @@ impl<'a> System<'a> for RenderSystem {
 		};
 
 
-		for (transform, geometry, shared_material) in (&transform_coll, &mut geometry_coll, &mut material_coll).join() {
+		use self::rayon::prelude::*;
+		use specs::ParJoin;
+
+		let mut collection: Vec<(f32, &Transform, &mut SharedGeometry, &mut SharedMaterial)>  = (&transform_coll, &mut geometry_coll, &mut material_coll)
+			.par_join()
+			.map(|(transform, geometry, shared_material)| {
+				let mut pos = Vector3::zero();
+				(matrix_cam_position * transform.matrix_world * transform.matrix_local).get_position(&mut pos);
+				(-pos.z, transform, geometry, shared_material)
+			})
+			.collect();
+
+		collection.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());;
+		// println!("________________________");
+
+
+		for (_distance, transform, geometry, shared_material) in collection
+			// .map(|(transform, geometry, shared_material)| {
+			// 	let distance = transform.position.length();
+			// 	(distance, transform, geometry, shared_material)
+			// })
+			// .sort()
+		{
+			// println!("{}", _distance);
 			let mut matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
 
 			match transform.lock {
 				TransformLock::Rotation => {
-					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
+					let (pos, mut rot, scale) = matrix_model.decompose_to_new();
 					rot.copy(&transform.quaternion);
 					matrix_model.compose(&pos, &rot, &scale);
 				}
 				TransformLock::Scale => {
-					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
+					let (pos, rot, mut scale) = matrix_model.decompose_to_new();
                     let length = pos.length();
                     scale.multiply_scalar(length);
 					matrix_model.compose(&pos, &rot, &scale);

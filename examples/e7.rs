@@ -176,9 +176,10 @@ fn main(){
 
 
 
-	let entries: Vec<Entity> = emojis.iter().map(|item|{
+	emojis.iter().for_each(|item|{
 		let mut pos = Vector3::random();
-		pos.multiply_scalar(5.0);
+		pos.multiply_scalar(10.0);
+		pos.sub_scalar(5.0);
 
 		let texture = SharedTexture2D::new_from_path(item);
 		let mut mat = Material::new_mesh_standard();
@@ -200,8 +201,8 @@ fn main(){
 			.with(transform)
 			.with(geom_plane.clone())
 			.with(material.clone())
-			.build()
-	}).collect();
+			.build();
+	});
 
 
 
