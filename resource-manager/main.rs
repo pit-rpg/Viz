@@ -1,51 +1,23 @@
 extern crate clap;
 extern crate colored;
-extern crate serde;
-extern crate serde_json;
 extern crate tar;
+
+mod lib;
 
 use clap::{App, Arg, SubCommand};
 use std::ffi::OsString;
 #[macro_use]
-use serde::{Serialize, Deserialize};
 use colored::*;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::File;
-use std::io::prelude::*;
+// use std::io::prelude::*;
+use lib::*;
 use std::path::PathBuf;
 use tar::Builder;
 
 // use std::env;
 // use std::fs;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct LoadedResource {
-	name: String,
-	data_type: String,
-	path: PathBuf,
-	content_type: String,
-	bin: Option<Vec<u8>>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Resource {
-	name: String,
-	data_type: String,
-	path: PathBuf,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Package {
-	name: String,
-	priority: i32,
-	resources: Vec<Resource>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct PackageList {
-	packages: Vec<Package>,
-}
 
 fn main() {
 	let matches = App::new("My Super Program")
@@ -84,16 +56,18 @@ fn main() {
 						.takes_value(true)
 						.default_value("./")
 						.help("Specify output dir"),
+				)
+				.arg(
+					Arg::with_name("single_file")
+						.short("-s")
+						.required(false)
+						.help("force to create one file \"res.tar\""),
 				),
 		)
 		.get_matches();
 
 	println!("{:?}", matches);
 	println!("===================");
-
-	// if matches.subcommand.is_none() {
-	//     return;
-	// }
 
 	match matches.subcommand {
 		None => {
@@ -108,15 +82,16 @@ fn main() {
 
 				let vals = &command.matches.args.get("list").unwrap().vals;
 				let out_dir = &command.matches.args.get("output_dir").unwrap().vals[0];
+				let single_file = command.matches.args.get("single_file").is_some();
 
-				build(vals, out_dir);
+				build(vals, out_dir, single_file);
 			}
 			_ => unimplemented!(),
 		}, // Some(command) => println!(" ==> {:?}", command)
 	}
 }
 
-fn build(files: &Vec<OsString>, out_dir: &OsString) {
+fn build(files: &Vec<OsString>, out_dir: &OsString, single_file: bool) {
 	let dir = std::env::current_dir().unwrap();
 
 	let files: Vec<PathBuf> = files
@@ -131,7 +106,6 @@ fn build(files: &Vec<OsString>, out_dir: &OsString) {
 			file_path
 		})
 		.collect();
-
 
 	let mut packages = HashMap::new();
 	files.iter().for_each(|path_buf| {
@@ -198,29 +172,44 @@ fn build(files: &Vec<OsString>, out_dir: &OsString) {
 			.collect();
 	});
 
+	if single_file {
+		packages = vec![Package {
+			name: "res".to_string(),
+			priority: 0,
+			resources: packages
+				.drain(..)
+				.map(|item| item.resources)
+				.flatten()
+				.collect(),
+		}];
+	}
+
 	// write packages
-	packages.iter()
-	.filter(|package| package.resources.len() != 0)
-	.for_each(|package| {
-		let package_file_dir = dir.clone().join(&out_dir);
-		let package_file_path = package_file_dir
-			.clone()
-			.join(format!("{}.tar", package.name));
+	let package_file_dir = dir.clone().join(&out_dir);
+	packages
+		.iter_mut()
+		.filter(|package| package.resources.len() != 0)
+		.for_each(|package| {
+			let package_file_path = package_file_dir
+				.clone()
+				.join(format!("{}.tar", package.name));
 
-		println!("{:?}, {:?}", package_file_dir, package_file_path);
-		std::fs::create_dir_all(package_file_dir).unwrap();
-		let package_file = File::create(package_file_path).unwrap();
+			println!("{:?}, {:?}", package_file_dir, package_file_path);
+			std::fs::create_dir_all(&package_file_dir).unwrap();
+			let package_file = File::create(package_file_path).unwrap();
 
-		let mut tar_file = Builder::new(package_file);
+			let mut tar_file = Builder::new(package_file);
 
-		package.resources.iter().for_each(|item| {
-			tar_file
-				.append_file(&item.name, &mut File::open(&item.path).unwrap())
-				.unwrap();
+			package.resources.iter_mut().for_each(|item| {
+				tar_file
+					.append_file(item.name.clone(), &mut File::open(item.path.clone()).unwrap())
+					.unwrap();
+				item.path = PathBuf::from(&item.name);
+			});
 		});
-	});
 
-	println!("============================");
-
-	println!("{:?}", packages);
+	let res_data = serde_json::to_string(&PackageList { packages }).unwrap();
+	let res_data_path = package_file_dir.clone().join("res.json");
+	std::fs::write(&res_data_path, res_data)
+		.expect(&format!("Unable to write file: {:?}", res_data_path));
 }
