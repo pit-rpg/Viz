@@ -1,6 +1,7 @@
 {
   "packages": [
     { "name": "shaders", "priority": 0, "resources": [] },
+    { "name": "shaders3", "priority": 0, "resources": [] },
     {
       "name": "shaders2",
       "priority": 0,

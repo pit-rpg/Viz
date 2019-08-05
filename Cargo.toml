@@ -18,6 +18,11 @@ lazy_static = "1.3.0"
 rayon = "1.0.3"
 gltf = "0.12.0"
 heck = "0.3.1"
+serde_json = "1.0.39"
+serde = {version =  "1.0.92", features = ["derive"]}
+clap = "2.33.0"
+colored = "1.8.0"
+tar = "0.4.26"
 
 [features]
 prod = []
@@ -26,11 +31,6 @@ names = []
 [profile.dev]
 opt-level = 2
 
-# [dependencies.lib-resource-manager]
-# path = "lib-resource-manager"
-
-
-[workspace]
-members = [
-  	"lib-resource-manager",
-]
+[[bin]]
+name = "resource-manager"
+path = "resource-manager/main.rs"
