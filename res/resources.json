@@ -24,8 +24,8 @@
       ]
     },
     {
-      "name": "shaders",
-      "priority": 0,
+      "name": "shaders1",
+      "priority": 1,
       "resources": [
         {
           "name": "basic.glsl",

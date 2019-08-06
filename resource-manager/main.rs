@@ -139,40 +139,46 @@ fn build(files: &Vec<OsString>, out_dir: &OsString, single_file: bool) {
 		});
 	});
 
+	// sort packages by priority
 	let mut packages: Vec<Package> = packages.drain().map(|item| item.1).collect();
 	packages.sort_by_key(|item| item.priority);
 
-	let mut resources = HashMap::new();
-	packages.iter().for_each(|package| {
-		package.resources.iter().for_each(|resource| {
-			let exists = resources.get(&resource.name).is_some();
-			if exists {
-				println!(
-					"{}",
-					format!("resource: '{}' override", resource.name).bright_yellow()
-				);
-			}
-			resources.insert(resource.name.clone(), resource.clone());
-		});
-	});
-
-	packages.iter_mut().for_each(|package| {
-		package.resources = package
-			.resources
-			.iter()
-			.map(|resource| {
-				if resources.get(&resource.name).is_some() {
-					resources.remove(&resource.name)
-				} else {
-					None
+	{
+		// remove duplicated resources
+		let mut resources = HashMap::new();
+		packages.iter().for_each(|package| {
+			package.resources.iter().for_each(|resource| {
+				let exists = resources.get(&resource.name).is_some();
+				if exists {
+					println!(
+						"{}",
+						format!("resource: '{}' override", resource.name).bright_yellow()
+					);
 				}
-			})
-			.filter(|item| item.is_some())
-			.map(|item| item.unwrap())
-			.collect();
-	});
+				resources.insert(resource.name.clone(), resource.clone());
+			});
+		});
 
+		packages.iter_mut().for_each(|package| {
+			package.resources = package
+				.resources
+				.iter()
+				.map(|resource| {
+					if resources.get(&resource.name).is_some() {
+						resources.remove(&resource.name)
+					} else {
+						None
+					}
+				})
+				.filter(|item| item.is_some())
+				.map(|item| item.unwrap())
+				.collect();
+		});
+	}
+
+	println!("single_file: {}", single_file);
 	if single_file {
+		// merge packages if needed
 		packages = vec![Package {
 			name: "res".to_string(),
 			priority: 0,
@@ -182,31 +188,37 @@ fn build(files: &Vec<OsString>, out_dir: &OsString, single_file: bool) {
 				.flatten()
 				.collect(),
 		}];
+	} else {
+		// or remove empty packages
+		packages = packages
+			.drain(..)
+			.filter(|package| package.resources.len() != 0)
+			.collect();
 	}
 
 	// write packages
 	let package_file_dir = dir.clone().join(&out_dir);
-	packages
-		.iter_mut()
-		.filter(|package| package.resources.len() != 0)
-		.for_each(|package| {
-			let package_file_path = package_file_dir
-				.clone()
-				.join(format!("{}.tar", package.name));
+	packages.iter_mut().for_each(|package| {
+		let package_file_path = package_file_dir
+			.clone()
+			.join(format!("{}.tar", package.name));
 
-			println!("{:?}, {:?}", package_file_dir, package_file_path);
-			std::fs::create_dir_all(&package_file_dir).unwrap();
-			let package_file = File::create(package_file_path).unwrap();
+		println!("{:?}, {:?}", package_file_dir, package_file_path);
+		std::fs::create_dir_all(&package_file_dir).unwrap();
+		let package_file = File::create(package_file_path).unwrap();
 
-			let mut tar_file = Builder::new(package_file);
+		let mut tar_file = Builder::new(package_file);
 
-			package.resources.iter_mut().for_each(|item| {
-				tar_file
-					.append_file(item.name.clone(), &mut File::open(item.path.clone()).unwrap())
-					.unwrap();
-				item.path = PathBuf::from(&item.name);
-			});
+		package.resources.iter_mut().for_each(|item| {
+			tar_file
+				.append_file(
+					item.name.clone(),
+					&mut File::open(item.path.clone()).unwrap(),
+				)
+				.unwrap();
+			item.path = PathBuf::from(&item.name);
 		});
+	});
 
 	let res_data = serde_json::to_string(&PackageList { packages }).unwrap();
 	let res_data_path = package_file_dir.clone().join("res.json");
