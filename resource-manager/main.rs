@@ -1,6 +1,7 @@
 extern crate clap;
 extern crate colored;
 extern crate tar;
+extern crate pathdiff;
 
 mod lib;
 
@@ -15,6 +16,8 @@ use std::fs::File;
 use lib::*;
 use std::path::PathBuf;
 use tar::Builder;
+use pathdiff::diff_paths;
+// use tar::Builder;
 
 // use std::env;
 // use std::fs;
@@ -152,7 +155,7 @@ fn build(files: &Vec<OsString>, out_dir: &OsString, single_file: bool) {
 				if exists {
 					println!(
 						"{}",
-						format!("resource: '{}' override", resource.name).bright_yellow()
+						format!("resource: '{:?}' override", resource.name).bright_yellow()
 					);
 				}
 				resources.insert(resource.name.clone(), resource.clone());
@@ -216,7 +219,8 @@ fn build(files: &Vec<OsString>, out_dir: &OsString, single_file: bool) {
 					&mut File::open(item.path.clone()).unwrap(),
 				)
 				.unwrap();
-			item.path = PathBuf::from(&item.name);
+
+			item.path = diff_paths(&item.path.clone(), &package_file_dir.clone()).unwrap();
 		});
 	});
 

@@ -8,7 +8,7 @@ use tar::Archive;
 
 use self::serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-// use self::serde_json::Error;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoadedResource {
@@ -21,10 +21,10 @@ pub struct LoadedResource {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Resource {
-	pub name: String,
+	pub name: PathBuf,
 	pub data_type: String,
 	pub path: PathBuf,
-	pub data: Option<Vec<u8>>,
+	// pub data: Option<Vec<u8>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -42,6 +42,7 @@ pub struct PackageList {
 #[derive(Debug, Clone)]
 pub struct ResourceManager {
 	package_list: Option<PackageList>,
+	data_loaded: HashMap<String, Vec<u8>>,
 }
 
 impl ResourceManager {
@@ -66,39 +67,65 @@ impl ResourceManager {
 
 	pub fn clear(&mut self) {
 		self.package_list = None;
+		self.data_loaded.clear();
 	}
 
 	pub fn add_package_data(&mut self, data: &[u8], name: &str) -> Result<(), String> {
 		let mut archive = Archive::new(data);
 
-		match &mut self.package_list {
-			None => Err("package_list is None".to_string()),
-			Some(package_list) => {
-				let package = package_list
-					.packages
-					.iter_mut()
-					.find(|package| package.name == name)
-					.ok_or(format!("package '{}' not exists", name))?;
+		let data_loaded = &mut self.data_loaded;
+		let package_list = self
+			.package_list
+			.as_mut()
+			.ok_or("package_list is None")?;
 
-				for file in archive.entries().or(Err("tar error".to_string()))? {
-					let mut file = file.or(Err("tar file error".to_string()))?;
+		let package = package_list
+			.packages
+			.iter_mut()
+			.find(|package| package.name == name)
+			.ok_or(format!("package '{}' not exists", name))?;
 
-					// // Inspect metadata about the file
-					// println!("{:?}", file.header().path().unwrap());
-					// println!("{}", file.header().size().unwrap());
+		for file in archive.entries().or(Err("tar error"))? {
+			let mut file = file.or(Err("tar file error"))?;
 
-					// files implement the Read trait
-					// let mut s = String::new();
+			let file_path = {
+				PathBuf::from(&*file.path().or(Err("tar file path error"))?)
+			};
 
+			let res = package
+				.resources
+				.iter_mut()
+				.find(|res| res.name == file_path)
+				.ok_or(format!("wrong file path {:?}", file_path))?;
 
+			let mut data = Vec::new();
+			file.read(&mut data).unwrap();
 
-					// file.read_to_string(&mut s).unwrap();
-
-					// println!("{}", s);
-				}
-
-				unimplemented!()
-			}
+			data_loaded.insert(name.into(), data);
 		}
+
+		if package.resources.iter().find(|res| data_loaded.get(&*res.name.to_string_lossy()).is_none()).is_some() {
+			return Err("tar file path error")?;
+		}
+
+		Ok(())
+	}
+
+	pub fn get_resource(&self, name: &str) -> Result<&Resource, String> {
+		// let package_list = self.package_list.as_ref().ok_or("package_list is None")?;
+		unimplemented!()
+	}
+
+	pub fn remove_package(&mut self, name: &str) {
+		unimplemented!()
+	}
+
+	pub fn load_package(&mut self, name: &str) {
+		unimplemented!()
+	}
+
+	pub fn load_all_resourcess(&mut self, name: &str) {
+		// let package_list = self.package_list.as_mut().ok_or("package_list is None")?;
+		unimplemented!()
 	}
 }
