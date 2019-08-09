@@ -1,0 +1,26 @@
+{
+  "packages": [
+    {
+      "name": "shaders",
+      "resources": [
+		{"name":"basic.glsl",                   "data_type":"shader", "path": "basic.glsl"},
+		{"name":"basic-texture.glsl",           "data_type":"shader", "path": "basic-texture.glsl"},
+		{"name":"light.glsl",                   "data_type":"shader", "path": "light.glsl"},
+		{"name":"light_texture.glsl",           "data_type":"shader", "path": "light_texture.glsl"},
+		{"name":"lololo.glsl",                  "data_type":"shader", "path": "lololo.glsl"},
+		{"name":"mat_cup2.glsl",                "data_type":"shader", "path": "mat_cup2.glsl"},
+		{"name":"mat_cup.glsl",                 "data_type":"shader", "path": "mat_cup.glsl"},
+		{"name":"mesh_phong.glsl",              "data_type":"shader", "path": "mesh_phong.glsl"},
+		{"name":"mesh_standard.glsl",           "data_type":"shader", "path": "mesh_standard.glsl"},
+		{"name":"normal.glsl",                  "data_type":"shader", "path": "normal.glsl"},
+		{"name":"phong.glsl",                   "data_type":"shader", "path": "phong.glsl"},
+		{"name":"point_light.glsl",             "data_type":"shader", "path": "point_light.glsl"},
+		{"name":"snippet-common.glsl",          "data_type":"shader", "path": "snippet-common.glsl"},
+		{"name":"snippet-common-lighting.glsl", "data_type":"shader", "path": "snippet-common-lighting.glsl"},
+		{"name":"snippet-phong.glsl",           "data_type":"shader", "path": "snippet-phong.glsl"},
+		{"name":"snippet-standart.glsl",        "data_type":"shader", "path": "snippet-standart.glsl"},
+		{"name":"test_mat.glsl",                "data_type":"shader", "path": "test_mat.glsl"}
+	  ]
+    }
+  ]
+}

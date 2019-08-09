@@ -10,14 +10,14 @@ use self::serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{PathBuf, Path};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct LoadedResource {
-	pub name: String,
-	pub data_type: String,
-	pub path: PathBuf,
-	pub content_type: String,
-	pub bin: Option<Vec<u8>>,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct LoadedResource {
+// 	pub name: String,
+// 	pub data_type: String,
+// 	pub path: PathBuf,
+// 	pub content_type: String,
+// 	pub bin: Option<Vec<u8>>,
+// }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Resource {
@@ -29,6 +29,7 @@ pub struct Resource {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
 	pub name: String,
+	#[serde(default)]
 	pub priority: i32,
 	pub resources: Vec<Resource>,
 }
