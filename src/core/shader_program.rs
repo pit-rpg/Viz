@@ -10,33 +10,52 @@ use super::SharedTexture2D;
 use math::{Matrix3, Matrix4, Vector, Vector2, Vector3, Vector4};
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Uniform {
 	Vector2(Vector2<f32>),
 	Vector3(Vector3<f32>),
 	Vector4(Vector4<f32>),
-	Matrix4f(Matrix4<f32>),
-	Matrix3f(Matrix3<f32>),
+	Matrix4(Matrix4<f32>),
+	Matrix3(Matrix3<f32>),
 	Float(f32),
 	Int(i32),
 	UInt(u32),
 	Texture2D(Option<SharedTexture2D>, u32),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum UniformName {
+	Color,
+	Normal,
+	Specular,
+	SpecularStrength,
+	Diffuse,
+	Roughness,
+	Metalness,
+	AmbientLightColor,
+	TextureColor,
+	TextureSpecular,
+	TextureNormal,
+	MatrixModel,
+	MatrixView,
+	MatrixNormal,
+	Time,
+}
+
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ShaderTag {
 	Lighting,
-	B_Color_4,
-	B_Color_3,
-	B_Position,
-	B_UV,
-	B_Normal,
-	E_Map_Defuse,
-	E_Map_Normal,
-	E_Map_Roughness,
-	E_Map_Metalness,
-	E_Map_Emissive,
+	VertexColor4,
+	VertexColor3,
+	VertexPosition,
+	VertexUV,
+	VertexNormal,
+	MapDefuse,
+	MapNormal,
+	MapRoughness,
+	MapMetalness,
+	MapEmissive,
 	Other(String),
 }
 
@@ -45,114 +64,32 @@ pub struct UniformItem {
 	pub name: String,
 	pub uniform: Uniform,
 	pub need_update: bool,
+	// pub tag: Option<String>,
 }
 
 #[allow(dead_code)]
 pub trait ShaderProgram {
-
-	fn set_uniform(&mut self, name: &str, u: &Uniform) {
+	fn set_uniform<T: ToUniform>(&mut self, name: &str, value: T) {
 		let uniforms = self.get_uniforms_mut();
-		let mut material_need_update = false;
-		let mut updated = false;
-		{
-			let res = uniforms.iter_mut().find(|e| e.name == name);
-			if let Some(uniform_item) = res {
-				match (&mut uniform_item.uniform, u) {
-					(Uniform::Vector2(ref mut a), Uniform::Vector2(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Vector3(ref mut a), Uniform::Vector3(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Vector4(ref mut a), Uniform::Vector4(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Matrix3f(ref mut a), Uniform::Matrix3f(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Matrix4f(ref mut a), Uniform::Matrix4f(b)) => {
-						if !a.equals(b) {
-							a.copy(&b);
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Float(ref mut a), Uniform::Float(b)) => {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Int(ref mut a), Uniform::Int(b)) => {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::UInt(ref mut a), Uniform::UInt(b)) => {
-						if a != b {
-							*a = *b;
-							uniform_item.need_update = true;
-							updated = true;
-						}
-					}
-					(Uniform::Texture2D(ref mut a, n1), Uniform::Texture2D(b, n2)) => {
-						match (&a, &b) {
-							(None, None) => {},
-							(Some(t1), Some(t2)) => {
-								if t1.get_uuid() != t1.get_uuid() {
-									uniform_item.need_update = true;
-									updated = true;
-								}
-							},
-							(_, _) => {
-								uniform_item.need_update = true;
-								updated = true;
-							}
-						}
+		let uniform = value.to_uniform();
 
-						match b {
-							None => *a = None,
-							Some(t) => *a = Some(t.clone()),
-						}
 
-						if n1 != n2 {
-							material_need_update = true;
-						}
-					}
+		let res = uniforms.iter_mut().find(|e| e.name == name);
+		if let Some(uniform_item) = res {
 
-					_ => {}
-				};
+			if uniform_item.uniform == uniform {return}
+			uniform_item.uniform = uniform;
+			uniform_item.need_update = true;
+		} else {
+			let new_uniform = UniformItem {
+				name: name.to_string(),
+				uniform: uniform,
+				need_update: true,
+				// tag: None
+			};
 
-				return;
-			}
+			uniforms.push(new_uniform);
 		}
-
-		let new_uniform = UniformItem {
-			name: name.to_string(),
-			uniform: u.clone(),
-			need_update: true,
-		};
-
-		uniforms.push(new_uniform);
 	}
 
 	fn get_src(&self) -> &str;
@@ -165,3 +102,68 @@ pub trait ShaderProgram {
 	fn is_need_update(&self) -> bool;
 	fn set_need_update(&mut self, bool);
 }
+
+
+pub trait ToUniform : PartialEq {
+	fn to_uniform(self) -> Uniform;
+}
+
+impl ToUniform for Vector2<f32> {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Vector2(self)
+	}
+}
+impl ToUniform for Vector3<f32> {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Vector3(self)
+	}
+}
+impl ToUniform for Vector4<f32> {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Vector4(self)
+	}
+}
+impl ToUniform for Matrix3<f32> {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Matrix3(self)
+	}
+}
+impl ToUniform for Matrix4<f32> {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Matrix4(self)
+	}
+}
+impl ToUniform for f32 {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Float(self)
+	}
+}
+impl ToUniform for i32 {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Int(self)
+	}
+}
+impl ToUniform for u32 {
+	fn to_uniform(self) -> Uniform {
+		Uniform::UInt(self)
+	}
+}
+impl ToUniform for (Option<SharedTexture2D>, u32) {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Texture2D(self.0, self.1)
+	}
+}
+impl ToUniform for Option<SharedTexture2D> {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Texture2D(self, 0)
+	}
+}
+impl ToUniform for SharedTexture2D {
+	fn to_uniform(self) -> Uniform {
+		Uniform::Texture2D(Some(self), 0)
+	}
+}
+
+
+
+

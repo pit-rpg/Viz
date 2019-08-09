@@ -8,7 +8,7 @@ use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Wrapping {
 	Repeat,
 	MirroredRepeat,
@@ -16,14 +16,14 @@ pub enum Wrapping {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MagFilter {
     Nearest,
     Linear,
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MinFilter {
     Nearest,
     Linear,
@@ -34,7 +34,7 @@ pub enum MinFilter {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TextureColorType {
 	None,
 	R(u8),
@@ -45,7 +45,7 @@ pub enum TextureColorType {
 
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Texture2D {
 	pub path: Option<String>,
 	pub uuid: Uuid,
@@ -59,7 +59,7 @@ pub struct Texture2D {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TextureData {
 	pub color_type: TextureColorType,
 	pub width: u32,
@@ -202,4 +202,10 @@ impl Default for Texture2D {
 			texture_data: None,
 		}
 	}
+}
+
+impl PartialEq for SharedTexture2D {
+	fn eq(&self, other: &Self) -> bool {
+        self.uuid == other.uuid
+    }
 }

@@ -3,7 +3,7 @@ use super::Vector;
 use super::Vector3;
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Vector4<T>
 where T:Nums
 {

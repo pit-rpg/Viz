@@ -50,10 +50,10 @@ impl<'a> System<'a> for SystemLight {
 				.for_each(|(i, (light, light_transform))| {
 					let mut material = shared_material.lock().unwrap();
 
-					material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(light_transform.position.clone()));
-					material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(light.color.clone()));
-					material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(light.distance));
-					material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(light.decay));
+					material.set_uniform(&format!("pointLights[{}].position", i), light_transform.position.clone());
+					material.set_uniform(&format!("pointLights[{}].color", i), light.color.clone());
+					material.set_uniform(&format!("pointLights[{}].distance", i), light.distance);
+					material.set_uniform(&format!("pointLights[{}].decay", i), light.decay);
 				});
 		}
 	}

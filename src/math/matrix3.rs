@@ -11,7 +11,7 @@ use std::ops::{
 
 #[repr(C)]
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Matrix3<T> {
 	pub elements: [T; 9],
 }

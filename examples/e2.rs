@@ -77,12 +77,12 @@ fn main(){
 
 
 	let mut material2 = Material::new_basic_texture();
-	material2.set_uniform("texture_color", &Uniform::Texture2D(Some(texture2.clone()), 0));
+	material2.set_uniform("texture_color", texture2.clone());
 	let material2 = SharedMaterial::new(material2);
 
 	let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-	material_sphere.set_uniform("texture_color", &Uniform::Texture2D(Some(texture_container), 0));
-	material_sphere.set_uniform("texture_specular", &Uniform::Texture2D(Some(texture_container_specular), 0));
+	material_sphere.set_uniform("texture_color", texture_container);
+	material_sphere.set_uniform("texture_specular", texture_container_specular);
 	let box_mat = SharedMaterial::new(material_sphere);
 
 	let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);

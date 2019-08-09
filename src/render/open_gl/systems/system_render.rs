@@ -365,18 +365,18 @@ impl<'a> System<'a> for RenderSystem {
 					let mut col = light.color.clone();
 					col.multiply_scalar(light.power);
 
-					material.set_uniform(&format!("pointLights[{}].position", i), &Uniform::Vector3(pos.clone()));
-					material.set_uniform(&format!("pointLights[{}].color", i), &Uniform::Vector3(col));
-					material.set_uniform(&format!("pointLights[{}].distance", i), &Uniform::Float(light.distance));
-					material.set_uniform(&format!("pointLights[{}].decay", i), &Uniform::Float(light.decay));
+					material.set_uniform(&format!("pointLights[{}].position", i), pos.clone());
+					material.set_uniform(&format!("pointLights[{}].color", i), col);
+					material.set_uniform(&format!("pointLights[{}].distance", i), light.distance);
+					material.set_uniform(&format!("pointLights[{}].decay", i), light.decay);
 				});
 			lights_direct.iter().enumerate()
 				.for_each(|(i, (light, direction))| {
 					let mut col = light.color.clone();
 					col.multiply_scalar(light.power);
 
-					material.set_uniform(&format!("directionalLights[{}].color", i), &Uniform::Vector3(col));
-					material.set_uniform(&format!("directionalLights[{}].direction", i), &Uniform::Vector3(direction.clone()));
+					material.set_uniform(&format!("directionalLights[{}].color", i), col);
+					material.set_uniform(&format!("directionalLights[{}].direction", i), direction.clone());
 				});
 
 			if light_materials_need_update {
@@ -457,16 +457,16 @@ impl<'a> System<'a> for RenderSystem {
 			let geom = geometry.lock().unwrap();
 
 			material
-				.set_uniform("matrix_model", &Uniform::Matrix4f(matrix_model));
+				.set_uniform("matrix_model", matrix_model);
 
 			material
-				.set_uniform("matrix_view", &Uniform::Matrix4f(matrix_projection));
+				.set_uniform("matrix_view", matrix_projection);
 
 			material
-				.set_uniform("matrix_normal", &Uniform::Matrix3f(matrix_normal));
+				.set_uniform("matrix_normal", matrix_normal);
 
 			material
-				.set_uniform("time", &Uniform::Float(time));
+				.set_uniform("time", time);
 
 			if prev_geom != geom.uuid {
 				geom.bind(&mut vertex_arrays_ids);

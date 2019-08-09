@@ -4,7 +4,7 @@ use helpers::Nums;
 use super::{Vector, Matrix4, Matrix3};
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Vector3<T>
 where T:Nums
 {

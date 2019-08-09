@@ -73,7 +73,7 @@ fn main(){
 
 	let mut mat_cup_mat = Material::new_mat_cup();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
-	mat_cup_mat.set_uniform("texture_color", &Uniform::Texture2D(Some(mat_cup_texture.clone()), 0));
+	mat_cup_mat.set_uniform("texture_color", mat_cup_texture.clone());
 	let shared_mat_cup_mat = SharedMaterial::new(mat_cup_mat);
 
 

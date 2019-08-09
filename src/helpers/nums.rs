@@ -16,6 +16,7 @@ SubAssign+
 DivAssign+
 PartialOrd+
 Debug+
+PartialEq+
 Mul<Output=Self>+
 Add<Output=Self>+
 Sub<Output=Self>+

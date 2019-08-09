@@ -125,11 +125,11 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 			let emissive = Vector3::new_from_array(&in_mat.emissive_factor());
 			// mat.
 
-			mat.set_uniform("diffuse", &Uniform::Vector3(diffuse));
-			mat.set_uniform("roughness", &Uniform::Float(pbr.roughness_factor()));
-			mat.set_uniform("metalness", &Uniform::Float(pbr.metallic_factor()));
-			mat.set_uniform("alpha", &Uniform::Float(color_f[3]));
-			mat.set_uniform("emissive", &Uniform::Vector3(emissive));
+			mat.set_uniform("diffuse", diffuse);
+			mat.set_uniform("roughness", pbr.roughness_factor());
+			mat.set_uniform("metalness", pbr.metallic_factor());
+			mat.set_uniform("alpha", color_f[3]);
+			mat.set_uniform("emissive", emissive);
 
 			if let Some(name) = in_mat.name() {
 				mat.name = name.to_string();
@@ -137,23 +137,23 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 
 			if let Some(map) = pbr.base_color_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture), map.tex_coord()));
+				mat.set_uniform("map_color", (Some(texture), map.tex_coord()));
 			}
 
 			if let Some(map) = in_mat.normal_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_normal", &Uniform::Texture2D(Some(texture), map.tex_coord()));
-				mat.set_uniform("normal_scale", &Uniform::Float(map.scale()));
+				mat.set_uniform("map_normal", (Some(texture), map.tex_coord()));
+				mat.set_uniform("normal_scale", map.scale());
 			}
 
 			if let Some(map) = in_mat.emissive_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_emissive", &Uniform::Texture2D(Some(texture), map.tex_coord()));
+				mat.set_uniform("map_emissive", (Some(texture), map.tex_coord()));
 			}
 
 			if let Some(map) = in_mat.occlusion_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_occlusion", &Uniform::Texture2D(Some(texture), map.tex_coord()));
+				mat.set_uniform("map_occlusion", (Some(texture), map.tex_coord()));
 			}
 
 			// println!("{:?}", pbr);
@@ -229,7 +229,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 						let data = match semantic {
 							Semantic::Positions => {
 
-								shader_tags.insert(ShaderTag::B_Position);
+								shader_tags.insert(ShaderTag::VertexPosition);
 
 
 								let positions: Vec<_> = reader.read_positions()
@@ -240,7 +240,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							}
 							Semantic::Normals => {
 
-								shader_tags.insert(ShaderTag::B_Normal);
+								shader_tags.insert(ShaderTag::VertexNormal);
 
 								let normals: Vec<_> = reader.read_normals()
 									.expect("cant find normals")
@@ -251,7 +251,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							Semantic::TexCoords(n) => {
 								let en = reader.read_tex_coords(n).expect("cant find uv");
 
-								shader_tags.insert(ShaderTag::B_UV);
+								shader_tags.insert(ShaderTag::VertexUV);
 
 								let uv: Vec<_> = match en {
 									ReadTexCoords::U8(iter)=>{
@@ -272,32 +272,32 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 								match en {
 									ReadColors::RgbU8(iter) => {
-										shader_tags.insert(ShaderTag::B_Color_3);
+										shader_tags.insert(ShaderTag::VertexColor3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbU16(iter) => {
-										shader_tags.insert(ShaderTag::B_Color_3);
+										shader_tags.insert(ShaderTag::VertexColor3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbF32(iter) => {
-										shader_tags.insert(ShaderTag::B_Color_3);
+										shader_tags.insert(ShaderTag::VertexColor3);
 										let color: Vec<_> = iter.map(|e| Vector3::new( e[0], e[1], e[2]) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbaU8(iter) => {
-										shader_tags.insert(ShaderTag::B_Color_4);
+										shader_tags.insert(ShaderTag::VertexColor4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaU16(iter) => {
-										shader_tags.insert(ShaderTag::B_Color_4);
+										shader_tags.insert(ShaderTag::VertexColor4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaF32(iter) => {
-										shader_tags.insert(ShaderTag::B_Color_4);
+										shader_tags.insert(ShaderTag::VertexColor4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0], e[1], e[2], e[3] ) ).collect();
 										BufferData::Vector4(color)
 									},

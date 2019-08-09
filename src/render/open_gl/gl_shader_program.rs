@@ -85,12 +85,12 @@ pub fn set_uniform(uniform: &mut Uniform, loc: &UniformLocation, texture_store: 
 				gl::Uniform4fv(loc.location, 1, &data.x as *const f32);
 			});
 		}
-		Uniform::Matrix3f(data) => {
+		Uniform::Matrix3(data) => {
 			gl_call!({
 				gl::UniformMatrix3fv(loc.location, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
 		}
-		Uniform::Matrix4f(data) => {
+		Uniform::Matrix4(data) => {
 			gl_call!({
 				gl::UniformMatrix4fv(loc.location, 1, gl::FALSE, &data.elements[0] as *const f32);
 			});
@@ -424,17 +424,17 @@ trait GLShaderTag {
 impl GLShaderTag for ShaderTag {
 	fn definition(&self) -> &str {
 		match self {
-			ShaderTag::B_UV => "B_UV",
+			ShaderTag::VertexUV => "VertexUV",
 			ShaderTag::Lighting => "LIGHTING",
-			ShaderTag::B_Color_4 => "B_COLOR_4",
-			ShaderTag::B_Color_3 => "B_COLOR_3",
-			ShaderTag::B_Normal => "B_NORMAL",
-			ShaderTag::B_Position => "B_POSITION",
-			ShaderTag::E_Map_Defuse => "MAP_DEFUSE",
-			ShaderTag::E_Map_Emissive => "MAP_EMISSIVE",
-			ShaderTag::E_Map_Metalness => "MAP_METALNESS",
-			ShaderTag::E_Map_Normal => "MAP_NORMAL",
-			ShaderTag::E_Map_Roughness => "MAP_ROUGHNESS",
+			ShaderTag::VertexColor4 => "VERTEX_COLOR_4",
+			ShaderTag::VertexColor3 => "VERTEX_COLOR_3",
+			ShaderTag::VertexNormal => "VERTEX_NORMAL",
+			ShaderTag::VertexPosition => "VERTEX_POSITION",
+			ShaderTag::MapDefuse => "MAP_DEFUSE",
+			ShaderTag::MapEmissive => "MAP_EMISSIVE",
+			ShaderTag::MapMetalness => "MAP_METALNESS",
+			ShaderTag::MapNormal => "MAP_NORMAL",
+			ShaderTag::MapRoughness => "MAP_ROUGHNESS",
 			ShaderTag::Other(data) => data,
 		}
 	}

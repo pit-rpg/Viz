@@ -190,7 +190,7 @@ impl Material {
 	pub fn new_mesh_standard() -> Self {
 		let mut set = HashSet::new();
 		set.insert(ShaderTag::Lighting);
-		set.insert(ShaderTag::B_Position);
+		set.insert(ShaderTag::VertexPosition);
 
 		let mut mat = Material::new(
 			"mesh_standard",
@@ -198,11 +198,11 @@ impl Material {
 			&[]
 		);
 
-		mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
-		mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
-		mat.set_uniform("roughness", &Uniform::Float(1.0));
-		mat.set_uniform("metalness", &Uniform::Float(0.0));
-		mat.set_uniform("ambientLightColor", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
+		mat.set_uniform("diffuse", Vector3::new_one());
+		mat.set_uniform("specular", Vector3::new_one());
+		mat.set_uniform("roughness", 1.0);
+		mat.set_uniform("metalness", 0.0);
+		mat.set_uniform("ambientLightColor", Vector3::new(0.0,0.0,0.0));
 
 		mat
 	}
@@ -272,8 +272,8 @@ impl Material {
 			]
 		);
 
-		m.set_uniform("colors[0]", &Uniform::Vector3(Vector3::new(0.0,1.0,0.0)));
-		m.set_uniform("colors[1]", &Uniform::Vector3(Vector3::new(0.0,0.0,1.0)));
+		m.set_uniform("colors[0]", Vector3::new(0.0,1.0,0.0));
+		m.set_uniform("colors[1]", Vector3::new(0.0,0.0,1.0));
 
 		m
 	}

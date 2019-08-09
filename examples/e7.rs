@@ -185,9 +185,9 @@ fn main(){
 		let mut mat = Material::new_mesh_standard();
 		{
 			let tags = mat.get_tags_mut();
-			tags.insert(ShaderTag::B_UV);
+			tags.insert(ShaderTag::VertexUV);
 		}
-		mat.set_uniform("map_color", &Uniform::Texture2D(Some(texture), 0));
+		mat.set_uniform("map_color", texture);
 
 
 		let material = SharedMaterial::new(mat);

@@ -3,7 +3,7 @@ use helpers::Nums;
 use super::Vector;
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Vector2<T>
 where T: Nums
 {
