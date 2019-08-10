@@ -38,10 +38,10 @@ in vec3 v_pos;
 in vec3 v_normal;
 in vec2 v_uv;
 
-uniform vec3 diffuse;
+uniform vec3 color;
 uniform vec3 emissive;
 uniform vec3 specular;
-uniform float specularStrength;
+uniform float specular_strength;
 uniform float shininess;
 // uniform float opacity;
 
@@ -64,10 +64,10 @@ void main()
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 
 	BlinnPhongMaterial material;
-	material.diffuseColor = diffuse;
+	material.diffuseColor = color;
 	material.specularColor = specular;
 	material.specularShininess = shininess;
-	material.specularStrength = specularStrength;
+	material.specular_strength = specular_strength;
 
 	#pragma unroll_loop
 	for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {

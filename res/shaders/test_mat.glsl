@@ -18,11 +18,11 @@ void main() {
 	x = x * cos( p.y * 20 - time * 8 );
 	x = x * cos( p.x * 20 - time * 8 );
 
-	vec4 xvec = vec4(1 + 1*x, 1,1,1); 
+	vec4 xvec = vec4(1 + 1*x, 1,1,1);
 
 	vec4 p = matrix_view * matrix_model * vec4(aPos.xyz, 1.0);
 
-	xvec = normalize(p * xvec) *0.2; 
+	xvec = normalize(p * xvec) *0.2;
 
 	gl_Position = p + xvec;
 }
@@ -30,7 +30,7 @@ void main() {
 
 
 #<fragment>
-uniform sampler2D texture_color;
+uniform sampler2D map_color;
 uniform float time;
 
 in vec3 n;
@@ -42,9 +42,9 @@ layout (location = 0) out vec4 FragColor;
 
 void main() {
 	vec3 x = normalize(n) * 0.5 + 0.5;
-	// vec3 base = texture2D( texture_color, x ).rgb;
+	// vec3 base = texture2D( map_color, x ).rgb;
 
-	vec3 color = vec3( x.xy, 0.0 ); 
+	vec3 color = vec3( x.xy, 0.0 );
 
 	vec3 rim = (1.0 - x.z) * (1.0 - x.z) * 4 * vec3(1,1,1);
 

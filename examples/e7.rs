@@ -28,6 +28,7 @@ use project::{
 		EntityRelations,
 		ShaderTag,
 		TransformLock,
+		UniformName,
 	},
 	helpers::{
 		load_obj,
@@ -156,7 +157,7 @@ fn main(){
 		let mut color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
 
-		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,5.0)));
+		let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
 
 		let e_light = world
 			.create_entity()
@@ -187,7 +188,7 @@ fn main(){
 			let tags = mat.get_tags_mut();
 			tags.insert(ShaderTag::VertexUV);
 		}
-		mat.set_uniform("map_color", texture);
+		mat.set_uniform(UniformName::MapColor, texture);
 
 
 		let material = SharedMaterial::new(mat);

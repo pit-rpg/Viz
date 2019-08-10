@@ -21,13 +21,13 @@ void main() {
 
 in vec4 v_color;
 in vec2 v_uv;
-uniform sampler2D texture_color;
+uniform sampler2D map_color;
 layout (location = 0) out vec4 FragColor;
 
 void main() {
-	FragColor = texture(texture_color, v_uv);
+	FragColor = texture(map_color, v_uv);
 	// FragColor.x *=v_uv.x;
-	// if (texture_color) {
+	// if (map_color) {
 	// } else {
 	// 	FragColor = v_color;
 	// }

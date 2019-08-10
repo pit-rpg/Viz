@@ -240,5 +240,5 @@ void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 clearCo
 // 	// #endif
 
 // 	reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );
-// 	reflectedLight.directSpecular += irradiance * BRDF_Specular_BlinnPhong( directLight, geometry, material.specularColor, material.specularShininess ) * material.specularStrength;
+// 	reflectedLight.directSpecular += irradiance * BRDF_Specular_BlinnPhong( directLight, geometry, material.specularColor, material.specularShininess ) * material.specular_strength;
 // }

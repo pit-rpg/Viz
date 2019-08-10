@@ -9,7 +9,7 @@ use core::{
 	Transform,
 	PointLight,
 	ShaderProgram,
-	Uniform,
+	UniformName
 };
 
 use self::specs::{
@@ -50,10 +50,10 @@ impl<'a> System<'a> for SystemLight {
 				.for_each(|(i, (light, light_transform))| {
 					let mut material = shared_material.lock().unwrap();
 
-					material.set_uniform(&format!("pointLights[{}].position", i), light_transform.position.clone());
-					material.set_uniform(&format!("pointLights[{}].color", i), light.color.clone());
-					material.set_uniform(&format!("pointLights[{}].distance", i), light.distance);
-					material.set_uniform(&format!("pointLights[{}].decay", i), light.decay);
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].position", i)), light_transform.position.clone());
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].color", i)), light.color.clone());
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].distance", i)), light.distance);
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].decay", i)), light.decay);
 				});
 		}
 	}

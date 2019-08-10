@@ -138,7 +138,7 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 		.enumerate()
 		.for_each(|(i, uniform)| {
 			if shader_program.uniform_locations.get(i).is_none() {
-				let c_name = CString::new(uniform.name.as_bytes()).unwrap();
+				let c_name = CString::new(uniform.name.to_string().as_bytes()).unwrap();
 				let location;
 
 				gl_call!({
@@ -216,7 +216,7 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 		})
 		.map(|e| {
 			if let Uniform::Texture2D(_, n) = e.uniform {
-				let texture = e.name.to_shouty_snake_case();
+				let texture = e.name.to_string().to_shouty_snake_case();
 				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
 			}
 			"".to_string()
@@ -249,7 +249,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 		})
 		.map(|e| {
 			if let Uniform::Texture2D(_, n) = e.uniform {
-				let texture = e.name.to_shouty_snake_case();
+				let texture = e.name.to_string().to_shouty_snake_case();
 				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
 			}
 			"".to_string()
@@ -424,17 +424,18 @@ trait GLShaderTag {
 impl GLShaderTag for ShaderTag {
 	fn definition(&self) -> &str {
 		match self {
-			ShaderTag::VertexUV => "VertexUV",
-			ShaderTag::Lighting => "LIGHTING",
+			ShaderTag::VertexUV => "VERTEX_UV",
 			ShaderTag::VertexColor4 => "VERTEX_COLOR_4",
 			ShaderTag::VertexColor3 => "VERTEX_COLOR_3",
 			ShaderTag::VertexNormal => "VERTEX_NORMAL",
 			ShaderTag::VertexPosition => "VERTEX_POSITION",
-			ShaderTag::MapDefuse => "MAP_DEFUSE",
-			ShaderTag::MapEmissive => "MAP_EMISSIVE",
-			ShaderTag::MapMetalness => "MAP_METALNESS",
-			ShaderTag::MapNormal => "MAP_NORMAL",
-			ShaderTag::MapRoughness => "MAP_ROUGHNESS",
+
+			ShaderTag::Lighting => "LIGHTING",
+			ShaderTag::Metalness => "METALNESS",
+			ShaderTag::AmbientLight => "AMBIENT_LIGHT",
+			ShaderTag::Transparent => "TRANSPARENT",
+			ShaderTag::Emissive => "EMISSIVE",
+
 			ShaderTag::Other(data) => data,
 		}
 	}

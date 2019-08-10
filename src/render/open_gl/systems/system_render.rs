@@ -21,7 +21,8 @@ use core::{
 	PointLight,
 	DirectionalLight,
 	ShaderTag,
-	TransformLock
+	TransformLock,
+	UniformName
 };
 
 
@@ -365,18 +366,18 @@ impl<'a> System<'a> for RenderSystem {
 					let mut col = light.color.clone();
 					col.multiply_scalar(light.power);
 
-					material.set_uniform(&format!("pointLights[{}].position", i), pos.clone());
-					material.set_uniform(&format!("pointLights[{}].color", i), col);
-					material.set_uniform(&format!("pointLights[{}].distance", i), light.distance);
-					material.set_uniform(&format!("pointLights[{}].decay", i), light.decay);
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].position", i)), pos.clone());
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].color", i)), col);
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].distance", i)), light.distance);
+					material.set_uniform(UniformName::Other(format!("pointLights[{}].decay", i)), light.decay);
 				});
 			lights_direct.iter().enumerate()
 				.for_each(|(i, (light, direction))| {
 					let mut col = light.color.clone();
 					col.multiply_scalar(light.power);
 
-					material.set_uniform(&format!("directionalLights[{}].color", i), col);
-					material.set_uniform(&format!("directionalLights[{}].direction", i), direction.clone());
+					material.set_uniform(UniformName::Other(format!("directionalLights[{}].color", i)), col);
+					material.set_uniform(UniformName::Other(format!("directionalLights[{}].direction", i)), direction.clone());
 				});
 
 			if light_materials_need_update {
@@ -457,16 +458,16 @@ impl<'a> System<'a> for RenderSystem {
 			let geom = geometry.lock().unwrap();
 
 			material
-				.set_uniform("matrix_model", matrix_model);
+				.set_uniform(UniformName::MatrixModel, matrix_model);
 
 			material
-				.set_uniform("matrix_view", matrix_projection);
+				.set_uniform(UniformName::MatrixView, matrix_projection);
 
 			material
-				.set_uniform("matrix_normal", matrix_normal);
+				.set_uniform(UniformName::MatrixNormal, matrix_normal);
 
 			material
-				.set_uniform("time", time);
+				.set_uniform(UniformName::Time, time);
 
 			if prev_geom != geom.uuid {
 				geom.bind(&mut vertex_arrays_ids);

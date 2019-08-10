@@ -1,7 +1,7 @@
 #<vertex>
 in vec3 B_Pos;
 in vec3 B_Normal;
-#ifdef VertexUV
+#ifdef VERTEX_UV
 in vec2 B_uv;
 #endif
 #ifdef VERTEX_COLOR_4
@@ -18,7 +18,7 @@ uniform mat3 matrix_normal;
 
 out vec3 v_pos;
 out vec3 v_normal;
-#ifdef VertexUV
+#ifdef VERTEX_UV
 out vec2 v_uv;
 #endif
 #ifdef VERTEX_COLOR_4
@@ -33,7 +33,7 @@ void main() {
 	v_pos = vec3(matrix_model * vec4(B_Pos, 1.0));
 	v_normal = matrix_normal * B_Normal;
 
-	#ifdef VertexUV
+	#ifdef VERTEX_UV
 	v_uv = B_uv;
 	#endif
 	#if defined VERTEX_COLOR_4 || defined VERTEX_COLOR_3
@@ -59,7 +59,7 @@ out vec4 FragColor;
 
 in vec3 v_pos;
 in vec3 v_normal;
-#ifdef VertexUV
+#ifdef VERTEX_UV
 in vec2 v_uv;
 #endif
 #ifdef VERTEX_COLOR_4
@@ -69,12 +69,12 @@ in vec4 v_color;
 in vec3 v_color;
 #endif
 
-uniform vec3 diffuse;
+uniform vec3 color;
 uniform vec3 specular;
 uniform float roughness;
 uniform float metalness;
 
-uniform vec3 ambientLightColor;
+uniform vec3 ambient_light;
 // uniform vec3 emissive;
 // uniform float opacity;
 
@@ -117,7 +117,7 @@ void main()
 	geometry.normal = normalize( v_normal );
 	geometry.viewDir = normalize( -v_pos );
 
-#if defined VertexUV && defined MAP_NORMAL
+#if defined VERTEX_UV && defined MAP_NORMAL
 // geometry.normal = -(texture2D( map_normal, v_uv ).xyz * 2.0 - 1.0);
 geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
 // geometry.normal *= normalize(vec3(texture(map_color, v_uv)));
@@ -138,9 +138,9 @@ geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
 	float roughnessFactor = roughness;
 	// float metalnessFactor = metalness;
 	// float roughnessFactor = roughness;
-	vec3 diffuseColor = diffuse;
+	vec3 diffuseColor = color;
 
-#if defined VertexUV && defined MAP_COLOR
+#if defined VERTEX_UV && defined MAP_COLOR
 diffuseColor = vec3(texture(map_color, v_uv));
 alpha = texture(map_color, v_uv).a;
 #endif
@@ -203,7 +203,7 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 
 
 // #if defined( RE_IndirectDiffuse )
-	vec3 irradiance = getAmbientLightIrradiance( ambientLightColor );
+	vec3 irradiance = getAmbientLightIrradiance( ambient_light );
 	// #if ( NUM_HEMI_LIGHTS > 0 )
 	// 	#pragma unroll_loop
 	// 	for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
@@ -237,7 +237,7 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 	// FragColor = vec4(outgoingLight, 1.0);
 
 
-	// #if defined VertexUV
+	// #if defined VERTEX_UV
 	// FragColor = vec4(v_uv,0,1);
 	// #endif
 }

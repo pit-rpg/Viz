@@ -17,7 +17,7 @@ void main() {
 
 
 #<fragment>
-uniform sampler2D texture_color;
+uniform sampler2D map_color;
 
 in vec3 e;
 in vec3 n;
@@ -30,7 +30,7 @@ void main() {
 	float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
 	vec2 vN = r.xy / m + .5;
 
-	vec3 base = texture2D( texture_color, vN ).rgb;
+	vec3 base = texture2D( map_color, vN ).rgb;
 
 	FragColor = vec4( base, 1. );
 }

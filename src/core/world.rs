@@ -1,5 +1,5 @@
 extern crate specs;
-use self::specs::{World, RunNow, Builder};
+use self::specs::{World};
 use super::{
 	SharedGeometry,
 	SharedMaterial,

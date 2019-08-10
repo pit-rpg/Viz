@@ -4,50 +4,35 @@ extern crate byteorder;
 extern crate regex;
 extern crate uuid;
 
-use std::io::{Cursor, SeekFrom};
-use self::byteorder::{LittleEndian, ReadBytesExt};
-use self::uuid::Uuid;
-
-use std::io;
-use std::io::prelude::*;
-use std::fs::File;
 use std::string::ToString;
 use std::collections::HashSet;
-use std::{
-	fs,
-	// io
-};
-use std::path::Path;
 use std::path::PathBuf;
 use std::boxed::Box;
-use std::ops::Range;
 use std::error::Error as StdError;
 use math::{
 	Vector,
 	Vector2,
 	Vector3,
 	Vector4,
-	Matrix2,
-	Matrix3,
 	Matrix4,
 };
 
 
 use self::gltf::{
-	accessor::{
-		Accessor,
-		DataType,
-		Dimensions,
-	},
+	// accessor::{
+	// 	Accessor,
+	// 	DataType,
+	// 	Dimensions,
+	// },
 	mesh::{
 		Semantic,
-		Reader,
+		// Reader,
 		util::ReadTexCoords,
 		util::ReadColors,
 	},
-	buffer::{
-		Source,
-	},
+	// buffer::{
+	// 	Source,
+	// },
 	// material::{
 	// 	Material,
 	// },
@@ -81,7 +66,7 @@ use core::{
 	MagFilter,
 	MinFilter,
 	SharedTexture2D,
-	Uniform,
+	UniformName,
 };
 
 struct Context {
@@ -125,11 +110,11 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 			let emissive = Vector3::new_from_array(&in_mat.emissive_factor());
 			// mat.
 
-			mat.set_uniform("diffuse", diffuse);
-			mat.set_uniform("roughness", pbr.roughness_factor());
-			mat.set_uniform("metalness", pbr.metallic_factor());
-			mat.set_uniform("alpha", color_f[3]);
-			mat.set_uniform("emissive", emissive);
+			mat.set_uniform(UniformName::Color, diffuse);
+			mat.set_uniform(UniformName::Roughness, pbr.roughness_factor());
+			mat.set_uniform(UniformName::Metalness, pbr.metallic_factor());
+			mat.set_uniform(UniformName::Alpha, color_f[3]);
+			mat.set_uniform(UniformName::Emissive, emissive);
 
 			if let Some(name) = in_mat.name() {
 				mat.name = name.to_string();
@@ -137,23 +122,23 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 
 			if let Some(map) = pbr.base_color_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_color", (Some(texture), map.tex_coord()));
+				mat.set_uniform(UniformName::MapColor, (Some(texture), map.tex_coord()));
 			}
 
 			if let Some(map) = in_mat.normal_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_normal", (Some(texture), map.tex_coord()));
-				mat.set_uniform("normal_scale", map.scale());
+				mat.set_uniform(UniformName::MapNormal, (Some(texture), map.tex_coord()));
+				mat.set_uniform(UniformName::NormalScale, map.scale());
 			}
 
 			if let Some(map) = in_mat.emissive_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_emissive", (Some(texture), map.tex_coord()));
+				mat.set_uniform(UniformName::MapEmissive, (Some(texture), map.tex_coord()));
 			}
 
 			if let Some(map) = in_mat.occlusion_texture() {
 				let texture = textures[ map.texture().index() ].clone();
-				mat.set_uniform("map_occlusion", (Some(texture), map.tex_coord()));
+				mat.set_uniform(UniformName::MapOcclusion, (Some(texture), map.tex_coord()));
 			}
 
 			// println!("{:?}", pbr);
@@ -340,9 +325,9 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 		.build();
 
 	world.add_child(parent, current);
-	let parent = current;
+	// let parent = current;
 
-	let mut child_node = parent.clone();
+	// let mut child_node = parent.clone();
 
 	if let Some(meshes) = meshes {
 		// println!("++++++++++++++++++++++++++++++++++++++++++");
@@ -366,7 +351,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 			// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
 			// mat.set_uniform("roughness", &Uniform::Float(1.0));
 			// mat.set_uniform("metalness", &Uniform::Float(0.0));
-			// mat.set_uniform("ambientLightColor", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
+			// mat.set_uniform("ambient_light", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
 
 
 			{

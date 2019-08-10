@@ -1,5 +1,5 @@
 use helpers::Nums;
-use math::{Vector, Vector3, Vector2};
+use math::{Vector, Vector3};
 
 pub struct Rect<T>
 where T: Nums,

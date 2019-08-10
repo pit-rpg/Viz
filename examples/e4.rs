@@ -17,12 +17,12 @@ use project::{
 		SharedTexture2D,
 		Material,
 		SharedMaterial,
-		Uniform,
 		create_world,
 		ShaderProgram,
 		PointLight,
 		SystemTransform,
 		BufferType,
+		UniformName,
 	},
 	helpers::{load_obj, geometry_generators, Nums},
 };
@@ -73,7 +73,7 @@ fn main(){
 
 	let mut test_mat = Material::new_mesh_phong();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
-	test_mat.set_uniform("texture_color", mat_cup_texture.clone());
+	test_mat.set_uniform(UniformName::MapColor, mat_cup_texture.clone());
 	let shared_test_mat = SharedMaterial::new(test_mat);
 
 	for mut object in objects {
@@ -89,10 +89,10 @@ fn main(){
 		let mut mat = shared_test_mat.clone();
 		{
 			let mut material = mat.lock().unwrap();
-			material.set_uniform("diffuse", Vector3::new_one());
-			material.set_uniform("specular", Vector3::new_one());
-			material.set_uniform("shininess", 1.0);
-			material.set_uniform("specularStrength", 1.0);
+			material.set_uniform(UniformName::Color, Vector3::new_one());
+			material.set_uniform(UniformName::Specular, Vector3::new_one());
+			material.set_uniform(UniformName::Shininess, 1.0);
+			material.set_uniform(UniformName::SpecularStrength, 1.0);
 		}
 
 		world
@@ -116,7 +116,7 @@ fn main(){
 		let mut color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 10.0, 1.0);
 
-		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,1.0)));
+		let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,1.0)));
 
 		let e_light = world
 			.create_entity()

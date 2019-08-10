@@ -28,7 +28,7 @@ uniform vec4 color;
 uniform vec3 position_light;
 
 
-float specularStrength = 0.534;
+float specular_strength = 0.534;
 
 void main() {
 	vec3 norm = normalize(v_norm);
@@ -45,7 +45,7 @@ void main() {
 	vec3 viewDir = normalize(-v_pos);
 	vec3 reflectDir = reflect(-light_dir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specularStrength * spec * color_light;
+	vec3 specular = specular_strength * spec * color_light;
 
 	vec3 f_color = (diffuse+amb+specular)*color.xyz;
 

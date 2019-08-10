@@ -50,16 +50,16 @@ impl Transform {
 
 	pub fn from_matrix (matrix: Matrix4<f32>) -> Self {
 
-		let (pos, rotQ, scale) = matrix.decompose_to_new();
-		let rotE = Euler::from_quaternion(&rotQ);
+		let (pos, rot_q, scale) = matrix.decompose_to_new();
+		let rot_e = Euler::from_quaternion(&rot_q);
 
 		Self {
 			matrix_local: matrix,
 			matrix_world: Matrix4::new(),
 			position: pos,
 			scale: scale,
-			rotation: rotE,
-			quaternion: rotQ,
+			rotation: rot_e,
+			quaternion: rot_q,
 			lock: TransformLock::None,
 		}
 	}

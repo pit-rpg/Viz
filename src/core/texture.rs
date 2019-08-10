@@ -116,7 +116,7 @@ impl Texture2D {
 			}
 			(Some(path), true) => {
 				let img =  match image::open(&Path::new( path )){
-					Err(e) => {return Err( format!("cant open image: {}", path) );}
+					Err(_) => {return Err( format!("cant open image: {}", path) );}
 					Ok(im) => im.flipv()
 				};
 

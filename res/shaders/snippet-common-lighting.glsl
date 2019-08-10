@@ -53,9 +53,9 @@ void getPointDirectLightIrradiance( const in PointLight pointLight, const in Geo
 }
 
 
-vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
+vec3 getAmbientLightIrradiance( const in vec3 ambient_light ) {
 
-	vec3 irradiance = ambientLightColor;
+	vec3 irradiance = ambient_light;
 
 	// #ifndef PHYSICALLY_CORRECT_LIGHTS
 	// 	irradiance *= PI;

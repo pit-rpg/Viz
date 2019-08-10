@@ -26,8 +26,8 @@ void main() {
 
 uniform vec3 color_light;
 uniform vec4 color;
-uniform sampler2D texture_specular;
-uniform sampler2D texture_color;
+uniform sampler2D map_specular;
+uniform sampler2D map_color;
 uniform vec3 position_light;
 
 
@@ -37,12 +37,12 @@ in vec3 v_pos;
 in vec3 v_norm;
 in vec2 v_uv;
 
-float specularStrength = 0.534;
+float specular_strength = 0.534;
 
 void main() {
 	// texture semle
-	vec3 pixel_col = vec3(texture(texture_color, v_uv));
-	vec3 pixel_spec = vec3(texture(texture_specular, v_uv));
+	vec3 pixel_col = vec3(texture(map_color, v_uv));
+	vec3 pixel_spec = vec3(texture(map_specular, v_uv));
 
 	// ambient
 	vec3 amb = color_light * 0.1;
@@ -57,8 +57,8 @@ void main() {
 	vec3 viewDir = normalize(-v_pos);
 	vec3 reflectDir = reflect(-light_dir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	// vec3 specular = specularStrength * spec * pixel_spec;
-	// vec3 specular = specularStrength * spec * color_light;
+	// vec3 specular = specular_strength * spec * pixel_spec;
+	// vec3 specular = specular_strength * spec * color_light;
 	vec3 specular = pixel_spec * spec * color_light;
 	// vec3 specular = color_light * spec * color_light;
 

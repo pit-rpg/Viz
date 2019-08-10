@@ -9,7 +9,7 @@ use project::{
 	glutin,
 	render,
 	math::{Vector3, Vector, Vector4},
-	core::{SharedGeometry, PerspectiveCamera, Transform, SharedTexture2D, Material, SharedMaterial, Uniform, create_world, ShaderProgram},
+	core::{SharedGeometry, PerspectiveCamera, Transform, SharedTexture2D, Material, SharedMaterial, create_world, ShaderProgram, UniformName},
 	helpers::{geometry_generators},
 };
 
@@ -71,28 +71,28 @@ fn main(){
 
 
 	let mut material2 = Material::new_basic_texture();
-	material2.set_uniform("texture_color", texture2.clone());
+	material2.set_uniform(UniformName::MapColor, texture2.clone());
 	let mut material2 = SharedMaterial::new(material2);
 
 	let normal_mat = SharedMaterial::new(Material::new_normal());
 
-	let mut material_sphere = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-	material_sphere.set_uniform("texture_color", texture_container);
-	material_sphere.set_uniform("texture_specular", texture_container_specular);
+	let mut material_sphere = Material::new_light_texture(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
+	material_sphere.set_uniform(UniformName::MapColor, texture_container);
+	material_sphere.set_uniform(UniformName::MapSpecular, texture_container_specular);
 	let mut boxMat = SharedMaterial::new(material_sphere);
 
-	let mut material_sphere3 = Material::new_light_texture(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
-	material_sphere3.set_uniform("texture_color", texture_a);
-	material_sphere3.set_uniform("texture_specular", texture_a2);
+	let mut material_sphere3 = Material::new_light_texture(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
+	material_sphere3.set_uniform(UniformName::MapColor, texture_a);
+	material_sphere3.set_uniform(UniformName::MapSpecular, texture_a2);
 	let mut boxMat3 = SharedMaterial::new(material_sphere3);
 
-	let material_sphere2 = Material::new_light(&Vector4::new(1.0,0.5,0.31,1.0), &Vector3::new_one(), &transform_light.position);
+	let material_sphere2 = Material::new_light(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
 	let mut boxMat2 = SharedMaterial::new(material_sphere2);
 
-	let material_phong = Material::new_phong(&Vector4::new(0.46,0.46,1.0,1.0), &Vector3::new_one(), &transform_light.position);
+	let material_phong = Material::new_phong(Vector4::new(0.46,0.46,1.0,1.0), Vector3::new_one(), transform_light.position.clone());
 	let mut box_phong = SharedMaterial::new(material_phong);
 
-	let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(1.0,1.0,1.0,1.0)));
+	let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(1.0,1.0,1.0,1.0)));
 
 
 	// println!("{}", geom2.uuid);

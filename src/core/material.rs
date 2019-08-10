@@ -8,6 +8,7 @@ use super::{
 	Uniform,
 	ShaderProgram,
 	ShaderTag,
+	UniformName,
 };
 
 use math::{
@@ -54,6 +55,10 @@ impl ShaderProgram for Material {
 		&mut self.uniforms
 	}
 
+	fn add_tag(&mut self, tag: ShaderTag) {
+		self.tags.insert(tag);
+	}
+
 	fn get_tags(&self) -> &HashSet<ShaderTag> {
 		&self.tags
 	}
@@ -79,203 +84,99 @@ impl ShaderProgram for Material {
 #[allow(dead_code)]
 impl Material {
 
-	pub fn new(src: &str, tags: HashSet<ShaderTag>, new_uniforms: &[UniformItem]) -> Self {
-		let uniforms = new_uniforms.iter().map(|u| u.clone()).collect();
-
+	pub fn new(src: &str) -> Self {
 		Self {
 			uuid: Uuid::new_v4(),
 			src: src.to_string(),
-			uniforms,
-			tags,
+			uniforms: vec![],
+			tags: HashSet::new(),
 			name: "".to_string(),
 			need_update: true,
 		}
 	}
 
 
-	pub fn new_basic(color: &Vector4<f32>) -> Self {
-		Material::new(
-			"basic",
-			HashSet::new(),
-			&[
-				UniformItem {
-					name: "color".to_string(),
-					uniform: Uniform::Vector4(color.clone()),
-					need_update: true,
-				},
-			]
-		)
+	pub fn new_basic(color: Vector4<f32>) -> Self {
+		let mut mat = Material::new("basic");
+		mat.set_uniform(UniformName::Color, color);
+		mat
 	}
 
 	pub fn new_basic_texture() -> Self {
-		let mut set = HashSet::new();
-		set.insert(ShaderTag::Lighting);
-		Material::new(
-			"basic-texture",
-			set,
-			&[
-				UniformItem {
-					name: "texture_color".to_string(),
-					uniform: Uniform::Texture2D(None, 0),
-					need_update: true,
-				}
-			]
-		)
+		let mut mat = Material::new("basic-texture");
+		mat.set_uniform(UniformName::MapColor, None);
+		mat.add_tag(ShaderTag::Lighting);
+		mat
 	}
 
 	pub fn new_normal() -> Self {
-		Material::new(
-			"normal",
-			HashSet::new(),
-			&[]
-		)
+		Material::new("normal")
 	}
-
 
 	pub fn new_mat_cup() -> Self {
-		Material::new(
-			"mat_cup2",
-			HashSet::new(),
-			&[
-				UniformItem {
-					name: "texture_color".to_string(),
-					uniform: Uniform::Texture2D(None, 0),
-					need_update: true,
-				}
-			]
-		)
+		let mut mat = Material::new("mat_cup2");
+		mat.set_uniform(UniformName::MapColor, None);
+		mat
 	}
 
 
-	pub fn new_light(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
-		let mut set = HashSet::new();
-		set.insert(ShaderTag::Lighting);
-
-		Material::new(
-			"light",
-			set,
-			&[
-				UniformItem {
-					name: "color".to_string(),
-					uniform: Uniform::Vector4(color.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "color_light".to_string(),
-					uniform: Uniform::Vector3(color_light.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "position_light".to_string(),
-					uniform: Uniform::Vector3(position_light.clone()),
-					need_update: true,
-				},
-			]
-		)
+	pub fn new_light(color: Vector4<f32>, color_light: Vector3<f32>, position_light: Vector3<f32>) -> Self {
+		let mut mat = Material::new("light");
+		mat.add_tag(ShaderTag::Lighting);
+		mat.set_uniform(UniformName::Color, color);
+		mat.set_uniform(UniformName::Other("color_light".to_string()), color_light);
+		mat.set_uniform(UniformName::Other("position_light".to_string()), position_light);
+		mat
 	}
 
 
 
 	pub fn new_mesh_phong() -> Self {
-		let mut set = HashSet::new();
-		set.insert(ShaderTag::Lighting);
-
-		Material::new(
-			"mesh_phong",
-			set,
-			&[]
-		)
+		let mut mat = Material::new("mesh_phong");
+		mat.add_tag(ShaderTag::Lighting);
+		mat
 	}
 
 	pub fn new_mesh_standard() -> Self {
-		let mut set = HashSet::new();
-		set.insert(ShaderTag::Lighting);
-		set.insert(ShaderTag::VertexPosition);
+		let mut mat = Material::new("mesh_standard");
 
-		let mut mat = Material::new(
-			"mesh_standard",
-			set,
-			&[]
-		);
+		mat.add_tag(ShaderTag::Lighting);
+		mat.add_tag(ShaderTag::VertexPosition);
 
-		mat.set_uniform("diffuse", Vector3::new_one());
-		mat.set_uniform("specular", Vector3::new_one());
-		mat.set_uniform("roughness", 1.0);
-		mat.set_uniform("metalness", 0.0);
-		mat.set_uniform("ambientLightColor", Vector3::new(0.0,0.0,0.0));
+		mat.set_uniform(UniformName::Color, Vector3::new_one());
+		mat.set_uniform(UniformName::Specular, Vector3::new_one());
+		mat.set_uniform(UniformName::Roughness, 1.0);
+		mat.set_uniform(UniformName::Metalness, 0.0);
+		mat.set_uniform(UniformName::AmbientLight, Vector3::new(0.0,0.0,0.0));
 
 		mat
 	}
 
 
-	pub fn new_light_texture(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
-		let mut set = HashSet::new();
-		set.insert(ShaderTag::Lighting);
+	pub fn new_light_texture(color: Vector4<f32>, color_light: Vector3<f32>, position_light: Vector3<f32>) -> Self {
+		let mut mat = Material::new("light_texture");
+		mat.add_tag(ShaderTag::Lighting);
 
-		Material::new(
-			"light_texture",
-			set,
-			&[
-				UniformItem {
-					name: "color".to_string(),
-					uniform: Uniform::Vector4(color.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "color_light".to_string(),
-					uniform: Uniform::Vector3(color_light.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "position_light".to_string(),
-					uniform: Uniform::Vector3(position_light.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "texture_specular".to_string(),
-					uniform: Uniform::Texture2D(None, 0),
-					need_update: true,
-				},
-				UniformItem {
-					name: "texture_color".to_string(),
-					uniform: Uniform::Texture2D(None, 0),
-					need_update: true,
-				}
-			]
-		)
+		mat.set_uniform(UniformName::Color, color);
+		mat.set_uniform(UniformName::Other("color_light".to_string()), color_light);
+		mat.set_uniform(UniformName::Other("position_light".to_string()), position_light);
+		mat.set_uniform(UniformName::MapSpecular, None);
+		mat.set_uniform(UniformName::MapColor, None);
+		mat
 	}
 
 
-	pub fn new_phong(color: &Vector4<f32>, color_light: &Vector3<f32>, position_light: &Vector3<f32>) -> Self {
-		let mut set = HashSet::new();
-		set.insert(ShaderTag::Lighting);
+	pub fn new_phong(color: Vector4<f32>, color_light: Vector3<f32>, position_light: Vector3<f32>) -> Self {
+		let mut mat = Material::new("phong");
+		mat.add_tag(ShaderTag::Lighting);
 
-		let mut m = Material::new(
-			"phong",
-			set,
-			&[
-				UniformItem {
-					name: "color".to_string(),
-					uniform: Uniform::Vector4(color.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "color_light".to_string(),
-					uniform: Uniform::Vector3(color_light.clone()),
-					need_update: true,
-				},
-				UniformItem {
-					name: "position_light".to_string(),
-					uniform: Uniform::Vector3(position_light.clone()),
-					need_update: true,
-				},
-			]
-		);
+		mat.set_uniform(UniformName::Color, color);
+		mat.set_uniform(UniformName::Other("color_light".to_string()), color_light);
+		mat.set_uniform(UniformName::Other("position_light".to_string()), position_light);
+		mat.set_uniform(UniformName::Other("colors[0]".to_string()), Vector3::new(0.0,1.0,0.0));
+		mat.set_uniform(UniformName::Other("colors[1]".to_string()), Vector3::new(0.0,0.0,1.0));
 
-		m.set_uniform("colors[0]", Vector3::new(0.0,1.0,0.0));
-		m.set_uniform("colors[1]", Vector3::new(0.0,0.0,1.0));
-
-		m
+		mat
 	}
 
 }

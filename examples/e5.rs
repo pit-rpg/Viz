@@ -14,10 +14,8 @@ use project::{
 	core::{SharedGeometry,
 		PerspectiveCamera,
 		Transform,
-		SharedTexture2D,
 		Material,
 		SharedMaterial,
-		Uniform,
 		create_world,
 		ShaderProgram,
 		PointLight,
@@ -25,6 +23,7 @@ use project::{
 		Parent,
 		EntityRelations,
 		BufferType,
+		UniformName,
 	},
 	helpers::{load_obj, geometry_generators, Nums},
 };
@@ -105,18 +104,18 @@ fn main(){
 
 		{
 			let mut material = mat1.lock().unwrap();
-			material.set_uniform("diffuse", Vector3::new_one());
-			material.set_uniform("specular", Vector3::new_one());
-			material.set_uniform("shininess", 1.0);
-			material.set_uniform("specularStrength", 1.0);
+			material.set_uniform(UniformName::Color, Vector3::new_one());
+			material.set_uniform(UniformName::Specular, Vector3::new_one());
+			material.set_uniform(UniformName::Shininess, 1.0);
+			material.set_uniform(UniformName::SpecularStrength, 1.0);
 		}
 		{
 			let mut material = mat2.lock().unwrap();
-			material.set_uniform("diffuse", Vector3::new_one());
-			material.set_uniform("specular", Vector3::new_one());
-			material.set_uniform("roughness", 0.5);
-			material.set_uniform("metalness", 1.0);
-			material.set_uniform("ambientLightColor", Vector3::new_zero());
+			material.set_uniform(UniformName::Color, Vector3::new_one());
+			material.set_uniform(UniformName::Specular, Vector3::new_one());
+			material.set_uniform(UniformName::Roughness, 0.5);
+			material.set_uniform(UniformName::Metalness, 1.0);
+			material.set_uniform(UniformName::AmbientLight, Vector3::new_zero());
 		}
 
 		let elem1 = world
@@ -156,7 +155,7 @@ fn main(){
 		let mut color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 10.0, 1.0);
 
-		let material_light = SharedMaterial::new(Material::new_basic(&Vector4::new(color.x,color.y,color.z,1.0)));
+		let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,1.0)));
 
 		let e_light = world
 			.create_entity()
