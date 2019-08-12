@@ -8,21 +8,19 @@ extern crate rayon;
 use std::time::{Instant, Duration};
 use std::os::raw::c_void;
 use std::ffi::CStr;
-// use std::collections::HashSet;
-use std::path::PathBuf;
 
 use core::{
 	SharedGeometry,
 	SharedMaterial,
 	Transform,
-	Uniform,
 	PerspectiveCamera,
 	ShaderProgram,
 	PointLight,
 	DirectionalLight,
 	ShaderTag,
 	TransformLock,
-	UniformName
+	UniformName,
+	BufferGeometry
 };
 
 
@@ -43,18 +41,18 @@ use super::super::{
 };
 
 
-pub struct RenderSettings {
-	// pub num_point_lights: usize,
-	// pub num_directional_lights: usize,
-}
+// pub struct RenderSettings {
+// 	// pub num_point_lights: usize,
+// 	// pub num_directional_lights: usize,
+// }
 
-impl Default for RenderSettings {
-	fn default() -> Self {
-		RenderSettings{
-			// num_point_lights: 4,
-		}
-	}
-}
+// impl Default for RenderSettings {
+// 	fn default() -> Self {
+// 		// RenderSettings{
+// 		// 	// num_point_lights: 4,
+// 		// }
+// 	}
+// }
 
 // pub struct ShaderSource {
 // 	pub name: String,
@@ -73,7 +71,7 @@ impl Default for RenderSettings {
 // 	}
 // }
 
-pub struct BindContext<'z> {
+pub struct BindContext<'z, 'x> {
 	pub tags: &'z Vec<ShaderTag>,
 	// pub shader_sources: &'z Vec<ShaderSource>,
 	// pub render_settings: &'z RenderSettings,
@@ -82,6 +80,7 @@ pub struct BindContext<'z> {
 
 	pub lights_point_count: usize,
 	pub lights_directional_count: usize,
+	pub geometry: &'x BufferGeometry,
 }
 
 
@@ -97,7 +96,7 @@ pub struct RenderSystem {
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
 	pub tags: Vec<ShaderTag>,
-	pub render_settings: RenderSettings,
+	// pub render_settings: RenderSettings,
 	// shader_sources: Vec<ShaderSource>,
 
 	lights_point_count: usize,
@@ -177,30 +176,10 @@ impl RenderSystem {
 			clear_color: Vector4::new_zero(),
 			clear_color_need_update: true,
 			tags: Vec::new(),
-			render_settings: RenderSettings::default(),
+			// render_settings: RenderSettings::default(),
 			lights_point_count: 0,
 			lights_directional_count: 0,
-			// shader_sources: Vec::new()
 		};
-
-		// render_system.include_shader("basic", 						include_str!("../shaders/basic.glsl"));
-		// render_system.include_shader("basic-texture", 				include_str!("../shaders/basic-texture.glsl"));
-		// render_system.include_shader("light", 						include_str!("../shaders/light.glsl"));
-		// render_system.include_shader("light_texture", 				include_str!("../shaders/light_texture.glsl"));
-		// render_system.include_shader("lololo", 						include_str!("../shaders/lololo.glsl"));
-		// render_system.include_shader("mat_cup2", 					include_str!("../shaders/mat_cup2.glsl"));
-		// render_system.include_shader("mat_cup", 					include_str!("../shaders/mat_cup.glsl"));
-		// render_system.include_shader("mesh_phong", 					include_str!("../shaders/mesh_phong.glsl"));
-		// render_system.include_shader("mesh_standard", 				include_str!("../shaders/mesh_standard.glsl"));
-		// render_system.include_shader("normal", 						include_str!("../shaders/normal.glsl"));
-		// render_system.include_shader("phong", 						include_str!("../shaders/phong.glsl"));
-		// render_system.include_shader("point_light", 				include_str!("../shaders/point_light.glsl"));
-		// render_system.include_shader("snippet-common", 				include_str!("../shaders/snippet-common.glsl"));
-		// render_system.include_shader("snippet-common-lighting", 	include_str!("../shaders/snippet-common-lighting.glsl"));
-		// render_system.include_shader("snippet-phong", 				include_str!("../shaders/snippet-phong.glsl"));
-		// render_system.include_shader("snippet-standart", 			include_str!("../shaders/snippet-standart.glsl"));
-		// render_system.include_shader("test_mat", 					include_str!("../shaders/test_mat.glsl"));
-
 		render_system
 	}
 
@@ -386,17 +365,6 @@ impl<'a> System<'a> for RenderSystem {
 		}
 
 
-		let mut bind_context = BindContext {
-			gl_texture_ids: &mut gl_texture_ids,
-			gl_material_ids: &mut gl_material_ids,
-			tags: &self.tags,
-			// shader_sources: &self.shader_sources,
-
-			lights_point_count: self.lights_point_count,
-			lights_directional_count: self.lights_directional_count,
-		};
-
-
 		use self::rayon::prelude::*;
 		use specs::ParJoin;
 
@@ -474,7 +442,20 @@ impl<'a> System<'a> for RenderSystem {
 				prev_geom = geom.uuid;
 			}
 
-			material.bind(&mut bind_context);
+			{
+				let mut bind_context = BindContext {
+					gl_texture_ids: &mut gl_texture_ids,
+					gl_material_ids: &mut gl_material_ids,
+					tags: &self.tags,
+					// shader_sources: &self.shader_sources,
+
+					lights_point_count: self.lights_point_count,
+					lights_directional_count: self.lights_directional_count,
+					geometry: &geom,
+				};
+
+				material.bind(&mut bind_context);
+			}
 
 			match geom.indices {
 				Some(ref indices) => {

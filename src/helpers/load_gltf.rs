@@ -198,7 +198,6 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 				println!();
 
 				let reader = primitive.reader(|buffer| Some(&context.buffers[buffer.index()]));
-				let mut shader_tags = HashSet::new();
 
 				let indices = reader
 					.read_indices()
@@ -213,10 +212,6 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 						let data = match semantic {
 							Semantic::Positions => {
-
-								shader_tags.insert(ShaderTag::VertexPosition);
-
-
 								let positions: Vec<_> = reader.read_positions()
 									.expect("cant find positions")
 									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
@@ -224,9 +219,6 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 								BufferData::Vector3(positions)
 							}
 							Semantic::Normals => {
-
-								shader_tags.insert(ShaderTag::VertexNormal);
-
 								let normals: Vec<_> = reader.read_normals()
 									.expect("cant find normals")
 									.map(|v| Vector3::new( v[0], v[1], v[2] ) )
@@ -235,8 +227,6 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 							}
 							Semantic::TexCoords(n) => {
 								let en = reader.read_tex_coords(n).expect("cant find uv");
-
-								shader_tags.insert(ShaderTag::VertexUV);
 
 								let uv: Vec<_> = match en {
 									ReadTexCoords::U8(iter)=>{
@@ -257,32 +247,26 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 								match en {
 									ReadColors::RgbU8(iter) => {
-										shader_tags.insert(ShaderTag::VertexColor3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbU16(iter) => {
-										shader_tags.insert(ShaderTag::VertexColor3);
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbF32(iter) => {
-										shader_tags.insert(ShaderTag::VertexColor3);
 										let color: Vec<_> = iter.map(|e| Vector3::new( e[0], e[1], e[2]) ).collect();
 										BufferData::Vector3(color)
 									},
 									ReadColors::RgbaU8(iter) => {
-										shader_tags.insert(ShaderTag::VertexColor4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaU16(iter) => {
-										shader_tags.insert(ShaderTag::VertexColor4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0] as f32, e[1] as f32, e[2] as f32, e[3] as f32 ) ).collect();
 										BufferData::Vector4(color)
 									},
 									ReadColors::RgbaF32(iter) => {
-										shader_tags.insert(ShaderTag::VertexColor4);
 										let color: Vec<_> = iter.map(|e| Vector4::new( e[0], e[1], e[2], e[3] ) ).collect();
 										BufferData::Vector4(color)
 									},
@@ -313,7 +297,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 				let mut geom = BufferGeometry::new();
 				attributes.into_iter().for_each(|e| {geom.add_buffer_attribute(e);} );
 				indices.map(|data| {geom.set_indices(data)} );
-				(geom, shader_tags, primitive.material().index())
+				(geom, primitive.material().index())
 			})
 			.collect();
 			primitives
@@ -341,9 +325,9 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 		// println!("++++++++++++++++++++++++++++++++++++++++++");
 
 
-		for (mesh, mut shader_tags, material_index) in meshes {
+		for (mesh, material_index) in meshes {
 			// let mut mat = Material::new_mesh_standard();
-			let mut shard_mat = match material_index {
+			let shard_mat = match material_index {
 				None => context.defaultMaterial.clone(),
 				Some(index) => context.materials[index].clone(),
 			};
@@ -352,17 +336,6 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 			// mat.set_uniform("roughness", &Uniform::Float(1.0));
 			// mat.set_uniform("metalness", &Uniform::Float(0.0));
 			// mat.set_uniform("ambient_light", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
-
-
-			{
-				let mut mat = shard_mat.lock().unwrap();
-				let tags = mat.get_tags_mut();
-				tags.extend(shader_tags.drain());
-
-				println!("_______+++++++++++++___________++++++++_________++++++++_______");
-				println!("{:?}", tags);
-			}
-
 
 			// let shard_mat = SharedMaterial::new(mat);
 			let e  = world.create_entity()

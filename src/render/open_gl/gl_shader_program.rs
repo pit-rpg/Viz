@@ -138,7 +138,7 @@ pub fn set_uniforms(uniforms: &mut[UniformItem], shader_program: &mut GLShaderPr
 		.enumerate()
 		.for_each(|(i, uniform)| {
 			if shader_program.uniform_locations.get(i).is_none() {
-				let c_name = CString::new(uniform.name.to_string().as_bytes()).unwrap();
+				let c_name = CString::new(uniform.name.get_name().as_bytes()).unwrap();
 				let location;
 
 				gl_call!({
@@ -216,7 +216,7 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 		})
 		.map(|e| {
 			if let Uniform::Texture2D(_, n) = e.uniform {
-				let texture = e.name.to_string().to_shouty_snake_case();
+				let texture = e.name.get_name().to_shouty_snake_case();
 				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
 			}
 			"".to_string()
@@ -229,10 +229,11 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 		.map(|e| {
 			format!("#define {}\n", e.definition())
 		})
+		.chain(bind_context.geometry.attributes.iter().map(|attribute| format!("#define {}\n", attribute.definition()) ))
 		.collect();
 
-		println!("<><><><<><><><>><><<><><\n{}", core_definitions);
-		println!("..................\n{}..................\n", textures);
+		// println!("<><><><<><><><>><><<><><\n{}", core_definitions);
+		// println!("..................\n{}..................\n", textures);
 
 	format!("#version 330 core\n{}\n{}\n{}\n{}", core_definitions,  definitions, textures, code)
 }
@@ -249,7 +250,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 		})
 		.map(|e| {
 			if let Uniform::Texture2D(_, n) = e.uniform {
-				let texture = e.name.to_string().to_shouty_snake_case();
+				let texture = e.name.get_name().to_shouty_snake_case();
 				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
 			}
 			"".to_string()
@@ -259,9 +260,10 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 	let definitions: String = bind_context.tags
 		.iter()
 		.chain(shader.get_tags())
-		.map(|e| {
-			format!("#define {}\n", e.definition())
+		.map(|tag| {
+			format!("#define {}\n", tag.definition())
 		})
+		.chain(bind_context.geometry.attributes.iter().map(|attribute| format!("#define {}\n", attribute.definition()) ))
 		.collect();
 
 
@@ -424,11 +426,11 @@ trait GLShaderTag {
 impl GLShaderTag for ShaderTag {
 	fn definition(&self) -> &str {
 		match self {
-			ShaderTag::VertexUV => "VERTEX_UV",
-			ShaderTag::VertexColor4 => "VERTEX_COLOR_4",
-			ShaderTag::VertexColor3 => "VERTEX_COLOR_3",
-			ShaderTag::VertexNormal => "VERTEX_NORMAL",
-			ShaderTag::VertexPosition => "VERTEX_POSITION",
+			// ShaderTag::VertexUV => "VERTEX_UV_0_VEC2",
+			// ShaderTag::VertexColor4 => "VERTEX_COLOR_0_VEC4",
+			// ShaderTag::VertexColor3 => "VERTEX_COLOR_0_VEC3",
+			// ShaderTag::VertexNormal => "VERTEX_NORMAL",
+			// ShaderTag::VertexPosition => "VERTEX_POSITION",
 
 			ShaderTag::Lighting => "LIGHTING",
 			ShaderTag::Metalness => "METALNESS",

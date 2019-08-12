@@ -1,13 +1,13 @@
 #<vertex>
 in vec3 B_Pos;
 in vec3 B_Normal;
-#ifdef VERTEX_UV
+#ifdef VERTEX_UV_0_VEC2
 in vec2 B_uv;
 #endif
-#ifdef VERTEX_COLOR_4
+#ifdef VERTEX_COLOR_0_VEC4
 in vec4 B_Color;
 #endif
-#ifdef VERTEX_COLOR_3
+#ifdef VERTEX_COLOR_0_VEC3
 in vec3 B_Color;
 #endif
 
@@ -18,13 +18,13 @@ uniform mat3 matrix_normal;
 
 out vec3 v_pos;
 out vec3 v_normal;
-#ifdef VERTEX_UV
+#ifdef VERTEX_UV_0_VEC2
 out vec2 v_uv;
 #endif
-#ifdef VERTEX_COLOR_4
+#ifdef VERTEX_COLOR_0_VEC4
 out vec4 v_color;
 #endif
-#ifdef VERTEX_COLOR_3
+#ifdef VERTEX_COLOR_0_VEC3
 out vec3 v_color;
 #endif
 
@@ -33,10 +33,10 @@ void main() {
 	v_pos = vec3(matrix_model * vec4(B_Pos, 1.0));
 	v_normal = matrix_normal * B_Normal;
 
-	#ifdef VERTEX_UV
+	#ifdef VERTEX_UV_0_VEC2
 	v_uv = B_uv;
 	#endif
-	#if defined VERTEX_COLOR_4 || defined VERTEX_COLOR_3
+	#if defined VERTEX_COLOR_0_VEC4 || defined VERTEX_COLOR_0_VEC3
 	v_color = B_Color;
 	#endif
 
@@ -59,13 +59,13 @@ out vec4 FragColor;
 
 in vec3 v_pos;
 in vec3 v_normal;
-#ifdef VERTEX_UV
+#ifdef VERTEX_UV_0_VEC2
 in vec2 v_uv;
 #endif
-#ifdef VERTEX_COLOR_4
+#ifdef VERTEX_COLOR_0_VEC4
 in vec4 v_color;
 #endif
-#ifdef VERTEX_COLOR_3
+#ifdef VERTEX_COLOR_0_VEC3
 in vec3 v_color;
 #endif
 
@@ -117,7 +117,7 @@ void main()
 	geometry.normal = normalize( v_normal );
 	geometry.viewDir = normalize( -v_pos );
 
-#if defined VERTEX_UV && defined MAP_NORMAL
+#if defined VERTEX_UV_0_VEC2 && defined MAP_NORMAL
 // geometry.normal = -(texture2D( map_normal, v_uv ).xyz * 2.0 - 1.0);
 geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
 // geometry.normal *= normalize(vec3(texture(map_color, v_uv)));
@@ -140,7 +140,7 @@ geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
 	// float roughnessFactor = roughness;
 	vec3 diffuseColor = color;
 
-#if defined VERTEX_UV && defined MAP_COLOR
+#if defined VERTEX_UV_0_VEC2 && defined MAP_COLOR
 diffuseColor = vec3(texture(map_color, v_uv));
 alpha = texture(map_color, v_uv).a;
 #endif
@@ -156,7 +156,7 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 // 	material.clearCoatRoughness = clamp( clearCoatRoughness, 0.04, 1.0 );
 // #endif
 
-	#if defined VERTEX_COLOR_4 || defined VERTEX_COLOR_3
+	#if defined VERTEX_COLOR_0_VEC4 || defined VERTEX_COLOR_0_VEC3
 	material.diffuseColor *= v_color.xyz;
 	#endif
 
@@ -237,7 +237,7 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 	// FragColor = vec4(outgoingLight, 1.0);
 
 
-	// #if defined VERTEX_UV
+	// #if defined VERTEX_UV_0_VEC2
 	// FragColor = vec4(v_uv,0,1);
 	// #endif
 }

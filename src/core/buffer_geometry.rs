@@ -1,5 +1,9 @@
 extern crate uuid;
+extern crate heck;
+
+
 use self::uuid::Uuid;
+use self::heck::ShoutySnakeCase;
 use std::vec::Vec;
 use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
@@ -94,6 +98,24 @@ impl BufferData {
 		};
 		self.item_size() * bytes
 	}
+
+	pub fn definition(&self) -> String {
+		match self {
+			BufferData::Matrix2(_) => "MAT2".to_string(),
+			BufferData::Matrix3(_) => "MAT3".to_string(),
+			BufferData::Matrix4(_) => "MAT4".to_string(),
+			BufferData::Vector2(_) => "VEC2".to_string(),
+			BufferData::Vector3(_) => "VEC3".to_string(),
+			BufferData::Vector4(_) => "VEC4".to_string(),
+			BufferData::F32(_) => "F32".to_string(),
+			BufferData::I32(_) => "I32".to_string(),
+			BufferData::U32(_) => "U32".to_string(),
+			BufferData::I16(_) => "I16".to_string(),
+			BufferData::U16(_) => "U16".to_string(),
+			BufferData::I8(_) => "I8".to_string(),
+			BufferData::U8(_) => "U8".to_string(),
+		}
+	}
 }
 
 
@@ -107,6 +129,21 @@ pub enum BufferType {
 	Joint(usize),
 	Weight(usize),
 	Other(String),
+}
+
+impl BufferType {
+	pub fn definition(&self) -> String {
+		match self {
+			BufferType::Position => "POSITION".to_string(),
+			BufferType::Normal => "NORMAL".to_string(),
+			BufferType::Tangent => "TANGENT".to_string(),
+			BufferType::UV(n) => format!("UV_{}", n),
+			BufferType::Color(n) => format!("COLOR_{}", n),
+			BufferType::Joint(n) => format!("JOINT_{}", n),
+			BufferType::Weight(n) => format!("WEIGHT_{}", n),
+			BufferType::Other(string) => string.to_shouty_snake_case(),
+		}
+	}
 }
 
 
@@ -142,6 +179,10 @@ impl BufferAttribute {
 	pub fn set_dynamic(&mut self, dynamic: bool) -> &mut Self {
 		self.dynamic = dynamic;
 		self
+	}
+
+	pub fn definition(&self) ->String {
+		format!("VERTEX_{}_{}", self.buffer_type.definition(), self.data.definition())
 	}
 }
 

@@ -139,9 +139,7 @@ impl Material {
 
 	pub fn new_mesh_standard() -> Self {
 		let mut mat = Material::new("mesh_standard");
-
 		mat.add_tag(ShaderTag::Lighting);
-		mat.add_tag(ShaderTag::VertexPosition);
 
 		mat.set_uniform(UniformName::Color, Vector3::new_one());
 		mat.set_uniform(UniformName::Specular, Vector3::new_one());

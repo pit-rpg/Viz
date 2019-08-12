@@ -3,8 +3,6 @@ extern crate uuid;
 
 
 use std::f64::consts::PI as PI_f64;
-use std::path::Path;
-use std::path::PathBuf;
 
 use project::{
 	specs::*,
@@ -18,23 +16,17 @@ use project::{
 		SharedTexture2D,
 		Material,
 		SharedMaterial,
-		Uniform,
 		create_world,
 		ShaderProgram,
 		PointLight,
-		DirectionalLight,
 		SystemTransform,
-		Parent,
 		EntityRelations,
 		ShaderTag,
 		TransformLock,
 		UniformName,
 	},
 	helpers::{
-		load_obj,
-		load_gltf,
 		geometry_generators,
-		Nums
 	},
 };
 
@@ -184,10 +176,6 @@ fn main(){
 
 		let texture = SharedTexture2D::new_from_path(item);
 		let mut mat = Material::new_mesh_standard();
-		{
-			let tags = mat.get_tags_mut();
-			tags.insert(ShaderTag::VertexUV);
-		}
 		mat.set_uniform(UniformName::MapColor, texture);
 
 

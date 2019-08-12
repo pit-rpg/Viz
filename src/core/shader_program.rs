@@ -65,7 +65,7 @@ impl UniformName {
 			_ => None,
 		}
 	}
-	pub fn to_string(&self) -> String {
+	pub fn get_name(&self) -> String {
 		match self {
 			UniformName::Color => "color".to_string(),
 			UniformName::Normal => "normal".to_string(),
@@ -106,12 +106,6 @@ pub enum ShaderTag {
 	AmbientLight,
 	Transparent,
 	Emissive,
-
-	VertexColor4,
-	VertexColor3,
-	VertexPosition,
-	VertexUV,
-	VertexNormal,
 
 	Other(String),
 }
