@@ -13,7 +13,7 @@ use project::{
 		Transform,
 		SharedTexture2D,
 		Material,
-		SharedMaterial,
+		SharedMaterials,
 		create_world,
 		ShaderProgram,
 		SystemTransform,
@@ -78,20 +78,20 @@ fn main(){
 
 	let mut material2 = Material::new_basic_texture();
 	material2.set_uniform(UniformName::MapColor, texture2.clone());
-	let material2 = SharedMaterial::new(material2);
+	let material2 = SharedMaterials::new(material2);
 
 	let mut material_sphere = Material::new_light_texture(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
 	material_sphere.set_uniform(UniformName::MapColor, texture_container);
 	material_sphere.set_uniform(UniformName::MapSpecular, texture_container_specular);
-	let box_mat = SharedMaterial::new(material_sphere);
+	let box_mat = SharedMaterials::new(material_sphere);
 
 	let material_sphere2 = Material::new_light(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
-	let box_mat2 = SharedMaterial::new(material_sphere2);
+	let box_mat2 = SharedMaterials::new(material_sphere2);
 
 	let material_phong = Material::new_phong(Vector4::new(0.46,0.46,1.0,1.0), Vector3::new_one(), transform_light.position.clone());
-	let box_phong = SharedMaterial::new(material_phong);
+	let box_phong = SharedMaterials::new(material_phong);
 
-	let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(1.0,1.0,1.0,1.0)));
+	let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(1.0,1.0,1.0,1.0)));
 
 	let e2 = world
 		.create_entity()

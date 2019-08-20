@@ -158,7 +158,7 @@ pub trait GLGeometry {
 			}
 		}
 
-		let indices: &Vec<u32> = geom.indices.as_ref().unwrap();
+		let indices = &geom.indices;
 
 		let mut vertex_array = 0;
 		let mut array_buffer = 0;

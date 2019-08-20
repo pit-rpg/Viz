@@ -15,7 +15,7 @@ use project::{
 		PerspectiveCamera,
 		Transform,
 		Material,
-		SharedMaterial,
+		SharedMaterials,
 		create_world,
 		ShaderProgram,
 		PointLight,
@@ -70,10 +70,10 @@ fn main(){
 
 
 	let mut mat_phong1 = Material::new_mesh_phong();
-	let shared_mat_phong1 = SharedMaterial::new(mat_phong1);
+	let shared_mat_phong1 = SharedMaterials::new(mat_phong1);
 
 	let mut mat_standard2 = Material::new_mesh_standard();
-	let shared_mat_standard2 = SharedMaterial::new(mat_standard2);
+	let shared_mat_standard2 = SharedMaterials::new(mat_standard2);
 
 
 	let obj_parent = world
@@ -103,14 +103,14 @@ fn main(){
 		let mut mat2 = shared_mat_standard2.clone();
 
 		{
-			let mut material = mat1.lock().unwrap();
+			let material = &mut mat1.lock().unwrap()[0];
 			material.set_uniform(UniformName::Color, Vector3::new_one());
 			material.set_uniform(UniformName::Specular, Vector3::new_one());
 			material.set_uniform(UniformName::Shininess, 1.0);
 			material.set_uniform(UniformName::SpecularStrength, 1.0);
 		}
 		{
-			let mut material = mat2.lock().unwrap();
+			let material = &mut mat2.lock().unwrap()[0];
 			material.set_uniform(UniformName::Color, Vector3::new_one());
 			material.set_uniform(UniformName::Specular, Vector3::new_one());
 			material.set_uniform(UniformName::Roughness, 0.5);
@@ -155,7 +155,7 @@ fn main(){
 		let mut color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 10.0, 1.0);
 
-		let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,1.0)));
+		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,1.0)));
 
 		let e_light = world
 			.create_entity()

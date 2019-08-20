@@ -17,7 +17,7 @@ use project::{
 		Transform,
 		SharedTexture2D,
 		Material,
-		SharedMaterial,
+		SharedMaterials,
 		Uniform,
 		create_world,
 		ShaderProgram,
@@ -119,7 +119,7 @@ fn main(){
 		let mut color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
 
-		let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
+		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
 
 		let e_light = world
 			.create_entity()
@@ -143,7 +143,7 @@ fn main(){
 
 		// let color = Vector3::random();
 		let color = Vector3::new_one();
-		let material_light = SharedMaterial::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
+		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
 		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 1.0, 0.0), 5.0);
 
 		world

@@ -17,7 +17,7 @@ use project::{
 		Transform,
 		SharedTexture2D,
 		Material,
-		SharedMaterial,
+		SharedMaterials,
 		create_world,
 		ShaderProgram,
 		SystemTransform,
@@ -74,7 +74,7 @@ fn main(){
 	let mut mat_cup_mat = Material::new_mat_cup();
 	let mat_cup_texture = SharedTexture2D::new_from_path("images/mc4.jpg");
 	mat_cup_mat.set_uniform(UniformName::MapColor, mat_cup_texture.clone());
-	let shared_mat_cup_mat = SharedMaterial::new(mat_cup_mat);
+	let shared_mat_cup_mat = SharedMaterials::new(mat_cup_mat);
 
 
 	for mut object in objects {

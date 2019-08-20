@@ -73,11 +73,12 @@ pub fn load_obj( path: &Path ) -> Result<Vec<BufferGeometry>, String>{
 				println!("name: {}, groups: {}", object.name, object.groups.len());
 
 				for group in &object.groups {
+					// unimplemented!();
 					println!("name: {}, index: {}, polys: {}", group.name, group.index, group.polys.len());
 					let mut buffer_group = BufferGroup {
-						name: group.name.clone(),
+						name: Some(group.name.clone()),
 						count: 0,
-						material_index: 0,
+						material_index: group.index,
 						start: indices.len(),
 					};
 

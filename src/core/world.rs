@@ -2,7 +2,7 @@ extern crate specs;
 use self::specs::{World};
 use super::{
 	SharedGeometry,
-	SharedMaterial,
+	SharedMaterials,
 	Transform,
 	PerspectiveCamera,
 	PointLight,
@@ -14,7 +14,7 @@ use super::{
 pub fn create_world() -> World {
 	let mut world = World::new();
 	world.register::<SharedGeometry>();
-	world.register::<SharedMaterial>();
+	world.register::<SharedMaterials>();
 	world.register::<Transform>();
 	world.register::<PerspectiveCamera>();
 

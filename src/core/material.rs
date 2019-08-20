@@ -180,18 +180,22 @@ impl Material {
 }
 
 #[derive(Debug, Clone)]
-pub struct SharedMaterial (Arc<Mutex<Material>>);
+pub struct SharedMaterials (Arc<Mutex<Vec<Material>>>);
 
-impl Component for SharedMaterial{
+impl Component for SharedMaterials{
 	type Storage = VecStorage<Self>;
 }
 
-impl SharedMaterial {
-	pub fn new(m: Material) -> Self {
-		SharedMaterial(Arc::new(Mutex::new(m)))
+impl SharedMaterials {
+	pub fn new(material: Material) -> Self {
+		SharedMaterials(Arc::new(Mutex::new(vec![material])))
 	}
 
-	pub fn lock(&mut self) -> LockResult<MutexGuard<Material>> {
+	pub fn new_collection(materials: Vec<Material>) -> Self {
+		SharedMaterials(Arc::new(Mutex::new(materials)))
+	}
+
+	pub fn lock(&mut self) -> LockResult<MutexGuard<Vec<Material>>> {
 		self.0.lock()
 	}
 }

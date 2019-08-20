@@ -55,7 +55,7 @@ use core::{
 	BufferType,
 	Texture2D,
 	Material,
-	SharedMaterial,
+	SharedMaterials,
 	SharedGeometry,
 	EntityRelations,
 	ShaderTag,
@@ -75,8 +75,8 @@ struct Context {
 	images: Vec<TextureData>,
 	textures: Vec<SharedTexture2D>,
 	buffers: Vec<gltf::buffer::Data>,
-	materials: Vec<SharedMaterial>,
-	defaultMaterial: SharedMaterial,
+	materials: Vec<SharedMaterials>,
+	defaultMaterial: SharedMaterials,
 }
 
 
@@ -143,13 +143,13 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 
 			// println!("{:?}", pbr);
 
-			SharedMaterial::new(mat)
+			SharedMaterials::new(mat)
 		})
 		.collect();
 	println!("<><><><><>==========++++++==========<><><><><>");
 
 	let context = Context {
-		defaultMaterial: SharedMaterial::new(Material::new_normal()),
+		defaultMaterial: SharedMaterials::new(Material::new_normal()),
 		materials,
 		textures,
 		doc,
@@ -337,7 +337,7 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 			// mat.set_uniform("metalness", &Uniform::Float(0.0));
 			// mat.set_uniform("ambient_light", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
 
-			// let shard_mat = SharedMaterial::new(mat);
+			// let shard_mat = SharedMaterials::new(mat);
 			let e  = world.create_entity()
 				// .with(transform.clone())
 				.with(Transform::default())

@@ -192,7 +192,7 @@ pub struct BufferGroup {
 	pub start: usize,
 	pub material_index: usize,
 	pub count: usize,
-	pub name: String,
+	pub name: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -201,7 +201,7 @@ pub struct BufferGeometry {
 	pub uuid: Uuid,
 	pub name: String,
 	pub groups: Vec<BufferGroup>,
-	pub indices: Option<Vec<u32>>,
+	pub indices: Vec<u32>,
 	pub attributes: Vec<BufferAttribute>,
 	pub buffer_order: Vec<BufferType>,
 	pub b_box: Option<BBox3<f32>>,
@@ -244,7 +244,7 @@ impl BufferGeometry {
 		Self {
 			attributes: Vec::new(),
 			groups: Vec::new(),
-			indices: None,
+			indices: Vec::new(),
 			uuid: Uuid::new_v4(),
 			callbacks: Vec::new(),
 			name: "".to_string(),
@@ -268,7 +268,7 @@ impl BufferGeometry {
 	// }
 
 	pub fn set_indices(&mut self, indices: Vec<u32>) -> &mut Self {
-		self.indices = Some(indices);
+		self.indices = indices;
 		self
 	}
 
@@ -349,7 +349,7 @@ impl BufferGeometry {
 			let attribute = self.get_attribute(BufferType::Position).unwrap();
 			if let BufferData::Vector3(data) = &attribute.data {
 				let mut calc_normals = vec![Vec::new(); data.len()];
-				let indices = self.indices.as_ref().unwrap();
+				let indices = &self.indices;
 
 				let il = indices.len();
 				let mut i = 0;
@@ -432,6 +432,10 @@ impl BufferGeometry {
 			return None;
 		}
 		None
+	}
+
+	pub fn get_vertex_byte_size(&self) -> usize {
+		self.iter_attributes().map(|attr| attr.data.elem_byte_len()).sum()
 	}
 }
 
