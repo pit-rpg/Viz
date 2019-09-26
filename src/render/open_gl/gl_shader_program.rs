@@ -309,7 +309,7 @@ pub fn get_program<T: ShaderProgram>(shader: &T, bind_context: &mut BindContext)
 
 	// println!("=============================================");
 	// println!("{}", shader_program.vs_source);
-	// println!(">>>>>>>>>>>>>>>>>>>>");
+	// println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 	// println!("{}", shader_program.fs_source);
 	// println!("=============================================");
 

@@ -108,7 +108,10 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 			let color_f = pbr.base_color_factor();
 			let diffuse = Vector3::new_from_array(&color_f);
 			let emissive = Vector3::new_from_array(&in_mat.emissive_factor());
-			// mat.
+
+			if color_f[3] != 0.0 {
+				mat.add_tag(ShaderTag::Transparent);
+			}
 
 			mat.set_uniform(UniformName::Color, diffuse);
 			mat.set_uniform(UniformName::Roughness, pbr.roughness_factor());

@@ -54,6 +54,8 @@ fn main(){
 
 	gl_call!({
 		gl::Enable(gl::DEPTH_TEST);
+		gl::Enable(gl::BLEND);
+		gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
 	});
 
 	let up = Vector3::new(0.0, 1.0, 0.0);

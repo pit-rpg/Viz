@@ -176,9 +176,9 @@ fn main(){
 
 		let texture = SharedTexture2D::new_from_path(item);
 		let mut mat = Material::new_mesh_standard();
-		mat.set_uniform(UniformName::MapColor, texture);
-
-
+			mat.set_uniform(UniformName::MapColor, texture);
+			mat.set_uniform(UniformName::Alpha, 1.0);
+			mat.add_tag(ShaderTag::Transparent);
 		let material = SharedMaterials::new(mat);
 		let mut transform = Transform::from_position(pos);
 		transform.lock = TransformLock::RotationScale;
