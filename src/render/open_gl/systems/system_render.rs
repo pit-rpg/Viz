@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 use core::{
 	BufferGeometry, BufferGroup, DirectionalLight, PerspectiveCamera, PointLight, ShaderProgram,
-	ShaderTag, SharedGeometry, SharedMaterials, Transform, TransformLock, UniformName,
+	ShaderTag, SharedGeometry, SharedMaterials, Transform, TransformLock, UniformName, Material
 };
 
 use self::gl::types::*;
@@ -26,6 +26,13 @@ use super::super::{
 	GLMaterial,
 };
 use math::{Matrix3, Matrix4, Vector, Vector3, Vector4};
+
+use std::sync::{
+	Arc,
+	Mutex,
+	MutexGuard,
+	LockResult
+};
 
 // pub struct RenderSettings {
 // 	// pub num_point_lights: usize,
@@ -59,8 +66,6 @@ use math::{Matrix3, Matrix4, Vector, Vector3, Vector4};
 
 pub struct BindContext<'z, 'x> {
 	pub tags: &'z Vec<ShaderTag>,
-	// pub shader_sources: &'z Vec<ShaderSource>,
-	// pub render_settings: &'z RenderSettings,
 	pub gl_material_ids: &'z mut GLMaterialIDs,
 	pub gl_texture_ids: &'z mut GLTextureIDs,
 
@@ -321,13 +326,17 @@ impl<'a> System<'a> for RenderSystem {
 		}
 
 		for (_, shared_materials) in (&transform_coll, &mut material_coll).join() {
-			let mut materials = shared_materials.lock().unwrap();
 
-			materials
+			shared_materials
 				.iter_mut()
-				.filter(|material| material.get_tags().contains(&ShaderTag::Lighting))
-				.for_each(|material| {
-					lights_point
+				.for_each(|shared_material| {
+					let material = &mut shared_material.lock().unwrap();
+
+                    if !material.get_tags().contains(&ShaderTag::Lighting) {
+                        return;
+                    }
+
+                    lights_point
 						.iter()
 						.enumerate()
 						.for_each(|(i, (light, pos))| {
@@ -374,29 +383,20 @@ impl<'a> System<'a> for RenderSystem {
 				});
 		}
 
-		use self::rayon::prelude::*;
-		use specs::ParJoin;
+		// let mut collection: Vec<(f32, &Transform, &mut SharedGeometry, &mut SharedMaterials)> =
+		// 	(&transform_coll, &mut geometry_coll, &mut material_coll)
+		// 		.par_join()
+		// 		.map(|(transform, geometry, shared_material)| {
+		// 			let mut pos = Vector3::zero();
+		// 			(matrix_cam_position * transform.matrix_world * transform.matrix_local)
+		// 				.get_position(&mut pos);
+		// 			(-pos.z, transform, geometry, shared_material)
+		// 		})
+		// 		.collect();
 
-		let mut collection: Vec<(f32, &Transform, &mut SharedGeometry, &mut SharedMaterials)> =
-			(&transform_coll, &mut geometry_coll, &mut material_coll)
-				.par_join()
-				.map(|(transform, geometry, shared_material)| {
-					let mut pos = Vector3::zero();
-					(matrix_cam_position * transform.matrix_world * transform.matrix_local)
-						.get_position(&mut pos);
-					(-pos.z, transform, geometry, shared_material)
-				})
-				.collect();
+		// collection.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
 
-		collection.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-		// println!("________________________");
-
-		for (_distance, transform, geometry, shared_material) in collection
-		// .map(|(transform, geometry, shared_material)| {
-		// 	let distance = transform.position.length();
-		// 	(distance, transform, geometry, shared_material)
-		// })
-		// .sort()
+		for (transform, geometry, shared_materials) in (&transform_coll, &mut geometry_coll, &mut material_coll).join()
 		{
 			// println!("{}", _distance);
 			let mut matrix_model =
@@ -429,11 +429,9 @@ impl<'a> System<'a> for RenderSystem {
 				&(matrix_cam_position * transform.matrix_world * transform.matrix_local),
 			);
 
-			let mut position_light = Vector3::new_zero();
-			position_light.apply_matrix_4(&(matrix_cam_position));
 
-			let mut materials = shared_material.lock().unwrap();
-			materials.iter_mut().for_each(|material| {
+			shared_materials.iter_mut().for_each(|shared_material| {
+                let material = &mut shared_material.lock().unwrap();
 				material.set_uniform(UniformName::MatrixModel, matrix_model);
 				material.set_uniform(UniformName::MatrixView, matrix_projection);
 				material.set_uniform(UniformName::MatrixNormal, matrix_normal);
@@ -469,8 +467,11 @@ impl<'a> System<'a> for RenderSystem {
 						geometry: &geom,
 					};
 
-					let material_index = materials.len().min(buffer_group.material_index);
-					materials[material_index].bind(&mut bind_context);
+					let material_index = shared_materials.len().min(buffer_group.material_index);
+					(&mut shared_materials
+                        .lock(material_index)
+                        .unwrap())
+                        .bind(&mut bind_context);
 				}
 
 				let len = buffer_group.count as GLint;
@@ -487,3 +488,50 @@ impl<'a> System<'a> for RenderSystem {
 		self.swap_buffers().unwrap();
 	}
 }
+
+
+// struct DrawGroup {
+//     buffer_group: BufferGroup,
+//     matrix_model: Matrix4<f32>,
+//     matrix_projection: Matrix4<f32>,
+//     matrix_normal: Matrix3<f32>,
+//     material: Arc<Mutex<Material>>,
+//     geometry: SharedGeometry
+// }
+
+
+// fn draw_buffer_group<'x, 'z>(
+//     groupe: DrawGroup,
+//     tags: &'z Vec<ShaderTag>,
+//     gl_material_ids: &'z mut GLMaterialIDs,
+//     gl_texture_ids: &'z mut GLTextureIDs,
+
+//     lights_point_count: usize,
+//     lights_directional_count: usize,
+// ) {
+//     {
+//         let geometry = &groupe.geometry.lock().unwrap();
+//         let mut bind_context = BindContext {
+//             gl_texture_ids: &mut gl_texture_ids,
+//             gl_material_ids: &mut gl_material_ids,
+//             tags: tags,
+//             lights_point_count: lights_point_count,
+//             lights_directional_count: lights_directional_count,
+//             geometry,
+//         };
+
+//         let material_index = groupe.material
+//             .lock()
+//             .unwrap()
+//             .bind(&mut bind_context);
+//     }
+
+//     let geometry = &mut groupe.geometry.lock().unwrap();
+
+//     let len = groupe.buffer_group.count as GLint;
+//     let start = (groupe.buffer_group.start * geometry.get_vertex_byte_size()) as *const c_void;
+
+//     gl_call!({
+//         gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, start);
+//     });
+// }

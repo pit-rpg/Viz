@@ -5,7 +5,6 @@ extern crate specs;
 use self::specs::{Component, VecStorage};
 use super::{
 	UniformItem,
-	Uniform,
 	ShaderProgram,
 	ShaderTag,
 	UniformName,
@@ -179,8 +178,10 @@ impl Material {
 
 }
 
+
+
 #[derive(Debug, Clone)]
-pub struct SharedMaterials (Arc<Mutex<Vec<Material>>>);
+pub struct SharedMaterials (Vec<Arc<Mutex<Material>>>);
 
 impl Component for SharedMaterials{
 	type Storage = VecStorage<Self>;
@@ -188,14 +189,31 @@ impl Component for SharedMaterials{
 
 impl SharedMaterials {
 	pub fn new(material: Material) -> Self {
-		SharedMaterials(Arc::new(Mutex::new(vec![material])))
+		SharedMaterials(vec![Arc::new(Mutex::new(material))])
 	}
 
-	pub fn new_collection(materials: Vec<Material>) -> Self {
-		SharedMaterials(Arc::new(Mutex::new(materials)))
+	pub fn len(&self) -> usize {
+		self.0.len()
 	}
 
-	pub fn lock(&mut self) -> LockResult<MutexGuard<Vec<Material>>> {
-		self.0.lock()
+	pub fn new_collection(mut materials: Vec<Material>) -> Self {
+        let materials = materials
+            .drain(..)
+            .map(|mat| Arc::new(Mutex::new(mat)))
+            .collect();
+
+		SharedMaterials(materials)
+	}
+
+	pub fn lock(&mut self, index: usize) -> LockResult<MutexGuard<Material>> {
+        self.0[index].lock()
+	}
+
+	pub fn iter(&self) -> std::slice::Iter<'_, Arc<Mutex<Material>>> {
+        self.0.iter()
+	}
+
+	pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Arc<Mutex<Material>>> {
+        self.0.iter_mut()
 	}
 }

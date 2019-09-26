@@ -17,10 +17,9 @@ use project::{
 		Material,
 		SharedMaterials,
 		create_world,
-		ShaderProgram,
+        ShaderProgram,
 		PointLight,
 		SystemTransform,
-		Parent,
 		EntityRelations,
 		BufferType,
 		UniformName,
@@ -103,14 +102,14 @@ fn main(){
 		let mut mat2 = shared_mat_standard2.clone();
 
 		{
-			let material = &mut mat1.lock().unwrap()[0];
+			let material = &mut mat1.lock(0).unwrap();
 			material.set_uniform(UniformName::Color, Vector3::new_one());
 			material.set_uniform(UniformName::Specular, Vector3::new_one());
 			material.set_uniform(UniformName::Shininess, 1.0);
 			material.set_uniform(UniformName::SpecularStrength, 1.0);
 		}
 		{
-			let material = &mut mat2.lock().unwrap()[0];
+			let material = &mut mat2.lock(0).unwrap();
 			material.set_uniform(UniformName::Color, Vector3::new_one());
 			material.set_uniform(UniformName::Specular, Vector3::new_one());
 			material.set_uniform(UniformName::Roughness, 0.5);

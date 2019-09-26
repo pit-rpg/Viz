@@ -70,7 +70,7 @@ fn main() {
 
 		let mut mat = shared_test_mat.clone();
 		{
-			let material = &mut mat.lock().unwrap()[0];
+			let material = &mut mat.lock(0).unwrap();
 			material.set_uniform(UniformName::Color, Vector3::new_one());
 			material.set_uniform(UniformName::Specular, Vector3::new_one());
 			material.set_uniform(UniformName::Shininess, 1.0);
