@@ -123,8 +123,8 @@ fn main(){
 			.multiply_scalar(10.0)
 			.sub_scalar(5.0);
 
-		let mut mat;
-		let mut geom;
+		let mat;
+		let geom;
 
 		if i < count/3 {
 			mat = box_mat.clone();

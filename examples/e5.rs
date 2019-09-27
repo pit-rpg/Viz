@@ -24,7 +24,7 @@ use project::{
 		BufferType,
 		UniformName,
 	},
-	helpers::{load_obj, geometry_generators, Nums},
+	helpers::{load_obj, geometry_generators},
 };
 
 
@@ -68,10 +68,10 @@ fn main(){
 	let objects = load_obj(&path).expect("cant load file");
 
 
-	let mut mat_phong1 = Material::new_mesh_phong();
+	let mat_phong1 = Material::new_mesh_phong();
 	let shared_mat_phong1 = SharedMaterials::new(mat_phong1);
 
-	let mut mat_standard2 = Material::new_mesh_standard();
+	let mat_standard2 = Material::new_mesh_standard();
 	let shared_mat_standard2 = SharedMaterials::new(mat_standard2);
 
 
@@ -151,7 +151,7 @@ fn main(){
 			.multiply_scalar(10.0)
 			.sub_scalar(5.0);
 
-		let mut color = Vector3::random();
+		let color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 10.0, 1.0);
 
 		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,1.0)));
@@ -173,8 +173,6 @@ fn main(){
 	render_system.windowed_context.window().set_resizable(true);
 	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
 	let mut window_state = WindowState::default();
-
-	let mut prev_time = 0.0;
 
 	while running {
 
@@ -243,11 +241,6 @@ fn main(){
 				transform.rotation.x = time * 0.3;
 				transform.rotation.z = time * 0.1;
 			}
-			// {
-			// 	let transform = transform_store.get_mut(obj_parent).unwrap();
-			// 	let scale = (time * 0.4).sin();
-			// 	transform.scale.set(scale,scale,scale);
-			// }
 		}
 
 		system_transform.run_now(&world.res);

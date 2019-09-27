@@ -58,6 +58,11 @@ impl ShaderProgram for Material {
 		self.tags.insert(tag);
 	}
 
+
+	fn has_tag(&self, tag: ShaderTag) -> bool {
+		self.tags.get(&tag).is_some()
+	}
+
 	fn get_tags(&self) -> &HashSet<ShaderTag> {
 		&self.tags
 	}
@@ -215,5 +220,9 @@ impl SharedMaterials {
 
 	pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Arc<Mutex<Material>>> {
         self.0.iter_mut()
+	}
+
+	pub fn clone_material(&self, index: usize) -> Arc<Mutex<Material>> {
+        self.0[index].clone()
 	}
 }

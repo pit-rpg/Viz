@@ -146,7 +146,7 @@ fn main(){
 			.multiply_scalar(40.0)
 			.sub_scalar(20.0);
 
-		let mut color = Vector3::random();
+		let color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
 
 		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
@@ -195,16 +195,11 @@ fn main(){
 
 
 
-
-
-
 	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
 	// render_system.window.set_resizable(true);
 	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
 	let mut window_state = WindowState::default();
-
-	let mut prev_time = 0.0;
 
 	while running {
 

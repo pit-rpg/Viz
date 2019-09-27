@@ -115,7 +115,6 @@ pub struct UniformItem {
 	pub name: UniformName,
 	pub uniform: Uniform,
 	pub need_update: bool,
-	// pub tag: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -147,6 +146,7 @@ pub trait ShaderProgram {
 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
 	fn add_tag(&mut self, tag: ShaderTag);
+	fn has_tag(&self, tag: ShaderTag) -> bool;
 	fn get_tags(&self) -> &HashSet<ShaderTag>;
 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
 	fn get_uuid(&self) -> Uuid;

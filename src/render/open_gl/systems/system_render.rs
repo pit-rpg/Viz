@@ -10,8 +10,9 @@ use std::os::raw::c_void;
 use std::time::{Duration, Instant};
 
 use core::{
-	BufferGeometry, BufferGroup, DirectionalLight, PerspectiveCamera, PointLight, ShaderProgram,
-	ShaderTag, SharedGeometry, SharedMaterials, Transform, TransformLock, UniformName, Material
+	BufferGeometry, BufferGroup, DirectionalLight, Material, PerspectiveCamera, PointLight,
+	ShaderProgram, ShaderTag, SharedGeometry, SharedMaterials, Transform, TransformLock,
+	UniformName,
 };
 
 use self::gl::types::*;
@@ -19,7 +20,6 @@ use self::gl::GetString;
 use self::glutin::dpi::*;
 use self::glutin::{ContextError, ContextWrapper, EventsLoop, Window};
 use self::specs::{Entity, Join, ReadStorage, System, World, Write, WriteStorage};
-use self::uuid::Uuid;
 
 use super::super::{
 	gl_geometry::VertexArraysIDs, gl_material::GLMaterialIDs, gl_texture::GLTextureIDs, GLGeometry,
@@ -27,43 +27,7 @@ use super::super::{
 };
 use math::{Matrix3, Matrix4, Vector, Vector3, Vector4};
 
-use std::sync::{
-	Arc,
-	Mutex,
-	MutexGuard,
-	LockResult
-};
-
-// pub struct RenderSettings {
-// 	// pub num_point_lights: usize,
-// 	// pub num_directional_lights: usize,
-// }
-
-// impl Default for RenderSettings {
-// 	fn default() -> Self {
-// 		// RenderSettings{
-// 		// 	// num_point_lights: 4,
-// 		// }
-// 	}
-// }
-
-// pub struct ShaderSource {
-// 	pub name: String,
-// 	pub src: &'static str,
-// }
-
-// impl ShaderSource {
-// 	fn new(name: &str, src: &'static str) -> Self {
-// 		// let src = include_str!("../shaders/light.glsl");
-// 		Self {
-// 			name: name.to_string(),
-// 			src
-// 		}
-
-// 		// unimplemented!()
-// 	}
-// }
-
+use std::sync::{Arc, Mutex};
 pub struct BindContext<'z, 'x> {
 	pub tags: &'z Vec<ShaderTag>,
 	pub gl_material_ids: &'z mut GLMaterialIDs,
@@ -76,7 +40,6 @@ pub struct BindContext<'z, 'x> {
 
 pub struct RenderSystem {
 	pub camera: Option<Entity>,
-	// pub window: glutin::WindowBuilder,
 	pub windowed_context: ContextWrapper<glutin::PossiblyCurrent, Window>,
 	pub events_loop: EventsLoop,
 	pub timer: Instant,
@@ -86,10 +49,9 @@ pub struct RenderSystem {
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
 	pub tags: Vec<ShaderTag>,
-	// pub render_settings: RenderSettings,
-	// shader_sources: Vec<ShaderSource>,
 	lights_point_count: usize,
 	lights_directional_count: usize,
+	render_queue: Vec<DrawGroup>,
 }
 
 impl RenderSystem {
@@ -102,36 +64,16 @@ impl RenderSystem {
 
 		let events_loop = glutin::EventsLoop::new();
 
-		// let headless_context = glutin::ContextBuilder::new()
-		// 	.build_headless(&events_loop, PhysicalSize::new(1., 1.))
-		// 	.unwrap();
-
 		let window = glutin::WindowBuilder::new()
 			.with_title("Hello, world!")
 			.with_dimensions(LogicalSize::new(1024.0, 768.0));
 
 		let windowed_context = glutin::ContextBuilder::new()
-			// .with_shared_lists(&headless_context)
 			.with_vsync(true)
 			.build_windowed(window, &events_loop)
 			.unwrap();
 
-		// let headless_id = ct.insert(ContextCurrentWrapper::NotCurrent(
-		// 	ContextWrapper::Headless(headless_context),
-		// ));
-		// let windowed_id = ct.insert(ContextCurrentWrapper::NotCurrent(
-		// 	ContextWrapper::Windowed(windowed_context),
-		// ));
-
-		// let context = glutin::ContextBuilder::new()
-		// .with_vsync(true)
-		// .build_windowed(window, &events_loop)
-		// .unwrap();
-
-		// let gl_window = glutin::Window::new(&events_loop).unwrap();
-
 		let windowed_context = unsafe {
-			// 	gl_window.make_current().unwrap();
 			windowed_context.make_current().unwrap()
 		};
 
@@ -150,7 +92,7 @@ impl RenderSystem {
 
 		RenderSystem::print_gl_version();
 
-		let mut render_system = Self {
+		let render_system = Self {
 			camera: None,
 			// window: window,
 			windowed_context: windowed_context,
@@ -165,6 +107,7 @@ impl RenderSystem {
 			// render_settings: RenderSettings::default(),
 			lights_point_count: 0,
 			lights_directional_count: 0,
+			render_queue: vec![],
 		};
 		render_system
 	}
@@ -197,10 +140,6 @@ impl RenderSystem {
 	pub fn get_delta(&self) -> f32 {
 		self.delta_time.as_secs() as f32 + self.delta_time.subsec_nanos() as f32 * 1e-9
 	}
-
-	// pub fn include_shader(&mut self, name: &str, src: &'static str) {
-	// 	self.shader_sources.push(ShaderSource::new(name, src));
-	// }
 }
 
 impl<'a> System<'a> for RenderSystem {
@@ -218,9 +157,6 @@ impl<'a> System<'a> for RenderSystem {
 
 	fn run(&mut self, data: Self::SystemData) {
 		Self::gl_clear_error();
-
-		// let mut prev_mat = Uuid::new_v4();
-		let mut prev_geom = Uuid::new_v4();
 
 		if self.clear_color_need_update {
 			gl_call!({
@@ -266,26 +202,19 @@ impl<'a> System<'a> for RenderSystem {
 
 		let mut matrix_cam_position;
 		let matrix_projection;
-		// let matrix_projection_inverse;
 
 		match self.camera {
 			None => {
 				matrix_cam_position = Matrix4::new();
 				matrix_projection = Matrix4::new();
-				// matrix_projection_inverse = Matrix4::new();
 			}
 			Some(ref cam) => {
 				let cam_transform = transform_coll.get(*cam).unwrap();
 				let camera = camera_coll.get(*cam).unwrap();
-				// matrix_projection = Matrix4::new();
 				matrix_cam_position = Matrix4::new();
 				matrix_cam_position
 					.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local));
-				// matrix_projection = camera.matrix_projection_inverse * cam_transform.matrix_world * cam_transform.matrix_local;
-				// matrix_projection = camera.matrix_projection * matrix_cam_position;
 				matrix_projection = camera.matrix_projection.clone();
-				// matrix_projection_inverse = camera.matrix_projection_inverse.clone();
-				// matrix_cam_position = cam_transform.matrix_world * cam_transform.matrix_local;
 			}
 		}
 
@@ -320,85 +249,70 @@ impl<'a> System<'a> for RenderSystem {
 			self.lights_point_count = lights_point.len();
 			light_materials_need_update = true;
 		}
+
 		if lights_direct.len() != self.lights_directional_count {
 			self.lights_directional_count = lights_direct.len();
 			light_materials_need_update = true;
 		}
 
 		for (_, shared_materials) in (&transform_coll, &mut material_coll).join() {
+			shared_materials.iter_mut().for_each(|shared_material| {
+				let material = &mut shared_material.lock().unwrap();
 
-			shared_materials
-				.iter_mut()
-				.for_each(|shared_material| {
-					let material = &mut shared_material.lock().unwrap();
+				if !material.get_tags().contains(&ShaderTag::Lighting) {
+					return;
+				}
 
-                    if !material.get_tags().contains(&ShaderTag::Lighting) {
-                        return;
-                    }
+				lights_point
+					.iter()
+					.enumerate()
+					.for_each(|(i, (light, pos))| {
+						let mut col = light.color.clone();
+						col.multiply_scalar(light.power);
 
-                    lights_point
-						.iter()
-						.enumerate()
-						.for_each(|(i, (light, pos))| {
-							let mut col = light.color.clone();
-							col.multiply_scalar(light.power);
+						material.set_uniform(
+							UniformName::Other(format!("pointLights[{}].position", i)),
+							pos.clone(),
+						);
+						material.set_uniform(
+							UniformName::Other(format!("pointLights[{}].color", i)),
+							col,
+						);
+						material.set_uniform(
+							UniformName::Other(format!("pointLights[{}].distance", i)),
+							light.distance,
+						);
+						material.set_uniform(
+							UniformName::Other(format!("pointLights[{}].decay", i)),
+							light.decay,
+						);
+					});
+				lights_direct
+					.iter()
+					.enumerate()
+					.for_each(|(i, (light, direction))| {
+						let mut col = light.color.clone();
+						col.multiply_scalar(light.power);
 
-							material.set_uniform(
-								UniformName::Other(format!("pointLights[{}].position", i)),
-								pos.clone(),
-							);
-							material.set_uniform(
-								UniformName::Other(format!("pointLights[{}].color", i)),
-								col,
-							);
-							material.set_uniform(
-								UniformName::Other(format!("pointLights[{}].distance", i)),
-								light.distance,
-							);
-							material.set_uniform(
-								UniformName::Other(format!("pointLights[{}].decay", i)),
-								light.decay,
-							);
-						});
-					lights_direct
-						.iter()
-						.enumerate()
-						.for_each(|(i, (light, direction))| {
-							let mut col = light.color.clone();
-							col.multiply_scalar(light.power);
+						material.set_uniform(
+							UniformName::Other(format!("directionalLights[{}].color", i)),
+							col,
+						);
+						material.set_uniform(
+							UniformName::Other(format!("directionalLights[{}].direction", i)),
+							direction.clone(),
+						);
+					});
 
-							material.set_uniform(
-								UniformName::Other(format!("directionalLights[{}].color", i)),
-								col,
-							);
-							material.set_uniform(
-								UniformName::Other(format!("directionalLights[{}].direction", i)),
-								direction.clone(),
-							);
-						});
-
-					if light_materials_need_update {
-						material.set_need_update(true);
-					}
-				});
+				if light_materials_need_update {
+					material.set_need_update(true);
+				}
+			});
 		}
 
-		// let mut collection: Vec<(f32, &Transform, &mut SharedGeometry, &mut SharedMaterials)> =
-		// 	(&transform_coll, &mut geometry_coll, &mut material_coll)
-		// 		.par_join()
-		// 		.map(|(transform, geometry, shared_material)| {
-		// 			let mut pos = Vector3::zero();
-		// 			(matrix_cam_position * transform.matrix_world * transform.matrix_local)
-		// 				.get_position(&mut pos);
-		// 			(-pos.z, transform, geometry, shared_material)
-		// 		})
-		// 		.collect();
-
-		// collection.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-
-		for (transform, geometry, shared_materials) in (&transform_coll, &mut geometry_coll, &mut material_coll).join()
+		for (transform, geometry, shared_materials) in
+			(&transform_coll, &mut geometry_coll, &mut material_coll).join()
 		{
-			// println!("{}", _distance);
 			let mut matrix_model =
 				matrix_cam_position * transform.matrix_world * transform.matrix_local;
 
@@ -429,109 +343,132 @@ impl<'a> System<'a> for RenderSystem {
 				&(matrix_cam_position * transform.matrix_world * transform.matrix_local),
 			);
 
-
-			shared_materials.iter_mut().for_each(|shared_material| {
-                let material = &mut shared_material.lock().unwrap();
-				material.set_uniform(UniformName::MatrixModel, matrix_model);
-				material.set_uniform(UniformName::MatrixView, matrix_projection);
-				material.set_uniform(UniformName::MatrixNormal, matrix_normal);
-				material.set_uniform(UniformName::Time, time);
-			});
-
-			let geom = geometry.lock().unwrap();
-
-			let groups = if geom.groups.len() == 0 {
-				vec![BufferGroup {
-					count: geom.indices.len(),
-					start: 0,
-					material_index: 0,
-					name: None,
-				}]
-			} else {
-				geom.groups.clone()
+			let mut groups = {
+				let geom = geometry.lock().unwrap();
+				if geom.groups.len() == 0 {
+					vec![BufferGroup {
+						count: geom.indices.len(),
+						start: 0,
+						material_index: 0,
+						name: None,
+					}]
+				} else {
+					geom.groups.clone()
+				}
 			};
 
-			if prev_geom != geom.uuid {
-				geom.bind(&mut vertex_arrays_ids);
-				prev_geom = geom.uuid;
-			}
+			groups.drain(..).for_each(|buffer_group| {
+				let material_index = shared_materials.len().min(buffer_group.material_index);
+				let material = shared_materials.clone_material(material_index);
 
-			groups.iter().for_each(|buffer_group| {
-				{
-					let mut bind_context = BindContext {
-						gl_texture_ids: &mut gl_texture_ids,
-						gl_material_ids: &mut gl_material_ids,
-						tags: &self.tags,
-						lights_point_count: self.lights_point_count,
-						lights_directional_count: self.lights_directional_count,
-						geometry: &geom,
-					};
+				let need_sorting = { material.lock().unwrap().has_tag(ShaderTag::Transparent) };
 
-					let material_index = shared_materials.len().min(buffer_group.material_index);
-					(&mut shared_materials
-                        .lock(material_index)
-                        .unwrap())
-                        .bind(&mut bind_context);
+				let mut groupe = DrawGroup {
+					buffer_group,
+					matrix_model,
+					matrix_projection,
+					matrix_normal,
+					material,
+					geometry: geometry.clone(),
+					time,
+					distance: 0.0,
+				};
+
+				if need_sorting {
+					let mut pos = Vector3::zero();
+					(matrix_cam_position * transform.matrix_world * transform.matrix_local).get_position(&mut pos);
+					groupe.distance = pos.z;
+
+					self.render_queue.push(groupe);
+					return;
 				}
 
-				let len = buffer_group.count as GLint;
-				let start = (buffer_group.start * geom.get_vertex_byte_size()) as *const c_void;
-				gl_call!({
-					gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, start);
-				});
+				draw_buffer_group(
+					groupe,
+					&self.tags,
+					&mut gl_material_ids,
+					&mut gl_texture_ids,
+					&mut vertex_arrays_ids,
+					self.lights_point_count,
+					self.lights_directional_count,
+				);
 			});
+		}
 
-			// geom.unbind();
-			// material.unbind();
+
+		self.render_queue
+			.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
+
+		{
+			let mut render_queue: Vec<DrawGroup> = self.render_queue.drain(..).collect();
+
+			render_queue
+				.drain(..)
+				.for_each(|groupe| {
+					draw_buffer_group(
+						groupe,
+						&self.tags,
+						&mut gl_material_ids,
+						&mut gl_texture_ids,
+						&mut vertex_arrays_ids,
+						self.lights_point_count,
+						self.lights_directional_count,
+					);
+				});
 		}
 
 		self.swap_buffers().unwrap();
 	}
 }
 
+struct DrawGroup {
+	buffer_group: BufferGroup,
+	matrix_model: Matrix4<f32>,
+	matrix_projection: Matrix4<f32>,
+	matrix_normal: Matrix3<f32>,
+	material: Arc<Mutex<Material>>,
+	geometry: SharedGeometry,
+	time: f32,
+	distance: f32,
+}
 
-// struct DrawGroup {
-//     buffer_group: BufferGroup,
-//     matrix_model: Matrix4<f32>,
-//     matrix_projection: Matrix4<f32>,
-//     matrix_normal: Matrix3<f32>,
-//     material: Arc<Mutex<Material>>,
-//     geometry: SharedGeometry
-// }
+fn draw_buffer_group<'x, 'z>(
+	mut groupe: DrawGroup,
+	tags: &'z Vec<ShaderTag>,
+	mut gl_material_ids: &'z mut GLMaterialIDs,
+	mut gl_texture_ids: &'z mut GLTextureIDs,
+	mut vertex_arrays_ids: &'z mut VertexArraysIDs,
 
+	lights_point_count: usize,
+	lights_directional_count: usize,
+) {
+	{
+		let geometry = &groupe.geometry.lock().unwrap();
+		geometry.bind(&mut vertex_arrays_ids);
 
-// fn draw_buffer_group<'x, 'z>(
-//     groupe: DrawGroup,
-//     tags: &'z Vec<ShaderTag>,
-//     gl_material_ids: &'z mut GLMaterialIDs,
-//     gl_texture_ids: &'z mut GLTextureIDs,
+		let mut bind_context = BindContext {
+			gl_texture_ids: &mut gl_texture_ids,
+			gl_material_ids: &mut gl_material_ids,
+			tags: tags,
+			lights_point_count: lights_point_count,
+			lights_directional_count: lights_directional_count,
+			geometry,
+		};
 
-//     lights_point_count: usize,
-//     lights_directional_count: usize,
-// ) {
-//     {
-//         let geometry = &groupe.geometry.lock().unwrap();
-//         let mut bind_context = BindContext {
-//             gl_texture_ids: &mut gl_texture_ids,
-//             gl_material_ids: &mut gl_material_ids,
-//             tags: tags,
-//             lights_point_count: lights_point_count,
-//             lights_directional_count: lights_directional_count,
-//             geometry,
-//         };
+		let material = &mut groupe.material.lock().unwrap();
+		material.set_uniform(UniformName::MatrixModel, groupe.matrix_model);
+		material.set_uniform(UniformName::MatrixView, groupe.matrix_projection);
+		material.set_uniform(UniformName::MatrixNormal, groupe.matrix_normal);
+		material.set_uniform(UniformName::Time, groupe.time);
+		material.bind(&mut bind_context);
+	}
 
-//         let material_index = groupe.material
-//             .lock()
-//             .unwrap()
-//             .bind(&mut bind_context);
-//     }
+	let geometry = &mut groupe.geometry.lock().unwrap();
 
-//     let geometry = &mut groupe.geometry.lock().unwrap();
+	let len = groupe.buffer_group.count as GLint;
+	let start = (groupe.buffer_group.start * geometry.get_vertex_byte_size()) as *const c_void;
 
-//     let len = groupe.buffer_group.count as GLint;
-//     let start = (groupe.buffer_group.start * geometry.get_vertex_byte_size()) as *const c_void;
-
-//     gl_call!({
-//         gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, start);
-//     });
-// }
+	gl_call!({
+		gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, start);
+	});
+}

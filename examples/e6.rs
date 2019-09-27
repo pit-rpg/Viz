@@ -3,7 +3,6 @@ extern crate uuid;
 
 
 use std::f64::consts::PI as PI_f64;
-use std::path::Path;
 use std::path::PathBuf;
 
 use project::{
@@ -15,23 +14,17 @@ use project::{
 	core::{SharedGeometry,
 		PerspectiveCamera,
 		Transform,
-		SharedTexture2D,
 		Material,
 		SharedMaterials,
-		Uniform,
 		create_world,
-		ShaderProgram,
 		PointLight,
 		DirectionalLight,
 		SystemTransform,
-		Parent,
 		EntityRelations,
 	},
 	helpers::{
-		load_obj,
 		load_gltf,
 		geometry_generators,
-		Nums
 	},
 };
 
@@ -88,7 +81,7 @@ fn main(){
 		transform.scale.set_scalar(0.4);
 	}
 	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
+		load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
 	}
 
 	{
@@ -118,7 +111,7 @@ fn main(){
 			.multiply_scalar(40.0)
 			.sub_scalar(20.0);
 
-		let mut color = Vector3::random();
+		let color = Vector3::random();
 		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
 
 		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
@@ -136,14 +129,11 @@ fn main(){
 		lights.push(e_light);
 	}
 
-	let dir_light = {
+	{
 		let mut transform = Transform::default();
-		// transform.rotation.x = 0.3;/
 		transform.rotation.x = 3.14/2.0;
-		// transform.rotation.y = 0.3;
 
 
-		// let color = Vector3::random();
 		let color = Vector3::new_one();
 		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
 		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 1.0, 0.0), 5.0);
@@ -154,8 +144,8 @@ fn main(){
 			.with(geom_light.clone())
 			.with(material_light.clone())
 			.with(light.clone())
-			.build()
-	};
+			.build();
+	}
 
 
 
@@ -164,8 +154,6 @@ fn main(){
 	render_system.windowed_context.window().set_resizable(true);
 	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
 	let mut window_state = WindowState::default();
-
-	let mut prev_time = 0.0;
 
 	while running {
 
@@ -237,17 +225,6 @@ fn main(){
 				transform.rotation.x = time * 0.3;
 				transform.rotation.z = time * 0.1;
 			}
-			// {
-			// 	let transform = transform_store.get_mut(dir_light).unwrap();
-			// 	transform.rotation.y = time * 0.9;
-			// 	transform.rotation.x = time * 0.5;
-			// 	transform.rotation.z = time * 1.2;
-			// }
-			// {
-			// 	let transform = transform_store.get_mut(obj_parent).unwrap();
-			// 	let scale = (time * 0.4).sin();
-			// 	transform.scale.set(scale,scale,scale);
-			// }
 		}
 
 		system_transform.run_now(&world.res);

@@ -85,7 +85,7 @@ fn main(){
 
 		let geom = SharedGeometry::new(object);
 
-		let mut transform = Transform::default();
+		let transform = Transform::default();
 
 		world
 			.create_entity()
