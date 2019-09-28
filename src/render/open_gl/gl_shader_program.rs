@@ -10,10 +10,12 @@ use core::{
 	UniformItem,
 	ShaderProgram,
 	ShaderTag,
+	Blending
 };
 use std::ffi::{CString};
 use std::ptr;
 use std::str;
+use std::collections::HashSet;
 use helpers::{find_file, read_to_string};
 use super::gl_texture::{GLTextureIDs, GLTexture};
 use super::BindContext;
@@ -226,6 +228,7 @@ fn set_definitions_fragment<T: ShaderProgram>(code: &String, shader: &T, bind_co
 	let definitions: String = bind_context.tags
 		.iter()
 		.chain(shader.get_tags())
+		.chain(get_blending_tags(shader.blending()).iter())
 		.map(|e| {
 			format!("#define {}\n", e.definition())
 		})
@@ -260,6 +263,7 @@ fn set_definitions_vertex<T: ShaderProgram>(code: &String, shader: &T, bind_cont
 	let definitions: String = bind_context.tags
 		.iter()
 		.chain(shader.get_tags())
+		.chain(get_blending_tags(shader.blending()).iter())
 		.map(|tag| {
 			format!("#define {}\n", tag.definition())
 		})
@@ -426,19 +430,33 @@ trait GLShaderTag {
 impl GLShaderTag for ShaderTag {
 	fn definition(&self) -> &str {
 		match self {
-			// ShaderTag::VertexUV => "VERTEX_UV_0_VEC2",
-			// ShaderTag::VertexColor4 => "VERTEX_COLOR_0_VEC4",
-			// ShaderTag::VertexColor3 => "VERTEX_COLOR_0_VEC3",
-			// ShaderTag::VertexNormal => "VERTEX_NORMAL",
-			// ShaderTag::VertexPosition => "VERTEX_POSITION",
-
 			ShaderTag::Lighting => "LIGHTING",
 			ShaderTag::Metalness => "METALNESS",
 			ShaderTag::AmbientLight => "AMBIENT_LIGHT",
 			ShaderTag::Transparent => "TRANSPARENT",
+			ShaderTag::Additive => "ADDITIVE",
 			ShaderTag::Emissive => "EMISSIVE",
+			ShaderTag::Shadeless => "SHADELESS",
 
 			ShaderTag::Other(data) => data,
 		}
 	}
+}
+
+
+fn get_blending_tags(blending: Blending) -> HashSet<ShaderTag> {
+	let mut set = HashSet::new();
+
+	match blending {
+		Blending::None => {},
+		Blending::Transparent => {
+			set.insert(ShaderTag::Transparent);
+		},
+		Blending::Additive => {
+			set.insert(ShaderTag::Transparent);
+			set.insert(ShaderTag::Additive);
+		},
+	};
+
+	set
 }

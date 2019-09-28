@@ -10,9 +10,9 @@ use std::os::raw::c_void;
 use std::time::{Duration, Instant};
 
 use core::{
-	BufferGeometry, BufferGroup, DirectionalLight, Material, PerspectiveCamera, PointLight,
-	ShaderProgram, ShaderTag, SharedGeometry, SharedMaterials, Transform, TransformLock,
-	UniformName,
+	Blending, BufferGeometry, BufferGroup, DirectionalLight, Material, PerspectiveCamera,
+	PointLight, ShaderProgram, ShaderTag, SharedGeometry, SharedMaterials, Transform,
+	TransformLock, UniformName,
 };
 
 use self::gl::types::*;
@@ -52,10 +52,16 @@ pub struct RenderSystem {
 	lights_point_count: usize,
 	lights_directional_count: usize,
 	render_queue: Vec<DrawGroup>,
+
+	depth_test: bool,
+	stencil_test: bool,
+	blending: bool,
+
+	blending_state: Blending,
 }
 
 impl RenderSystem {
-	pub fn new(world: &mut World) -> Self {
+	pub fn new(world: &mut World, depth_test: bool, stencil_test: bool, blending: bool) -> Self {
 		// TODO: ensure once
 		world.add_resource(VertexArraysIDs::new());
 		world.add_resource(GLMaterialIDs::new());
@@ -73,9 +79,7 @@ impl RenderSystem {
 			.build_windowed(window, &events_loop)
 			.unwrap();
 
-		let windowed_context = unsafe {
-			windowed_context.make_current().unwrap()
-		};
+		let windowed_context = unsafe { windowed_context.make_current().unwrap() };
 
 		gl_call!({
 			gl::load_with(|symbol| windowed_context.get_proc_address(symbol) as *const _);
@@ -85,8 +89,12 @@ impl RenderSystem {
 
 		// Flags
 		gl_call!({
-			gl::Enable(gl::DEPTH_TEST);
-			gl::Enable(gl::STENCIL_TEST);
+			if depth_test {
+				gl::Enable(gl::DEPTH_TEST);
+			}
+			if stencil_test {
+				gl::Enable(gl::STENCIL_TEST);
+			}
 		});
 		// /Flags
 
@@ -108,6 +116,12 @@ impl RenderSystem {
 			lights_point_count: 0,
 			lights_directional_count: 0,
 			render_queue: vec![],
+
+			depth_test,
+			stencil_test,
+			blending,
+
+			blending_state: Blending::None,
 		};
 		render_system
 	}
@@ -140,6 +154,76 @@ impl RenderSystem {
 	pub fn get_delta(&self) -> f32 {
 		self.delta_time.as_secs() as f32 + self.delta_time.subsec_nanos() as f32 * 1e-9
 	}
+
+	fn set_blending_mode(&mut self, blending: Blending) {
+		if !self.blending || self.blending_state == blending {
+			return;
+		}
+
+		if self.blending_state != Blending::None && blending == Blending::None {
+			gl_call!({
+				gl::Disable(gl::BLEND);
+			});
+		} else if self.blending_state == Blending::None && blending != Blending::None {
+			gl_call!({
+				gl::Enable(gl::BLEND);
+			});
+		}
+
+		match blending {
+			Blending::None => {},
+			Blending::Transparent => gl_call!({
+				gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+			}),
+			Blending::Additive => gl_call!({
+				gl::BlendFunc(gl::SRC_ALPHA, gl::ONE);
+			}),
+		}
+
+		self.blending_state = blending;
+	}
+
+
+	fn draw_buffer_group<'x, 'z>(
+		&mut self,
+		mut groupe: DrawGroup,
+		mut gl_material_ids: &'z mut GLMaterialIDs,
+		mut gl_texture_ids: &'z mut GLTextureIDs,
+		mut vertex_arrays_ids: &'z mut VertexArraysIDs,
+	) {
+		{
+			let geometry = &groupe.geometry.lock().unwrap();
+			geometry.bind(&mut vertex_arrays_ids);
+
+			let material = &mut groupe.material.lock().unwrap();
+			self.set_blending_mode(material.blending());
+
+			let mut bind_context = BindContext {
+				gl_texture_ids: &mut gl_texture_ids,
+				gl_material_ids: &mut gl_material_ids,
+				tags: &self.tags,
+				lights_point_count: self.lights_point_count,
+				lights_directional_count: self.lights_directional_count,
+				geometry,
+			};
+
+			material.set_uniform(UniformName::MatrixModel, groupe.matrix_model);
+			material.set_uniform(UniformName::MatrixView, groupe.matrix_projection);
+			material.set_uniform(UniformName::MatrixNormal, groupe.matrix_normal);
+			material.set_uniform(UniformName::Time, groupe.time);
+			material.bind(&mut bind_context);
+		}
+
+		let geometry = &mut groupe.geometry.lock().unwrap();
+
+		let len = groupe.buffer_group.count as GLint;
+		let start = (groupe.buffer_group.start * geometry.get_vertex_byte_size()) as *const c_void;
+
+		gl_call!({
+			gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, start);
+		});
+	}
+
 }
 
 impl<'a> System<'a> for RenderSystem {
@@ -361,7 +445,8 @@ impl<'a> System<'a> for RenderSystem {
 				let material_index = shared_materials.len().min(buffer_group.material_index);
 				let material = shared_materials.clone_material(material_index);
 
-				let need_sorting = { material.lock().unwrap().has_tag(ShaderTag::Transparent) };
+				let need_sorting =
+					{ self.blending && material.lock().unwrap().blending() != Blending::None };
 
 				let mut groupe = DrawGroup {
 					buffer_group,
@@ -376,45 +461,38 @@ impl<'a> System<'a> for RenderSystem {
 
 				if need_sorting {
 					let mut pos = Vector3::zero();
-					(matrix_cam_position * transform.matrix_world * transform.matrix_local).get_position(&mut pos);
+					(matrix_cam_position * transform.matrix_world * transform.matrix_local)
+						.get_position(&mut pos);
 					groupe.distance = pos.z;
 
 					self.render_queue.push(groupe);
 					return;
 				}
 
-				draw_buffer_group(
+				self.draw_buffer_group(
 					groupe,
-					&self.tags,
 					&mut gl_material_ids,
 					&mut gl_texture_ids,
 					&mut vertex_arrays_ids,
-					self.lights_point_count,
-					self.lights_directional_count,
 				);
 			});
 		}
 
+		if self.render_queue.len() > 0 {
+			self.render_queue
+				.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
+			{
+				let mut render_queue: Vec<DrawGroup> = self.render_queue.drain(..).collect();
 
-		self.render_queue
-			.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
-
-		{
-			let mut render_queue: Vec<DrawGroup> = self.render_queue.drain(..).collect();
-
-			render_queue
-				.drain(..)
-				.for_each(|groupe| {
-					draw_buffer_group(
+				render_queue.drain(..).for_each(|groupe| {
+					self.draw_buffer_group(
 						groupe,
-						&self.tags,
 						&mut gl_material_ids,
 						&mut gl_texture_ids,
 						&mut vertex_arrays_ids,
-						self.lights_point_count,
-						self.lights_directional_count,
 					);
 				});
+			}
 		}
 
 		self.swap_buffers().unwrap();
@@ -430,45 +508,4 @@ struct DrawGroup {
 	geometry: SharedGeometry,
 	time: f32,
 	distance: f32,
-}
-
-fn draw_buffer_group<'x, 'z>(
-	mut groupe: DrawGroup,
-	tags: &'z Vec<ShaderTag>,
-	mut gl_material_ids: &'z mut GLMaterialIDs,
-	mut gl_texture_ids: &'z mut GLTextureIDs,
-	mut vertex_arrays_ids: &'z mut VertexArraysIDs,
-
-	lights_point_count: usize,
-	lights_directional_count: usize,
-) {
-	{
-		let geometry = &groupe.geometry.lock().unwrap();
-		geometry.bind(&mut vertex_arrays_ids);
-
-		let mut bind_context = BindContext {
-			gl_texture_ids: &mut gl_texture_ids,
-			gl_material_ids: &mut gl_material_ids,
-			tags: tags,
-			lights_point_count: lights_point_count,
-			lights_directional_count: lights_directional_count,
-			geometry,
-		};
-
-		let material = &mut groupe.material.lock().unwrap();
-		material.set_uniform(UniformName::MatrixModel, groupe.matrix_model);
-		material.set_uniform(UniformName::MatrixView, groupe.matrix_projection);
-		material.set_uniform(UniformName::MatrixNormal, groupe.matrix_normal);
-		material.set_uniform(UniformName::Time, groupe.time);
-		material.bind(&mut bind_context);
-	}
-
-	let geometry = &mut groupe.geometry.lock().unwrap();
-
-	let len = groupe.buffer_group.count as GLint;
-	let start = (groupe.buffer_group.start * geometry.get_vertex_byte_size()) as *const c_void;
-
-	gl_call!({
-		gl::DrawElements(gl::TRIANGLES, len, gl::UNSIGNED_INT, start);
-	});
 }

@@ -55,16 +55,17 @@ pub enum UniformName {
 }
 
 impl UniformName {
-	pub fn get_tag(&self) -> Option<ShaderTag> {
-		match self {
-			UniformName::Metalness => Some(ShaderTag::Metalness),
-			UniformName::AmbientLight => Some(ShaderTag::AmbientLight),
-			UniformName::Emissive => Some(ShaderTag::Emissive),
-			UniformName::Alpha => Some(ShaderTag::Transparent),
-			UniformName::MapAlpha => Some(ShaderTag::Transparent),
-			_ => None,
-		}
-	}
+	// pub fn get_tag(&self) -> Option<ShaderTag> {
+	// 	match self {
+	// 		UniformName::Metalness => Some(ShaderTag::Metalness),
+	// 		UniformName::AmbientLight => Some(ShaderTag::AmbientLight),
+	// 		UniformName::Emissive => Some(ShaderTag::Emissive),
+	// 		UniformName::Alpha => Some(ShaderTag::Transparent),
+	// 		UniformName::MapAlpha => Some(ShaderTag::Transparent),
+	// 		_ => None,
+	// 	}
+	// }
+
 	pub fn get_name(&self) -> String {
 		match self {
 			UniformName::Color => "color".to_string(),
@@ -98,6 +99,16 @@ impl UniformName {
 	}
 }
 
+
+
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
+pub enum Blending {
+	None,
+	Transparent,
+	Additive,
+}
+
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ShaderTag {
@@ -106,6 +117,8 @@ pub enum ShaderTag {
 	AmbientLight,
 	Transparent,
 	Emissive,
+	Additive,
+	Shadeless,
 
 	Other(String),
 }
@@ -138,20 +151,29 @@ pub trait ShaderProgram {
 			};
 
 			uniforms.push(new_uniform);
+			self.set_need_update(true);
 		}
 	}
 
 	fn get_src(&self) -> &str;
+
 	fn get_uniforms(&self) -> &Vec<UniformItem>;
 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
+
+	fn remove_tag(&mut self, tag: ShaderTag);
 	fn add_tag(&mut self, tag: ShaderTag);
 	fn has_tag(&self, tag: ShaderTag) -> bool;
 	fn get_tags(&self) -> &HashSet<ShaderTag>;
 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
+
 	fn get_uuid(&self) -> Uuid;
+
 	fn is_need_update(&self) -> bool;
 	fn set_need_update(&mut self, bool);
+
+	fn blending(&self) -> Blending;
+	fn set_blending(&mut self, blending: Blending);
 }
 
 pub trait ToUniform: PartialEq {

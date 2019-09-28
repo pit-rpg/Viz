@@ -9,7 +9,7 @@ use project::{
 	glutin::{MouseScrollDelta},
 	glutin,
 	render,
-	math::{Vector3, Vector, Vector4},
+	math::{Vector3, Vector},
 	core::{SharedGeometry,
 		PerspectiveCamera,
 		Transform,
@@ -18,10 +18,9 @@ use project::{
 		SharedMaterials,
 		create_world,
 		ShaderProgram,
-		PointLight,
 		SystemTransform,
-		EntityRelations,
 		ShaderTag,
+		Blending,
 		TransformLock,
 		UniformName,
 	},
@@ -61,6 +60,14 @@ fn main(){
 		"res/emoji/face-with-uneven-eyes-and-wavy-mouth_1f974.png",
 		"res/emoji/flushed-face_1f633.png",
 		"res/emoji/ghost_1f47b.png",
+
+		"res/flash/1.jpg",
+		"res/flash/203565_preview.png",
+		"res/flash/266371335012212.png",
+		"res/flash/burst.jpg",
+		"res/flash/eb07a72e2a175be326a53cacac303139.png",
+		"res/flash/lolo.png",
+
 		"res/emoji/grimacing-face_1f62c.png",
 		"res/emoji/grinning-face-with-one-large-and-one-small-eye_1f92a.png",
 		"res/emoji/grinning-face-with-smiling-eyes_1f601.png",
@@ -98,15 +105,8 @@ fn main(){
 	];
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
 	let mut system_transform = SystemTransform::new();
-
-
-	gl_call!({
-		gl::Enable(gl::DEPTH_TEST);
-		gl::Enable(gl::BLEND);
-		gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-	});
 
 	let up = Vector3::new(0.0, 1.0, 0.0);
 	let center = Vector3::new_zero();
@@ -119,7 +119,6 @@ fn main(){
 	transform_camera.position.z = 6.0;
 	camera.view.enabled = false;
 
-	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 	let geom_plane = SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
 
 	let e_cam = world
@@ -127,46 +126,6 @@ fn main(){
 		.with(transform_camera)
 		.with(camera)
 		.build();
-
-	//////////////////////////////////////////////////////////////////////////////////
-	////////////// lights ////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////
-	let lights_parent = world
-		.create_entity()
-		.with(Transform::default())
-		.build();
-
-
-	let mut lights = Vec::new();
-	for _ in  0..5 {
-		let mut transform = Transform::default();
-		transform.scale.set(0.2,0.2,0.2);
-		transform.position
-			.randomize()
-			.multiply_scalar(40.0)
-			.sub_scalar(20.0);
-
-		let color = Vector3::random();
-		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
-
-		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
-
-		let e_light = world
-			.create_entity()
-			.with(transform)
-			.with(geom_light.clone())
-			.with(material_light.clone())
-			.with(point_light.clone())
-			.build();
-
-		world.add_child(lights_parent, e_light);
-
-		lights.push(e_light);
-	}
-	//////////////////////////////////////////////////////////////////////////////////
-	////////////// lights ////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////
-
 
 
 	emojis.iter().for_each(|item|{
@@ -176,9 +135,18 @@ fn main(){
 
 		let texture = SharedTexture2D::new_from_path(item);
 		let mut mat = Material::new_mesh_standard();
-			mat.set_uniform(UniformName::MapColor, texture);
-			mat.set_uniform(UniformName::Alpha, 1.0);
-			mat.add_tag(ShaderTag::Transparent);
+		mat.set_uniform(UniformName::MapColor, texture);
+		mat.set_uniform(UniformName::Alpha, 1.0);
+
+
+		if item.find("emoji").is_some() {
+			mat.set_blending(Blending::Transparent);
+		} else {
+			mat.set_blending(Blending::Additive);
+		}
+
+		mat.add_tag(ShaderTag::Shadeless);
+
 		let material = SharedMaterials::new(mat);
 		let mut transform = Transform::from_position(pos);
 		transform.lock = TransformLock::RotationScale;
@@ -244,8 +212,6 @@ fn main(){
 			});
 		}
 
-		let time = render_system.get_duration();
-
 		{
 			let mut transform_store = world.write_storage::<Transform>();
 			let mut cam_store = world.write_storage::<PerspectiveCamera>();
@@ -265,15 +231,6 @@ fn main(){
 				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
-
-			////////////// lights ////////////////////////////////////////////////////////////
-			{
-				let transform = transform_store.get_mut(lights_parent).unwrap();
-				transform.rotation.y = time * 0.5;
-				transform.rotation.x = time * 0.3;
-				transform.rotation.z = time * 0.1;
-			}
-			////////////// lights ////////////////////////////////////////////////////////////
 		}
 
 		system_transform.run_now(&world.res);

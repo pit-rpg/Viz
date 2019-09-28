@@ -112,6 +112,40 @@ void main()
 
 	// FragColor = vec4(vec3( d ), 1.0);
 	// return;
+	vec3 diffuseColor = color;
+
+
+
+#if defined TRANSPARENT
+	float fragmentAalpha = alpha;
+#else
+	float fragmentAalpha = 1.0;
+#endif
+
+
+#if defined VERTEX_UV_0_VEC2 && defined MAP_COLOR
+	diffuseColor = vec3(texture(map_color, v_uv));
+	#if defined TRANSPARENT
+		fragmentAalpha *= texture(map_color, v_uv).a;
+	#endif
+#endif
+
+
+#if defined SHADELESS
+	FragColor = vec4(diffuseColor, fragmentAalpha);
+	return;
+#endif
+
+
+	// PhysicalMaterial material;
+	// material.diffuseColor = diffuse;
+	// material.specularColor = specular;
+	// material.specularRoughness = roughness;
+
+	float metalnessFactor = metalness;
+	float roughnessFactor = roughness;
+	// float metalnessFactor = metalness;
+	// float roughnessFactor = roughness;
 
 	IncidentLight directLight;
 	GeometricContext geometry;
@@ -126,32 +160,9 @@ geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
 // geometry.normal *= normalize(vec3(texture(map_color, v_uv)));
 #endif
 
-#if defined TRANSPARENT
-	float fragmentAalpha = alpha;
-#else
-	float fragmentAalpha = 1.0;
-#endif
 
+ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 
-	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
-
-	// PhysicalMaterial material;
-	// material.diffuseColor = diffuse;
-	// material.specularColor = specular;
-	// material.specularRoughness = roughness;
-
-	float metalnessFactor = metalness;
-	float roughnessFactor = roughness;
-	// float metalnessFactor = metalness;
-	// float roughnessFactor = roughness;
-	vec3 diffuseColor = color;
-
-#if defined VERTEX_UV_0_VEC2 && defined MAP_COLOR
-	diffuseColor = vec3(texture(map_color, v_uv));
-	#if defined TRANSPARENT
-		fragmentAalpha *= texture(map_color, v_uv).a;
-	#endif
-#endif
 
 PhysicalMaterial material;
 material.diffuseColor = diffuseColor.rgb * ( 1.0 - metalnessFactor );

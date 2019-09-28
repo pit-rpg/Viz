@@ -41,15 +41,9 @@ pub struct WindowState {
 fn main(){
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
 	let mut system_transform = SystemTransform::new();
 
-
-	gl_call!({
-		gl::Enable(gl::DEPTH_TEST);
-		gl::Enable(gl::BLEND);
-		gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-	});
 
 	let up = Vector3::new(0.0, 1.0, 0.0);
 	let center = Vector3::new_zero();

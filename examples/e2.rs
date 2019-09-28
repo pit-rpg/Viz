@@ -36,7 +36,7 @@ pub struct WindowState {
 fn main(){
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world);
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
 	let mut system_transform = SystemTransform::new();
 
 	let count = 400;

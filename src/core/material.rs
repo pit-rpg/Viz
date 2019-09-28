@@ -8,6 +8,7 @@ use super::{
 	ShaderProgram,
 	ShaderTag,
 	UniformName,
+	Blending
 };
 
 use math::{
@@ -34,6 +35,7 @@ pub struct Material {
 	uniforms: Vec<UniformItem>,
 	tags: HashSet<ShaderTag>,
 	need_update: bool,
+	blending_mode: Blending,
 }
 
 
@@ -56,8 +58,13 @@ impl ShaderProgram for Material {
 
 	fn add_tag(&mut self, tag: ShaderTag) {
 		self.tags.insert(tag);
+		self.set_need_update(true);
 	}
 
+	fn remove_tag(&mut self, tag: ShaderTag) {
+		self.tags.remove(&tag);
+		self.set_need_update(true);
+	}
 
 	fn has_tag(&self, tag: ShaderTag) -> bool {
 		self.tags.get(&tag).is_some()
@@ -82,6 +89,17 @@ impl ShaderProgram for Material {
 	fn set_need_update(&mut self, update: bool) {
 		self.need_update = update;
 	}
+
+	fn blending(&self) -> Blending {
+		self.blending_mode
+	}
+
+	fn set_blending(&mut self, blending: Blending) {
+		if self.blending_mode != blending {
+			self.blending_mode = blending;
+			self.set_need_update(true);
+		}
+	}
 }
 
 
@@ -96,6 +114,7 @@ impl Material {
 			tags: HashSet::new(),
 			name: "".to_string(),
 			need_update: true,
+			blending_mode: Blending::None,
 		}
 	}
 

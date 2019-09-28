@@ -59,6 +59,7 @@ use core::{
 	SharedGeometry,
 	EntityRelations,
 	ShaderTag,
+	Blending,
 	ShaderProgram,
 	TextureData,
 	TextureColorType,
@@ -110,7 +111,7 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 			let emissive = Vector3::new_from_array(&in_mat.emissive_factor());
 
 			if color_f[3] != 0.0 {
-				mat.add_tag(ShaderTag::Transparent);
+				mat.set_blending(Blending::Transparent);
 			}
 
 			mat.set_uniform(UniformName::Color, diffuse);
