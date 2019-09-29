@@ -12,6 +12,8 @@ mod gl_material;
 pub mod systems;
 mod gl_texture;
 mod gl_shader_program;
+mod gl_render_buffer;
+mod gl_frame_buffer;
 
 extern crate image;
 

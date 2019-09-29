@@ -144,8 +144,6 @@ void main()
 
 	float metalnessFactor = metalness;
 	float roughnessFactor = roughness;
-	// float metalnessFactor = metalness;
-	// float roughnessFactor = roughness;
 
 	IncidentLight directLight;
 	GeometricContext geometry;
@@ -156,7 +154,8 @@ void main()
 
 #if defined VERTEX_UV_0_VEC2 && defined MAP_NORMAL
 // geometry.normal = -(texture2D( map_normal, v_uv ).xyz * 2.0 - 1.0);
-geometry.normal = normalize(geometry.normal + vec3(texture(map_normal, v_uv)));
+// TODO: fix
+geometry.normal = normalize(geometry.normal * vec3(texture(map_normal, v_uv)));
 // geometry.normal *= normalize(vec3(texture(map_color, v_uv)));
 #endif
 

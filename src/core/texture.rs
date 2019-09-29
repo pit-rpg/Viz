@@ -4,8 +4,7 @@ extern crate uuid;
 use self::image::{ColorType, GenericImageView};
 use self::uuid::Uuid;
 use std::path::Path;
-use std::sync::{Arc,Mutex, LockResult, MutexGuard};
-
+use std::sync::{Arc, LockResult, Mutex, MutexGuard};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -18,32 +17,41 @@ pub enum Wrapping {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MagFilter {
-    Nearest,
-    Linear,
+	Nearest,
+	Linear,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MinFilter {
-    Nearest,
-    Linear,
-    NearestMipmapNearest,
-    LinearMipmapNearest,
-    NearestMipmapLinear,
-    LinearMipmapLinear,
+	Nearest,
+	Linear,
+	NearestMipmapNearest,
+	LinearMipmapNearest,
+	NearestMipmapLinear,
+	LinearMipmapLinear,
 }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TextureColorType {
-	None,
 	R(u8),
 	RG(u8),
 	RGB(u8),
 	RGBA(u8),
+	DepthStencil,
+	Stencil,
+	Depth,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TextureDataSource {
+	Raw(Vec<u8>),
+	RawUploaded,
+	TextureBuffer,
+}
 
+// TODO: mem cleaning
 #[allow(dead_code)]
 #[derive(Debug, PartialEq)]
 pub struct Texture2D {
@@ -54,84 +62,67 @@ pub struct Texture2D {
 	pub mag_filter: MagFilter,
 	pub min_filter: MinFilter,
 	pub auto_clear_texture_data: bool,
-	pub need_update: bool,
+	pub need_update: bool, // TODO: UPDATE
 	texture_data: Option<TextureData>,
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextureData {
 	pub color_type: TextureColorType,
 	pub width: u32,
 	pub height: u32,
-	pub data: Vec<u8>, // TODO optional data for memory save
+	pub data: TextureDataSource, // TODO optional data for memory save
 }
 
-
 impl Texture2D {
-
-	pub fn new (path: &str) -> Self {
+	pub fn new(path: &str) -> Self {
 		let mut e = Self::default();
 		e.path = Some(path.to_string());
 		e
 	}
 
-
-	pub fn new_from (data: TextureData) -> Self {
+	pub fn new_from(data: TextureData) -> Self {
 		let mut e = Self::default();
 		e.texture_data = Some(data);
 		e
 	}
 
-
-	pub fn new_from_bytes (path: Option<String>, bytes: &[u8]) -> Self {
+	pub fn new_from_bytes(bytes: &[u8]) -> Self {
 		let img = image::load_from_memory(bytes).unwrap();
 
-		let color_type = match img.color() {
-			ColorType::Gray(d) => TextureColorType::R(d),
-			ColorType::RGB(d) =>  TextureColorType::RGB(d),
-			ColorType::RGBA(d) => TextureColorType::RGBA(d),
-			_ =>{  panic!( format!("unknown color type for: {}", path.unwrap_or("<Unknown path (bytes)>".to_string()) ) )}
-		};
+		let color_type = img.color().into();
 
 		let data = img.raw_pixels();
 		let (width, height) = img.dimensions();
 
 		let mut e = Self::default();
 		e.texture_data = Some(TextureData {
-				data,
-				width,
-				height,
-				color_type,
-			});
+			data: TextureDataSource::Raw(data),
+			width,
+			height,
+			color_type,
+		});
 		e
 	}
 
-
-	pub fn load (&mut self) -> Result<&TextureData, (String)> {
-
+	pub fn load(&mut self) -> Result<&TextureData, (String)> {
 		match (&self.path, self.texture_data.is_none()) {
-			(_, false) => {
-				Ok(self.texture_data.as_ref().unwrap())
-			}
+			(_, false) => Ok(self.texture_data.as_ref().unwrap()),
 			(Some(path), true) => {
-				let img =  match image::open(&Path::new( path )){
-					Err(_) => {return Err( format!("cant open image: {}", path) );}
-					Ok(im) => im.flipv()
+				let img = match image::open(&Path::new(path)) {
+					Err(_) => {
+						return Err(format!("cant open image: {}", path));
+					}
+					Ok(im) => im.flipv(),
 				};
 
-				let color_type = match img.color() {
-					ColorType::Gray(d) => TextureColorType::R(d),
-					ColorType::RGB(d) =>  TextureColorType::RGB(d),
-					ColorType::RGBA(d) => TextureColorType::RGBA(d),
-					_ =>{ return Err( format!("unknown color type for: {}", path) )}
-				};
+				let color_type = img.color().into();
 
 				let data = img.raw_pixels();
 				let (width, height) = img.dimensions();
 
 				self.texture_data = Some(TextureData {
-					data,
+					data: TextureDataSource::Raw(data),
 					width,
 					height,
 					color_type,
@@ -139,7 +130,7 @@ impl Texture2D {
 
 				Ok(self.texture_data.as_ref().unwrap())
 			}
-			_=> { Err("missing path for load image".to_string()) }
+			_ => Err("missing path for load image".to_string()),
 		}
 	}
 
@@ -147,24 +138,24 @@ impl Texture2D {
 		self.texture_data = data;
 	}
 
-	pub fn get_texture_data_ref (&self) -> Option<&TextureData> {
+	pub fn get_texture_data_ref(&self) -> Option<&TextureData> {
 		self.texture_data.as_ref()
 	}
 
-	pub fn get_texture_data_ref_mut (&mut self) -> Option<&mut TextureData> {
+	pub fn get_texture_data_ref_mut(&mut self) -> Option<&mut TextureData> {
 		self.texture_data.as_mut()
 	}
 
-	pub fn has_texture_data(&self) -> bool { self.texture_data.is_some() }
+	pub fn has_texture_data(&self) -> bool {
+		self.texture_data.is_some()
+	}
 }
-
 
 #[derive(Debug, Clone)]
 pub struct SharedTexture2D {
 	data: Arc<Mutex<Texture2D>>,
 	uuid: Uuid,
 }
-
 
 impl SharedTexture2D {
 	pub fn new(texture: Texture2D) -> Self {
@@ -206,6 +197,17 @@ impl Default for Texture2D {
 
 impl PartialEq for SharedTexture2D {
 	fn eq(&self, other: &Self) -> bool {
-        self.uuid == other.uuid
-    }
+		self.uuid == other.uuid
+	}
+}
+
+impl From<ColorType> for TextureColorType {
+	fn from(color_type: ColorType) -> Self {
+		match color_type {
+			ColorType::Gray(d) => TextureColorType::R(d),
+			ColorType::RGB(d) => TextureColorType::RGB(d),
+			ColorType::RGBA(d) => TextureColorType::RGBA(d),
+			_ => panic!(format!("can't convert color type from: {:?}", color_type)),
+		}
+	}
 }

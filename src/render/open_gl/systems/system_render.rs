@@ -12,7 +12,7 @@ use std::time::{Duration, Instant};
 use core::{
 	Blending, BufferGeometry, BufferGroup, DirectionalLight, Material, PerspectiveCamera,
 	PointLight, ShaderProgram, ShaderTag, SharedGeometry, SharedMaterials, Transform,
-	TransformLock, UniformName,
+	TransformLock, UniformName, FrameBuffer
 };
 
 use self::gl::types::*;
@@ -23,7 +23,7 @@ use self::specs::{Entity, Join, ReadStorage, System, World, Write, WriteStorage}
 
 use super::super::{
 	gl_geometry::VertexArraysIDs, gl_material::GLMaterialIDs, gl_texture::GLTextureIDs, GLGeometry,
-	GLMaterial,
+	GLMaterial, gl_frame_buffer::{GLFrameBuffer, GLFrameBufferIDs}, gl_render_buffer::{GLRenderBufferIDs, GLRenderBuffer}
 };
 use math::{Matrix3, Matrix4, Vector, Vector3, Vector4};
 
@@ -58,6 +58,8 @@ pub struct RenderSystem {
 	blending: bool,
 
 	blending_state: Blending,
+
+	// override_material: Option<SharedMaterials>,
 }
 
 impl RenderSystem {
@@ -122,6 +124,8 @@ impl RenderSystem {
 			blending,
 
 			blending_state: Blending::None,
+
+			// override_material: None,
 		};
 		render_system
 	}
@@ -224,6 +228,23 @@ impl RenderSystem {
 		});
 	}
 
+	pub fn binf_frame_buffer(
+			texture_ids: &mut GLTextureIDs,
+			frame_buffer_ids: &mut GLFrameBufferIDs,
+			render_buffer_ids: &mut GLRenderBufferIDs,
+			frame_buffer: Option<&mut FrameBuffer>
+		) {
+		if let Some(buffer) = frame_buffer {
+			buffer.bind(
+				frame_buffer_ids,
+				texture_ids,
+				render_buffer_ids,
+			);
+		} else {
+			FrameBuffer::bind_default();
+		}
+	}
+
 }
 
 impl<'a> System<'a> for RenderSystem {
@@ -237,6 +258,8 @@ impl<'a> System<'a> for RenderSystem {
 		Write<'a, VertexArraysIDs>,
 		Write<'a, GLMaterialIDs>,
 		Write<'a, GLTextureIDs>,
+		Write<'a, GLFrameBufferIDs>,
+		Write<'a, GLRenderBufferIDs>,
 	);
 
 	fn run(&mut self, data: Self::SystemData) {
@@ -282,6 +305,8 @@ impl<'a> System<'a> for RenderSystem {
 			mut vertex_arrays_ids,
 			mut gl_material_ids,
 			mut gl_texture_ids,
+			mut gl_frame_buffer_ids,
+			mut gl_render_buffer_ids,
 		) = data;
 
 		let mut matrix_cam_position;

@@ -1,34 +1,22 @@
 extern crate uuid;
-#[macro_use] extern crate project;
-
+#[macro_use]
+extern crate project;
 
 use std::f64::consts::PI as PI_f64;
 
 use project::{
-	specs::*,
-	glutin::{MouseScrollDelta},
+	core::{
+		create_world, Blending, Material, PerspectiveCamera, ShaderProgram, ShaderTag,
+		SharedGeometry, SharedMaterials, SharedTexture2D, SystemTransform, Transform,
+		TransformLock, UniformName,
+	},
 	glutin,
+	glutin::MouseScrollDelta,
+	helpers::geometry_generators,
+	math::{Vector, Vector3},
 	render,
-	math::{Vector3, Vector},
-	core::{SharedGeometry,
-		PerspectiveCamera,
-		Transform,
-		SharedTexture2D,
-		Material,
-		SharedMaterials,
-		create_world,
-		ShaderProgram,
-		SystemTransform,
-		ShaderTag,
-		Blending,
-		TransformLock,
-		UniformName,
-	},
-	helpers::{
-		geometry_generators,
-	},
+	specs::*,
 };
-
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub struct WindowState {
@@ -38,9 +26,7 @@ pub struct WindowState {
 	pub window_size: (f64, f64),
 }
 
-
-fn main(){
-
+fn main() {
 	let emojis = vec![
 		"res/emoji/angry-face_1f620.png",
 		"res/emoji/astonished-face_1f632.png",
@@ -60,14 +46,12 @@ fn main(){
 		"res/emoji/face-with-uneven-eyes-and-wavy-mouth_1f974.png",
 		"res/emoji/flushed-face_1f633.png",
 		"res/emoji/ghost_1f47b.png",
-
 		"res/flash/1.jpg",
 		"res/flash/203565_preview.png",
 		"res/flash/266371335012212.png",
 		"res/flash/burst.jpg",
 		"res/flash/eb07a72e2a175be326a53cacac303139.png",
 		"res/flash/lolo.png",
-
 		"res/emoji/grimacing-face_1f62c.png",
 		"res/emoji/grinning-face-with-one-large-and-one-small-eye_1f92a.png",
 		"res/emoji/grinning-face-with-smiling-eyes_1f601.png",
@@ -101,11 +85,12 @@ fn main(){
 		"res/emoji/unamused-face_1f612.png",
 		"res/emoji/upside-down-face_1f643.png",
 		"res/emoji/winking-face_1f609.png",
-		"res/emoji/zipper-mouth-face_1f910.png"
+		"res/emoji/zipper-mouth-face_1f910.png",
 	];
 
 	let mut world = create_world();
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
+	let mut render_system =
+		render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
 	let mut system_transform = SystemTransform::new();
 
 	let up = Vector3::new(0.0, 1.0, 0.0);
@@ -119,7 +104,8 @@ fn main(){
 	transform_camera.position.z = 6.0;
 	camera.view.enabled = false;
 
-	let geom_plane = SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
+	let geom_plane =
+		SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
 
 	let e_cam = world
 		.create_entity()
@@ -127,8 +113,7 @@ fn main(){
 		.with(camera)
 		.build();
 
-
-	emojis.iter().for_each(|item|{
+	emojis.iter().for_each(|item| {
 		let mut pos = Vector3::random();
 		pos.multiply_scalar(10.0);
 		pos.sub_scalar(5.0);
@@ -137,7 +122,6 @@ fn main(){
 		let mut mat = Material::new_mesh_standard();
 		mat.set_uniform(UniformName::MapColor, texture);
 		mat.set_uniform(UniformName::Alpha, 1.0);
-
 
 		if item.find("emoji").is_some() {
 			mat.set_blending(Blending::Transparent);
@@ -150,8 +134,7 @@ fn main(){
 		let material = SharedMaterials::new(mat);
 		let mut transform = Transform::from_position(pos);
 		transform.lock = TransformLock::RotationScale;
-        transform.scale.multiply_scalar(0.1);
-
+		transform.scale.multiply_scalar(0.1);
 
 		world
 			.create_entity()
@@ -161,54 +144,67 @@ fn main(){
 			.build();
 	});
 
-
-
 	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
 	// render_system.window.set_resizable(true);
-	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
+	let hidpi_factor = render_system
+		.windowed_context
+		.window()
+		.get_hidpi_factor()
+		.round();
 	let mut window_state = WindowState::default();
 
+	let mut frame_count: u32 = 0;
+
 	while running {
+		frame_count += 1;
 
 		{
 			let windowed_context = &render_system.windowed_context;
 			use self::glutin::WindowEvent::*;
 
-			render_system.events_loop.poll_events(|event| {
-				match event {
-					glutin::Event::WindowEvent{ event, .. } => match event {
-						glutin::WindowEvent::CloseRequested => running = false,
-						glutin::WindowEvent::Resized(logical_size) => {
-							window_state.window_size.0 = logical_size.width;
-							window_state.window_size.1 = logical_size.height;
+			render_system.events_loop.poll_events(|event| match event {
+				glutin::Event::WindowEvent { event, .. } => match event {
+					glutin::WindowEvent::CloseRequested => running = false,
+					glutin::WindowEvent::Resized(logical_size) => {
+						window_state.window_size.0 = logical_size.width;
+						window_state.window_size.1 = logical_size.height;
 
-							let dpi_factor = windowed_context.window().get_hidpi_factor();
-							windowed_context.resize(logical_size.to_physical(dpi_factor));
+						let dpi_factor = windowed_context.window().get_hidpi_factor();
+						windowed_context.resize(logical_size.to_physical(dpi_factor));
 
-							gl_call!({
-								gl::Viewport(0,0, (logical_size.width * dpi_factor) as i32, (logical_size.height * dpi_factor) as i32);
-							});
-							println!("logical_size: {:?}, dpi_factor: {:?}", logical_size, dpi_factor);
-						},
-						glutin::WindowEvent::MouseWheel{ delta, .. } => {
-							match delta {
-								MouseScrollDelta::LineDelta(_, y) => {
-									if y > 0.0 { radius -= zoom_speed } else {radius += zoom_speed};
-								}
-								MouseScrollDelta::PixelDelta(_) => {}
-							}
+						gl_call!({
+							gl::Viewport(
+								0,
+								0,
+								(logical_size.width * dpi_factor) as i32,
+								(logical_size.height * dpi_factor) as i32,
+							);
+						});
+						println!(
+							"logical_size: {:?}, dpi_factor: {:?}",
+							logical_size, dpi_factor
+						);
+					}
+					glutin::WindowEvent::MouseWheel { delta, .. } => match delta {
+						MouseScrollDelta::LineDelta(_, y) => {
+							if y > 0.0 {
+								radius -= zoom_speed
+							} else {
+								radius += zoom_speed
+							};
 						}
-						CursorMoved { position: pos, .. } =>{
-							window_state.pointer_pos = pos
-								.to_physical(windowed_context.window().get_hidpi_factor())
-								.to_logical(hidpi_factor)
-								.into();
-						}
-						_ => ()
+						MouseScrollDelta::PixelDelta(_) => {}
 					},
-					_ => ()
-				}
+					CursorMoved { position: pos, .. } => {
+						window_state.pointer_pos = pos
+							.to_physical(windowed_context.window().get_hidpi_factor())
+							.to_logical(hidpi_factor)
+							.into();
+					}
+					_ => (),
+				},
+				_ => (),
 			});
 		}
 
@@ -218,17 +214,17 @@ fn main(){
 
 			{
 				let transform_camera = transform_store.get_mut(e_cam).unwrap();
-				let aspect = window_state.window_size.0/window_state.window_size.1;
+				let aspect = window_state.window_size.0 / window_state.window_size.1;
 
-				let  camera = cam_store.get_mut(e_cam).unwrap();
+				let camera = cam_store.get_mut(e_cam).unwrap();
 				camera.aspect = aspect as f32;
 				camera.update_projection_matrix();
 
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
-				transform_camera.position.z = ( (x_prog * (PI_f64*2.0)).sin() * radius ) as f32;
-				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;;
-				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
+				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
+				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;;
+				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
 		}

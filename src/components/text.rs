@@ -1,6 +1,6 @@
 extern crate typer;
 
-use core::{Texture2D, SharedTexture2D, TextureData, Rect, TextureColorType, SharedGeometry};
+use core::{Texture2D, SharedTexture2D, TextureData, Rect, TextureColorType, SharedGeometry, TextureDataSource};
 use math::{Vector4};
 use self::typer::{TextRenderer, Typer};
 use self::typer::rusttype::{Font};
@@ -11,10 +11,10 @@ use helpers::geometry_generators::{plane_buffer_geometry};
 pub trait Text {
 	fn set_text(&mut self, text: String);
 	fn render(&mut self, texture: SharedTexture2D, fonts: &Vec<(String, Font)>);
-		
+
 	fn load_fonts<'a>(fonts: Vec<(String, PathBuf)>) -> Vec<(String, Font<'a>)> {
 		TextRenderer::load_fonts(fonts)
-	} 
+	}
 }
 
 pub struct TextDinamic {
@@ -29,7 +29,7 @@ pub struct TextDinamic {
 
 
 impl TextDinamic {
-	
+
 	pub fn new(text: &str, font: &str) -> Self {
 		Self {
 			font: font.to_string(),
@@ -69,7 +69,7 @@ impl TextDinamic {
 			color_type: TextureColorType::RGBA(8),
 			width: 0,
 			height: 0,
-			data: Vec::new(),
+			data: TextureDataSource::Raw(Vec::new()),
 		};
 		let texture = Texture2D::new_from(texture_data);
 		let mut s_texture = SharedTexture2D::new(texture);
@@ -82,14 +82,14 @@ impl TextDinamic {
 			let plane = plane_buffer_geometry(texture_data.width as f32, texture_data.height as f32, 1, 1);
 			SharedGeometry::new(plane)
 		};
-		
+
 		(s_plane, s_texture)
 	}
 }
 
 
 impl Text for TextDinamic {
-	
+
 	fn set_text(&mut self, text: String) {
 		self.text = text;
 		self.need_update = true;
@@ -110,6 +110,6 @@ impl Text for TextDinamic {
 		texture_data.color_type = TextureColorType::RGBA(8);
 		texture_data.width = buffer.width as u32;
 		texture_data.height = buffer.height as u32;
-		texture_data.data = buffer.buffer;
+		texture_data.data = TextureDataSource::Raw(buffer.buffer);
 	}
 }

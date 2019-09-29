@@ -68,6 +68,7 @@ use core::{
 	MinFilter,
 	SharedTexture2D,
 	UniformName,
+	TextureDataSource
 };
 
 struct Context {
@@ -392,7 +393,7 @@ impl From<&image::Data> for TextureData {
 			width: data.width,
 			height: data.height,
 			color_type,
-			data: data.pixels.clone(),
+			data: TextureDataSource::Raw(data.pixels.clone()),
 		}
 	}
 }
