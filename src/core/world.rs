@@ -9,6 +9,8 @@ use super::{
 	Parent,
 	Children,
 	DirectionalLight,
+    SharedFrameBuffer,
+    SharedRenderBuffer
 };
 
 pub fn create_world() -> World {
@@ -17,6 +19,8 @@ pub fn create_world() -> World {
 	world.register::<SharedMaterials>();
 	world.register::<Transform>();
 	world.register::<PerspectiveCamera>();
+	world.register::<SharedFrameBuffer>();
+	world.register::<SharedRenderBuffer>();
 
 	world.register::<PointLight>();
 	world.register::<DirectionalLight>();

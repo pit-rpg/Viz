@@ -1,58 +1,87 @@
+extern crate specs;
 extern crate uuid;
 
-use std::sync::{Arc, LockResult, Mutex, MutexGuard};
+use self::specs::{Component, VecStorage};
 use self::uuid::Uuid;
-use super::{TextureColorType, SharedTexture2D};
-
+use super::{SharedRenderBuffer, SharedTexture2D, TextureColorType};
+use std::sync::{Arc, LockResult, Mutex, MutexGuard};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FrameBuffer {
-	pub uuid: Uuid,
-	pub frame_outputs: Vec<FrameOutput>,
-	pub need_update: bool, // TODO: UPDATE
+    pub uuid: Uuid,
+    pub frame_outputs: Vec<FrameOutput>,
+    pub need_update: bool, // TODO: UPDATE
+}
+
+impl FrameBuffer {
+    pub fn new_color_map_output(width: u32, height: u32) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            need_update: true,
+            frame_outputs: vec![
+                FrameOutput::SharedTexture2D(SharedTexture2D::new_color_buffer(width, height)),
+                FrameOutput::SharedRenderBuffer(SharedRenderBuffer::new_depth_stencil(
+                    width, height,
+                )),
+            ],
+        }
+    }
+
+    pub fn new_color_depth_stencil_map_output(width: u32, height: u32) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            need_update: true,
+            frame_outputs: vec![
+                FrameOutput::SharedTexture2D(SharedTexture2D::new_color_buffer(width, height)),
+                FrameOutput::SharedTexture2D(SharedTexture2D::new_depth_stencil(width, height)),
+            ],
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FrameOutput {
-	SharedRenderBuffer(SharedRenderBuffer),
-	SharedTexture2D(SharedTexture2D),
-}
-
-// TODO: mem cleaning
-#[derive(Debug, Clone, PartialEq)]
-pub struct RenderBuffer {
-	pub uuid: Uuid,
-	pub color_type: TextureColorType,
-	pub with: u32,
-	pub height: u32,
-	pub need_update: bool, // TODO: UPDATE
+    SharedRenderBuffer(SharedRenderBuffer),
+    SharedTexture2D(SharedTexture2D),
 }
 
 #[derive(Debug, Clone)]
-pub struct SharedRenderBuffer {
-	data: Arc<Mutex<RenderBuffer>>,
-	uuid: Uuid,
+pub struct SharedFrameBuffer {
+    data: Arc<Mutex<FrameBuffer>>,
+    uuid: Uuid,
 }
 
-impl SharedRenderBuffer {
-	pub fn new(render_buffer: RenderBuffer) -> Self {
-		Self {
-			uuid: render_buffer.uuid,
-			data: Arc::new(Mutex::new(render_buffer)),
-		}
-	}
+impl SharedFrameBuffer {
+    pub fn new(buffer: FrameBuffer) -> Self {
+        Self {
+            uuid: buffer.uuid,
+            data: Arc::new(Mutex::new(buffer)),
+        }
+    }
 
-	pub fn lock(&mut self) -> LockResult<MutexGuard<RenderBuffer>> {
-		self.data.lock()
-	}
+    pub fn lock(&mut self) -> LockResult<MutexGuard<FrameBuffer>> {
+        self.data.lock()
+    }
 
-	pub fn get_uuid(&self) -> Uuid {
-		self.uuid
-	}
+    pub fn get_uuid(&self) -> Uuid {
+        self.uuid
+    }
+
+    pub fn new_color_map_output(width: u32, height: u32) -> Self {
+        Self::new(FrameBuffer::new_color_map_output(width, height))
+    }
+
+    pub fn new_color_depth_stencil_map_output(width: u32, height: u32) -> Self {
+        Self::new(FrameBuffer::new_color_depth_stencil_map_output(width, height))
+    }
 }
 
-impl PartialEq for SharedRenderBuffer {
-	fn eq(&self, other: &Self) -> bool {
-		self.uuid == other.uuid
-	}
+impl PartialEq for SharedFrameBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        self.uuid == other.uuid
+    }
+}
+
+impl Component for SharedFrameBuffer {
+    type Storage = VecStorage<Self>;
 }

@@ -68,7 +68,7 @@ pub fn create_render_buffer(render_buffer: &mut RenderBuffer) -> RenderBufferId 
 		gl::RenderbufferStorage(
 			gl::RENDERBUFFER,
 			to_gl_color_internal_type(render_buffer.color_type),
-			render_buffer.with as i32,
+			render_buffer.width as i32,
 			render_buffer.height as i32,
 		);
 	});

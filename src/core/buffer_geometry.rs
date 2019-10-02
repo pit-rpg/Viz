@@ -1,5 +1,6 @@
 extern crate uuid;
 extern crate heck;
+extern crate specs;
 
 
 use self::uuid::Uuid;
@@ -9,6 +10,7 @@ use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 use std::mem;
 use std::error::Error;
+use self::specs::{Component, VecStorage};
 
 
 use math::{
@@ -230,12 +232,6 @@ attributes: {:?}
 		)
     }
 }
-
-
-
-
-extern crate specs;
-use self::specs::{Component, VecStorage};
 
 
 #[allow(dead_code)]

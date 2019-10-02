@@ -10,6 +10,7 @@ mod world;
 mod systems;
 mod relation;
 mod frame_buffer;
+mod render_buffer;
 
 
 pub use self::buffer_geometry::*;
@@ -24,3 +25,4 @@ pub use self::world::create_world;
 pub use self::systems::*;
 pub use self::relation::*;
 pub use self::frame_buffer::*;
+pub use self::render_buffer::*;

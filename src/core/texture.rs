@@ -170,6 +170,52 @@ impl SharedTexture2D {
 		Self::new(texture)
 	}
 
+	pub fn new_color_buffer(width: u32, height: u32) -> Self {
+        let data = TextureData {
+            color_type: TextureColorType::RGB(8),
+            width,
+            height,
+            data: TextureDataSource::TextureBuffer,
+        };
+
+        let texture = Texture2D {
+			path: None,
+			uuid: Uuid::new_v4(),
+			wrapping_x: Wrapping::ClampToEdge,
+			wrapping_y: Wrapping::ClampToEdge,
+			min_filter: MinFilter::Nearest,
+			mag_filter: MagFilter::Nearest,
+			auto_clear_texture_data: false,
+			need_update: true,
+			texture_data: Some(data),
+		};
+
+        Self::new(texture)
+	}
+
+	pub fn new_depth_stencil(width: u32, height: u32) -> Self {
+        let data = TextureData {
+            color_type: TextureColorType::DepthStencil,
+            width,
+            height,
+            data: TextureDataSource::TextureBuffer,
+        };
+
+        let texture = Texture2D {
+			path: None,
+			uuid: Uuid::new_v4(),
+			wrapping_x: Wrapping::ClampToEdge,
+			wrapping_y: Wrapping::ClampToEdge,
+			min_filter: MinFilter::Nearest,
+			mag_filter: MagFilter::Nearest,
+			auto_clear_texture_data: false,
+			need_update: true,
+			texture_data: Some(data),
+		};
+
+        Self::new(texture)
+	}
+
 	pub fn lock(&mut self) -> LockResult<MutexGuard<Texture2D>> {
 		self.data.lock()
 	}
