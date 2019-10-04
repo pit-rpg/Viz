@@ -1,0 +1,6 @@
+indent_style = "Block"
+blank_lines_upper_bound = 0
+# blank_lines_lower_bound = 0
+reorder_imports = true
+hard_tabs = true
+tab_spaces = 4
