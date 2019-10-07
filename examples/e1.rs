@@ -1,17 +1,18 @@
-extern crate uuid;
 extern crate project;
+extern crate uuid;
 
-
-use std::f64::consts::PI as PI_f64;
 use project::{
-	specs::*,
+	core::{
+		create_world, EntityRelations, Material, PerspectiveCamera, ShaderProgram, SharedGeometry,
+		SharedMaterials, SharedTexture2D, Transform, UniformName,
+	},
 	glutin,
+	helpers::geometry_generators,
+	math::{Vector, Vector3, Vector4},
 	render,
-	math::{Vector3, Vector, Vector4},
-	core::{SharedGeometry, PerspectiveCamera, Transform, SharedTexture2D, Material, SharedMaterials, create_world, ShaderProgram, UniformName},
-	helpers::{geometry_generators},
+	specs::*,
 };
-
+use std::f64::consts::PI as PI_f64;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub struct WindowState {
@@ -21,10 +22,10 @@ pub struct WindowState {
 	pub window_size: (f64, f64),
 }
 
-fn main(){
-
+fn main() {
 	let mut world = create_world();
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
+	let mut render_system =
+		render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
 
 	let mut f_count = 0.0;
 	let up = Vector3::new(0.0, 1.0, 0.0);
@@ -36,7 +37,6 @@ fn main(){
 	let mut color_tmp = Vector3::<f32>::new(color1.x, color1.y, color1.z);
 
 	let mut running = true;
-
 
 	let geom_container = SharedGeometry::new(geometry_generators::box_geometry(1.0, 1.0, 1.0));
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
@@ -57,24 +57,40 @@ fn main(){
 	let texture2 = SharedTexture2D::new_from_path("images/awesomeface.png");
 
 	let texture_container = SharedTexture2D::new_from_path("images/container2.png");
-	let texture_container_specular = SharedTexture2D::new_from_path("images/container2_specular.png");
+	let texture_container_specular =
+		SharedTexture2D::new_from_path("images/container2_specular.png");
 
 	let mut material2 = Material::new_basic_texture();
 	material2.set_uniform(UniformName::MapColor, texture2.clone());
 	let material2 = SharedMaterials::new(material2);
 
-	let mut material_sphere = Material::new_light_texture(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
+	let mut material_sphere = Material::new_light_texture(
+		Vector4::new(1.0, 0.5, 0.31, 1.0),
+		Vector3::new_one(),
+		transform_light.position.clone(),
+	);
 	material_sphere.set_uniform(UniformName::MapColor, texture_container);
 	material_sphere.set_uniform(UniformName::MapSpecular, texture_container_specular);
 	let box_mat = SharedMaterials::new(material_sphere);
 
-	let material_sphere2 = Material::new_light(Vector4::new(1.0,0.5,0.31,1.0), Vector3::new_one(), transform_light.position.clone());
+	let material_sphere2 = Material::new_light(
+		Vector4::new(1.0, 0.5, 0.31, 1.0),
+		Vector3::new_one(),
+		transform_light.position.clone(),
+	);
 	let box_mat2 = SharedMaterials::new(material_sphere2);
 
-	let material_phong = Material::new_phong(Vector4::new(0.46,0.46,1.0,1.0), Vector3::new_one(), transform_light.position.clone());
+	let material_phong = Material::new_phong(
+		Vector4::new(0.46, 0.46, 1.0, 1.0),
+		Vector3::new_one(),
+		transform_light.position.clone(),
+	);
 	let box_phong = SharedMaterials::new(material_phong);
 
-	let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(1.0,1.0,1.0,1.0)));
+	let material_light =
+		SharedMaterials::new(Material::new_basic(Vector4::new(1.0, 1.0, 1.0, 1.0)));
+
+	let root = world.create_entity().build();
 
 	let e2 = world
 		.create_entity()
@@ -89,20 +105,25 @@ fn main(){
 		.with(camera)
 		.build();
 
-	world
+	let e3 = world
 		.create_entity()
 		.with(geom_light.clone())
 		.with(material_light)
 		.with(transform_light)
 		.build();
 
+	world.add_child(root, e3);
+	world.add_child(root, e3);
+	world.add_child(root, e_cam);
+
 	let mut boxes = Vec::new();
 
 	let count = 1000;
 	for i in 0..1000 {
 		let mut transform = Transform::default();
-		transform.scale.set(0.4,0.4,0.4);
-		transform.position
+		transform.scale.set(0.4, 0.4, 0.4);
+		transform
+			.position
 			.randomize()
 			.multiply_scalar(10.0)
 			.sub_scalar(5.0);
@@ -110,20 +131,19 @@ fn main(){
 		let mat;
 		let geom;
 
-		if i < count/3 {
+		if i < count / 3 {
 			mat = box_mat.clone();
-		} else if i < count/3*2 {
+		} else if i < count / 3 * 2 {
 			mat = box_phong.clone();
 		} else {
 			mat = box_mat2.clone();
 		}
 
-		if i%2 == 0 {
+		if i % 2 == 0 {
 			geom = geom_container.clone();
 		} else {
 			geom = geom_light.clone();
 		}
-
 
 		transform.update();
 
@@ -134,42 +154,41 @@ fn main(){
 			.with(transform)
 			.build();
 		boxes.push(m_box);
+		world.add_child(root, m_box);
 	}
-
-
-
 
 	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
-	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
+	let hidpi_factor = render_system
+		.windowed_context
+		.window()
+		.get_hidpi_factor()
+		.round();
 	let mut window_state = WindowState::default();
 
 	while running {
-
 		{
 			let windowed_context = &render_system.windowed_context;
 			use self::glutin::WindowEvent::*;
 
-			render_system.events_loop.poll_events(|event| {
-				match event {
-					glutin::Event::WindowEvent{ event, .. } => match event {
-						glutin::WindowEvent::CloseRequested => running = false,
-						glutin::WindowEvent::Resized(logical_size) => {
-							let dpi_factor = windowed_context.window().get_hidpi_factor();
-							windowed_context.resize(logical_size.to_physical(dpi_factor));
-							window_state.window_size.0 = logical_size.width;
-							window_state.window_size.1 = logical_size.height;
-						},
-						CursorMoved { position: pos, .. } =>{
-							window_state.pointer_pos = pos
-								.to_physical(windowed_context.window().get_hidpi_factor())
-								.to_logical(hidpi_factor)
-								.into();
-						}
-						_ => ()
-					},
-					_ => ()
-				}
+			render_system.events_loop.poll_events(|event| match event {
+				glutin::Event::WindowEvent { event, .. } => match event {
+					glutin::WindowEvent::CloseRequested => running = false,
+					glutin::WindowEvent::Resized(logical_size) => {
+						let dpi_factor = windowed_context.window().get_hidpi_factor();
+						windowed_context.resize(logical_size.to_physical(dpi_factor));
+						window_state.window_size.0 = logical_size.width;
+						window_state.window_size.1 = logical_size.height;
+					}
+					CursorMoved { position: pos, .. } => {
+						window_state.pointer_pos = pos
+							.to_physical(windowed_context.window().get_hidpi_factor())
+							.to_logical(hidpi_factor)
+							.into();
+					}
+					_ => (),
+				},
+				_ => (),
 			});
 		}
 
@@ -208,7 +227,6 @@ fn main(){
 							transform.rotation.z -= 0.003;
 							transform.update();
 						}
-
 					} else {
 						transform.rotation.x += 0.01;
 						transform.rotation.y += 0.02;
@@ -222,22 +240,14 @@ fn main(){
 				let transform_camera = transform_store.get_mut(e_cam).unwrap();
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
-				transform_camera.position.z = ( (x_prog * (PI_f64*2.0)).sin() * radius ) as f32;
-				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;;
-				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
+				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
+				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;;
+				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 				transform_camera.update();
 			}
 		}
 
-		render_system.run_now(&world.res);
-
+		render_system.run(&mut world, root);
 	}
-
-
-
-
-
-
-
 }

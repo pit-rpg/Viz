@@ -6,9 +6,9 @@ use std::f64::consts::PI as PI_f64;
 
 use project::{
 	core::{
-		create_world, Blending, EntityRelations, FrameOutput, Material, PerspectiveCamera,
-		ShaderProgram, ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterials,
-		SharedTexture2D, SystemTransform, Transform, TransformLock, UniformName,
+		create_world, Blending, FrameOutput, Material, PerspectiveCamera, ShaderProgram, ShaderTag,
+		SharedFrameBuffer, SharedGeometry, SharedMaterials, SharedTexture2D, SystemTransform,
+		Transform, TransformLock, UniformName, EntityRelations
 	},
 	glutin,
 	glutin::MouseScrollDelta,
@@ -108,6 +108,7 @@ fn main() {
 		SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
 
 	let root = world.create_entity().build();
+
 	let e_cam = world
 		.create_entity()
 		.with(transform_camera)
@@ -147,10 +148,51 @@ fn main() {
 		world.add_child(root, entity);
 	});
 
+	let mut frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
+	let mut buffer_plane = root;
+
+	{
+		let buffer_texture = {
+			let buffer = frame_buffer.lock().unwrap();
+			buffer
+				.frame_outputs
+				.iter()
+				.find(|item| {
+					if let FrameOutput::SharedTexture2D(_) = item {
+						true
+					} else {
+						false
+					}
+				})
+				.unwrap()
+				.clone()
+		};
+
+		if let FrameOutput::SharedTexture2D(texture) = buffer_texture {
+			let mut mat = Material::new_mesh_standard();
+			mat.set_uniform(UniformName::MapColor, texture);
+			mat.set_uniform(UniformName::Alpha, 1.0);
+
+			mat.add_tag(ShaderTag::Shadeless);
+
+			let material = SharedMaterials::new(mat);
+			let mut transform = Transform::default();
+			transform.lock = TransformLock::RotationScale;
+			transform.scale.multiply_scalar(0.3);
+
+			buffer_plane = world
+				.create_entity()
+				.with(transform)
+				.with(geom_plane.clone())
+				.with(material.clone())
+				.build();
+		}
+	}
+
 	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
 	// render_system.window.set_resizable(true);
-	let hidpi_factor = render_system
+	let mut hidpi_factor = render_system
 		.windowed_context
 		.window()
 		.get_hidpi_factor()
@@ -173,20 +215,20 @@ fn main() {
 						window_state.window_size.0 = logical_size.width;
 						window_state.window_size.1 = logical_size.height;
 
-						let dpi_factor = windowed_context.window().get_hidpi_factor();
-						windowed_context.resize(logical_size.to_physical(dpi_factor));
+						hidpi_factor = windowed_context.window().get_hidpi_factor().round();
+						windowed_context.resize(logical_size.to_physical(hidpi_factor));
 
 						gl_call!({
 							gl::Viewport(
 								0,
 								0,
-								(logical_size.width * dpi_factor) as i32,
-								(logical_size.height * dpi_factor) as i32,
+								(logical_size.width * hidpi_factor) as i32,
+								(logical_size.height * hidpi_factor) as i32,
 							);
 						});
 						println!(
-							"logical_size: {:?}, dpi_factor: {:?}",
-							logical_size, dpi_factor
+							"logical_size: {:?}, hidpi_factor: {:?}",
+							logical_size, hidpi_factor
 						);
 					}
 					glutin::WindowEvent::MouseWheel { delta, .. } => match delta {
@@ -233,6 +275,10 @@ fn main() {
 		}
 
 		system_transform.run_now(&world.res);
+
+		render_system.set_frame_buffer(Some(frame_buffer.clone()));
 		render_system.run(&mut world, root);
+		render_system.set_frame_buffer(None);
+		render_system.run(&mut world, buffer_plane);
 	}
 }

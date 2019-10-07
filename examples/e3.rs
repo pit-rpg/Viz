@@ -23,6 +23,7 @@ use project::{
 		SystemTransform,
 		BufferType,
 		UniformName,
+		EntityRelations,
 	},
 	helpers::{load_obj},
 };
@@ -61,6 +62,10 @@ fn main(){
 	transform_light.scale.set(0.2, 0.2, 0.2);
 
 
+	let root = world
+		.create_entity()
+		.build();
+
 	let e_cam = world
 		.create_entity()
 		.with(transform_camera)
@@ -87,12 +92,13 @@ fn main(){
 
 		let transform = Transform::default();
 
-		world
+		let entity = world
 			.create_entity()
 			.with(transform)
 			.with(geom)
 			.with(shared_mat_cup_mat.clone())
 			.build();
+		world.add_child(root, entity);
 	}
 
 
@@ -165,6 +171,6 @@ fn main(){
 
 
 		system_transform.run_now(&world.res);
-		render_system.run_now(&world.res);
+		render_system.run(&mut world, root);
 	}
 }

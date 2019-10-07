@@ -292,3 +292,27 @@ pub fn plane_buffer_geometry( width: f32, height: f32, grid_x: usize, grid_y: us
 	geom.set_indices(indices);
 	geom
 }
+
+
+#[allow(dead_code)]
+pub fn simple_plane() -> BufferGeometry {
+
+	// buffers
+	let mut vertices = vec![
+		Vector3::new(0.0,0.0,0.0),
+		Vector3::new(0.0,1.0,0.0),
+		Vector3::new(1.0,1.0,0.0),
+		Vector3::new(1.0,0.0,0.0),
+	];
+
+	let mut indices = vec![
+		0,1,2,
+		0,2,3
+	];
+
+	// build geometry
+	let mut geom = BufferGeometry::new();
+	geom.create_buffer_attribute(BufferType::Position, BufferData::Vector3(vertices));
+	geom.set_indices(indices);
+	geom
+}

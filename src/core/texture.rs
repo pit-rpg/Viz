@@ -149,6 +149,21 @@ impl Texture2D {
 	pub fn has_texture_data(&self) -> bool {
 		self.texture_data.is_some()
 	}
+
+	pub fn set_size(&mut self, width: u32, height: u32) {
+		if let Some(texture_data) = &mut self.texture_data {
+			match texture_data.data {
+				TextureDataSource::TextureBuffer => {
+					texture_data.width = width;
+					texture_data.height = height;
+					self.need_update = true;
+				}
+				TextureDataSource::Raw(_) => unimplemented!(),
+				TextureDataSource::RawUploaded => unimplemented!(),
+			}
+		}
+		unimplemented!();
+	}
 }
 
 #[derive(Debug, Clone)]
@@ -171,14 +186,14 @@ impl SharedTexture2D {
 	}
 
 	pub fn new_color_buffer(width: u32, height: u32) -> Self {
-        let data = TextureData {
-            color_type: TextureColorType::RGB(8),
-            width,
-            height,
-            data: TextureDataSource::TextureBuffer,
-        };
+		let data = TextureData {
+			color_type: TextureColorType::RGB(8),
+			width,
+			height,
+			data: TextureDataSource::TextureBuffer,
+		};
 
-        let texture = Texture2D {
+		let texture = Texture2D {
 			path: None,
 			uuid: Uuid::new_v4(),
 			wrapping_x: Wrapping::ClampToEdge,
@@ -190,18 +205,18 @@ impl SharedTexture2D {
 			texture_data: Some(data),
 		};
 
-        Self::new(texture)
+		Self::new(texture)
 	}
 
 	pub fn new_depth_stencil(width: u32, height: u32) -> Self {
-        let data = TextureData {
-            color_type: TextureColorType::DepthStencil,
-            width,
-            height,
-            data: TextureDataSource::TextureBuffer,
-        };
+		let data = TextureData {
+			color_type: TextureColorType::DepthStencil,
+			width,
+			height,
+			data: TextureDataSource::TextureBuffer,
+		};
 
-        let texture = Texture2D {
+		let texture = Texture2D {
 			path: None,
 			uuid: Uuid::new_v4(),
 			wrapping_x: Wrapping::ClampToEdge,
@@ -213,7 +228,7 @@ impl SharedTexture2D {
 			texture_data: Some(data),
 		};
 
-        Self::new(texture)
+		Self::new(texture)
 	}
 
 	pub fn lock(&mut self) -> LockResult<MutexGuard<Texture2D>> {

@@ -58,6 +58,10 @@ fn main(){
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
+	let root = world
+		.create_entity()
+		.build();
+
 	let e_cam = world
 		.create_entity()
 		.with(transform_camera)
@@ -68,18 +72,22 @@ fn main(){
 
 	{
 		let entity = load_gltf(&mut world, PathBuf::from("models/girl_speedsculpt/scene.gltf")).unwrap();
+		world.add_child(root, entity);
 		let mut transform_store = world.write_storage::<Transform>();
 		let transform = transform_store.get_mut(entity).unwrap();
 		transform.position.y += 2.2;
 		transform.position.x -= 2.0;
 		transform.scale.set_scalar(0.4);
 	}
+
 	{
-		load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
+		let entity = load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
+		world.add_child(root, entity);
 	}
 
 	{
 		let entity = load_gltf(&mut world, PathBuf::from("models/pony_cartoon/scene.gltf")).unwrap();
+		world.add_child(root, entity);
 		let mut transform_store = world.write_storage::<Transform>();
 		let transform = transform_store.get_mut(entity).unwrap();
 		transform.scale.set_scalar(0.02);
@@ -93,8 +101,7 @@ fn main(){
 		.create_entity()
 		.with(Transform::default())
 		.build();
-
-
+	world.add_child(root, lights_parent);
 
 	let mut lights = Vec::new();
 	for _ in  0..5 {
@@ -132,13 +139,14 @@ fn main(){
 		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
 		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 1.0, 0.0), 5.0);
 
-		world
+		let entity = world
 			.create_entity()
 			.with(transform)
 			.with(geom_light.clone())
 			.with(material_light.clone())
 			.with(light.clone())
 			.build();
+		world.add_child(root, entity);
 	}
 
 
@@ -222,6 +230,6 @@ fn main(){
 		}
 
 		system_transform.run_now(&world.res);
-		render_system.run_now(&world.res);
+		render_system.run(&mut world, root);
 	}
 }

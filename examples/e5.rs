@@ -75,7 +75,7 @@ fn main(){
 	let shared_mat_standard2 = SharedMaterials::new(mat_standard2);
 
 
-	let obj_parent = world
+	let root = world
 		.create_entity()
 		.with(Transform::default())
 		.build();
@@ -131,14 +131,16 @@ fn main(){
 			.with(mat2)
 			.build();
 
-		world.add_child(obj_parent, elem1);
-		world.add_child(obj_parent, elem2);
+		world.add_child(root, elem1);
+		world.add_child(root, elem2);
 	}
 
-		let lights_parent = world
-			.create_entity()
-			.with(Transform::default())
-			.build();
+	let lights_parent = world
+		.create_entity()
+		.with(Transform::default())
+		.build();
+	world.add_child(root, lights_parent);
+
 
 
 
@@ -244,6 +246,6 @@ fn main(){
 		}
 
 		system_transform.run_now(&world.res);
-		render_system.run_now(&world.res);
+		render_system.run(&mut world, root);
 	}
 }

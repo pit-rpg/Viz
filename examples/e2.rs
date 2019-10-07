@@ -18,6 +18,7 @@ use project::{
 		ShaderProgram,
 		SystemTransform,
 		UniformName,
+		EntityRelations,
 	},
 	helpers::{geometry_generators},
 };
@@ -93,6 +94,10 @@ fn main(){
 
 	let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(1.0,1.0,1.0,1.0)));
 
+	let root = world
+		.create_entity()
+		.build();
+
 	let e2 = world
 		.create_entity()
 		.with(geom_container.clone())
@@ -107,12 +112,17 @@ fn main(){
 		.with(camera)
 		.build();
 
-	world
+	let e3 = world
 		.create_entity()
 		.with(geom_light.clone())
 		.with(material_light)
 		.with(transform_light)
 		.build();
+
+
+	world.add_child(root, e2);
+	world.add_child(root, e3);
+	world.add_child(root, e_cam);
 
 
 	for i in 0..count {
@@ -147,6 +157,7 @@ fn main(){
 			.with(transform)
 			.build();
 		boxes.push(m_box);
+		world.add_child(root, m_box);
 	}
 
 
@@ -249,6 +260,6 @@ fn main(){
 		}
 
 		system_transform.run_now(&world.res);
-		render_system.run_now(&world.res);
+		render_system.run(&mut world, root);
 	}
 }

@@ -8,7 +8,7 @@ use std::path::Path;
 use project::{
 	core::{
 		create_world, BufferType, Material, PerspectiveCamera, PointLight, ShaderProgram,
-		SharedGeometry, SharedMaterials, SharedTexture2D, SystemTransform, Transform, UniformName,
+		SharedGeometry, SharedMaterials, SharedTexture2D, SystemTransform, Transform, UniformName, EntityRelations
 	},
 	glutin,
 	glutin::MouseScrollDelta,
@@ -45,6 +45,10 @@ fn main() {
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
+	let root = world
+		.create_entity()
+		.build();
+
 	let e_cam = world
 		.create_entity()
 		.with(transform_camera)
@@ -77,12 +81,13 @@ fn main() {
 			material.set_uniform(UniformName::SpecularStrength, 1.0);
 		}
 
-		world
+		let entity = world
 			.create_entity()
 			.with(transform)
 			.with(geom)
 			.with(mat)
 			.build();
+		world.add_child(root, entity);
 	}
 
 	let mut lights = Vec::new();
@@ -111,6 +116,7 @@ fn main() {
 			.build();
 
 		lights.push(e_light);
+		world.add_child(root, e_light);
 	}
 
 	render_system.camera = Some(e_cam);
@@ -213,6 +219,6 @@ fn main() {
 		}
 
 		system_transform.run_now(&world.res);
-		render_system.run_now(&world.res);
+		render_system.run(&mut world, root);
 	}
 }
