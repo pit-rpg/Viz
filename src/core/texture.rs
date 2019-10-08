@@ -156,13 +156,12 @@ impl Texture2D {
 				TextureDataSource::TextureBuffer => {
 					texture_data.width = width;
 					texture_data.height = height;
-					self.need_update = true;
 				}
 				TextureDataSource::Raw(_) => unimplemented!(),
 				TextureDataSource::RawUploaded => unimplemented!(),
 			}
+			self.need_update = true;
 		}
-		unimplemented!();
 	}
 }
 

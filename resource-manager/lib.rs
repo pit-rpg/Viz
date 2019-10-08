@@ -8,7 +8,7 @@ use tar::Archive;
 
 use self::serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{PathBuf, Path};
+use std::path::{PathBuf};
 
 // #[derive(Serialize, Deserialize, Debug)]
 // pub struct LoadedResource {

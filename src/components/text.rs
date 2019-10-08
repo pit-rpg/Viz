@@ -1,6 +1,6 @@
 extern crate typer;
 
-use core::{Texture2D, SharedTexture2D, TextureData, Rect, TextureColorType, SharedGeometry, TextureDataSource};
+use core::{Texture2D, SharedTexture2D, TextureData, TextureColorType, SharedGeometry, TextureDataSource};
 use math::{Vector4};
 use self::typer::{TextRenderer, Typer};
 use self::typer::rusttype::{Font};

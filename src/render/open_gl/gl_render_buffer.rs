@@ -21,7 +21,7 @@ impl Drop for RenderBufferId {
 
 		gl_call!({
 			// TODO remove Renderbuffers
-			gl::DeleteRenderbuffers(1, self.id as *const u32);
+			gl::DeleteRenderbuffers(1, &self.id);
 		});
 	}
 }

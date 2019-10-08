@@ -6,8 +6,8 @@ use std::f64::consts::PI as PI_f64;
 
 use project::{
 	core::{
-		create_world, Blending, EntityRelations, FrameOutput, Material, PerspectiveCamera,
-		ShaderProgram, ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterials,
+		create_world, Blending, EntityRelations, Material, PerspectiveCamera,
+		ShaderProgram, ShaderTag, SharedGeometry, SharedMaterials,
 		SharedTexture2D, SystemTransform, Transform, TransformLock, UniformName,
 	},
 	glutin,

@@ -20,7 +20,7 @@ impl Drop for TextureId {
 
 		gl_call!({
 			// TODO remove textures
-			gl::DeleteTextures(1, self.id as *const u32);
+			gl::DeleteTextures(1, &self.id);
 		});
 	}
 }

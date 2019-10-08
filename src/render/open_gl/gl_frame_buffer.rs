@@ -22,7 +22,7 @@ impl Drop for FrameBufferId {
 
 		gl_call!({
 			// TODO: remove Renderbuffers
-			gl::DeleteRenderbuffers(1, self.id as *const u32);
+			gl::DeleteFramebuffers(1, &self.id);
 		});
 	}
 }

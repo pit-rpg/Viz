@@ -20,7 +20,7 @@ impl RenderBuffer {
 	pub fn new(width: u32, height: u32, color_type: TextureColorType) -> Self {
 		Self {
 			uuid: Uuid::new_v4(),
-			color_type: TextureColorType::DepthStencil,
+			color_type,
 			width,
 			height,
 			need_update: true,
