@@ -299,12 +299,11 @@ pub fn simple_plane() -> BufferGeometry {
 
 	// buffers
 	let mut vertices = vec![
-		Vector3::new(0.0,0.0,0.0),
-		Vector3::new(0.0,1.0,0.0),
-		Vector3::new(1.0,1.0,0.0),
-		Vector3::new(1.0,0.0,0.0),
+		Vector3::new(-1.0, -1.0, 0.0),
+		Vector3::new(-1.0, 1.0, 0.0),
+		Vector3::new(1.0, 1.0, 0.0),
+		Vector3::new(1.0, -1.0, 0.0),
 	];
-
 	let mut indices = vec![
 		0,1,2,
 		0,2,3

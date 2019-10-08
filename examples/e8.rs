@@ -6,9 +6,9 @@ use std::f64::consts::PI as PI_f64;
 
 use project::{
 	core::{
-		create_world, Blending, FrameOutput, Material, PerspectiveCamera, ShaderProgram, ShaderTag,
-		SharedFrameBuffer, SharedGeometry, SharedMaterials, SharedTexture2D, SystemTransform,
-		Transform, TransformLock, UniformName, EntityRelations
+		create_world, Blending, EntityRelations, FrameOutput, Material, PerspectiveCamera,
+		ShaderProgram, ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterials,
+		SharedTexture2D, SystemTransform, Transform, TransformLock, UniformName,
 	},
 	glutin,
 	glutin::MouseScrollDelta,
@@ -97,7 +97,6 @@ fn main() {
 	let center = Vector3::new_zero();
 	let mut radius = 20.0;
 	let zoom_speed = 0.5;
-	let mut running = true;
 
 	let mut camera = PerspectiveCamera::new();
 	let mut transform_camera = Transform::default();
@@ -107,13 +106,18 @@ fn main() {
 	let geom_plane =
 		SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
 
-	let root = world.create_entity().build();
+	let root = world
+		.create_entity()
+		.with(Transform::default())
+		.build();
 
 	let e_cam = world
 		.create_entity()
 		.with(transform_camera)
 		.with(camera)
 		.build();
+
+	world.add_child(root, e_cam);
 
 	emojis.iter().for_each(|item| {
 		let mut pos = Vector3::random();
@@ -169,22 +173,19 @@ fn main() {
 		};
 
 		if let FrameOutput::SharedTexture2D(texture) = buffer_texture {
-			let mut mat = Material::new_mesh_standard();
+			let geom = geometry_generators::simple_plane();
+			println!("{:?}", geom);
+
+			let geom_plane = SharedGeometry::new(geom);
+			let mut mat = Material::new_frame_buffer();
 			mat.set_uniform(UniformName::MapColor, texture);
-			mat.set_uniform(UniformName::Alpha, 1.0);
-
-			mat.add_tag(ShaderTag::Shadeless);
-
 			let material = SharedMaterials::new(mat);
-			let mut transform = Transform::default();
-			transform.lock = TransformLock::RotationScale;
-			transform.scale.multiply_scalar(0.3);
 
 			buffer_plane = world
 				.create_entity()
-				.with(transform)
-				.with(geom_plane.clone())
-				.with(material.clone())
+				.with(Transform::default())
+				.with(geom_plane)
+				.with(material)
 				.build();
 		}
 	}
@@ -195,11 +196,39 @@ fn main() {
 	let mut hidpi_factor = render_system
 		.windowed_context
 		.window()
-		.get_hidpi_factor()
-		.round();
+		.get_hidpi_factor();
+
 	let mut window_state = WindowState::default();
 
 	// let mut frame_count: u32 = 0;
+
+	render_system
+		.clear_color
+		.from_vector3(&Vector3::new(0.0, 0.5, 0.5), 1.0);
+
+	// render_system.events_loop.run(move |event, _, control_flow| {
+	// 	println!("{:?}", event);
+	// 	*control_flow = ControlFlow::Wait;
+
+	// 	match event {
+	// 		Event::LoopDestroyed => return,
+	// 		Event::WindowEvent { ref event, .. } => match event {
+	// 			WindowEvent::Resized(logical_size) => {
+	// 				let dpi_factor = windowed_context.window().hidpi_factor();
+	// 				windowed_context.resize(logical_size.to_physical(dpi_factor));
+	// 			}
+	// 			WindowEvent::RedrawRequested => {
+	// 				gl.draw_frame([1.0, 0.5, 0.7, 1.0]);
+	// 				windowed_context.swap_buffers().unwrap();
+	// 			}
+	// 			WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+	// 			_ => (),
+	// 		},
+	// 		_ => (),
+	// 	}
+	// });
+
+	let mut running = true;
 
 	while running {
 		// frame_count += 1;
@@ -212,11 +241,18 @@ fn main() {
 				glutin::Event::WindowEvent { event, .. } => match event {
 					glutin::WindowEvent::CloseRequested => running = false,
 					glutin::WindowEvent::Resized(logical_size) => {
+						println!("{:?}", logical_size);
+						println!(
+							"{} : {}",
+							(logical_size.width * hidpi_factor) as i32,
+							(logical_size.height * hidpi_factor) as i32,
+						);
+
+						hidpi_factor = windowed_context.window().get_hidpi_factor();
+
+						windowed_context.resize(logical_size.to_physical(hidpi_factor));
 						window_state.window_size.0 = logical_size.width;
 						window_state.window_size.1 = logical_size.height;
-
-						hidpi_factor = windowed_context.window().get_hidpi_factor().round();
-						windowed_context.resize(logical_size.to_physical(hidpi_factor));
 
 						gl_call!({
 							gl::Viewport(
@@ -226,6 +262,12 @@ fn main() {
 								(logical_size.height * hidpi_factor) as i32,
 							);
 						});
+
+						frame_buffer.set_size(
+							(logical_size.width * hidpi_factor) as u32,
+							(logical_size.height * hidpi_factor) as u32,
+						);
+
 						println!(
 							"logical_size: {:?}, hidpi_factor: {:?}",
 							logical_size, hidpi_factor
@@ -259,7 +301,7 @@ fn main() {
 
 			{
 				let transform_camera = transform_store.get_mut(e_cam).unwrap();
-				let aspect = window_state.window_size.0 / window_state.window_size.1;
+				let aspect = window_state.window_size.0.floor() / window_state.window_size.1.floor();
 
 				let camera = cam_store.get_mut(e_cam).unwrap();
 				camera.aspect = aspect as f32;
@@ -278,6 +320,7 @@ fn main() {
 
 		render_system.set_frame_buffer(Some(frame_buffer.clone()));
 		render_system.run(&mut world, root);
+
 		render_system.set_frame_buffer(None);
 		render_system.run(&mut world, buffer_plane);
 	}

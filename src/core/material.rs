@@ -200,6 +200,11 @@ impl Material {
 		mat
 	}
 
+
+	pub fn new_frame_buffer() -> Self {
+		Material::new("frame_buffer")
+	}
+
 }
 
 
