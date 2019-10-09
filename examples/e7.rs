@@ -232,7 +232,7 @@ fn main() {
 			}
 		}
 
-		system_transform.run_now(&world.res);
+		system_transform.run_now(&world);
 		render_system.run(&mut world, root);
 	}
 }

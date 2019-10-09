@@ -41,11 +41,7 @@ use self::gltf::{
 	Document,
 };
 
-use self::specs::{
-	World,
-	Builder,
-	Entity
-};
+use self::specs::prelude::*;
 
 use core::{
 	Transform,

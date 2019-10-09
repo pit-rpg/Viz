@@ -19,7 +19,7 @@ use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::dpi::*;
 use self::glutin::{ContextError, ContextWrapper, EventsLoop, Window};
-use self::specs::{Entity, Join, ReadStorage, System, SystemData, World, Write, WriteStorage};
+use self::specs::prelude::*;
 
 use super::super::{
 	gl_frame_buffer::{GLFrameBuffer, GLFrameBufferIDs},
@@ -288,18 +288,18 @@ impl RenderSystem {
 			mut gl_frame_buffer_ids,
 			mut gl_render_buffer_ids,
 		): (
-			ReadStorage<'a, PerspectiveCamera>,
-			ReadStorage<'a, Transform>,
-			WriteStorage<'a, SharedGeometry>,
-			WriteStorage<'a, SharedMaterials>,
-			WriteStorage<'a, PointLight>,
-			WriteStorage<'a, DirectionalLight>,
-			Write<'a, VertexArraysIDs>,
-			Write<'a, GLMaterialIDs>,
-			Write<'a, GLTextureIDs>,
-			Write<'a, GLFrameBufferIDs>,
-			Write<'a, GLRenderBufferIDs>,
-		) = SystemData::fetch(&world.res);
+			ReadStorage<PerspectiveCamera>,
+			ReadStorage<Transform>,
+			WriteStorage<SharedGeometry>,
+			WriteStorage<SharedMaterials>,
+			WriteStorage<PointLight>,
+			WriteStorage<DirectionalLight>,
+			Write<VertexArraysIDs>,
+			Write<GLMaterialIDs>,
+			Write<GLTextureIDs>,
+			Write<GLFrameBufferIDs>,
+			Write<GLRenderBufferIDs>,
+		) = SystemData::fetch(&world);
 
 		self.bind_frame_buffer(
 			&mut gl_texture_ids,

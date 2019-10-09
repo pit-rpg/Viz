@@ -1,5 +1,5 @@
 extern crate specs;
-use self::specs::{World};
+use self::specs::prelude::*;
 use super::{
 	SharedGeometry,
 	SharedMaterials,

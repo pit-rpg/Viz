@@ -1,6 +1,7 @@
 extern crate specs;
 
-use self::specs::{error::WrongGeneration, Component, Entity, VecStorage, World};
+use specs::prelude::*;
+use specs::error::WrongGeneration;
 
 pub struct Parent {
 	pub entity: Entity,

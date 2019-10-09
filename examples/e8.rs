@@ -316,7 +316,7 @@ fn main() {
 			}
 		}
 
-		system_transform.run_now(&world.res);
+		system_transform.run_now(&world);
 
 		render_system.set_frame_buffer(Some(frame_buffer.clone()));
 		render_system.run(&mut world, root);
