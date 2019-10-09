@@ -5,7 +5,7 @@ extern crate uuid;
 use self::byteorder::{LittleEndian, WriteBytesExt};
 use self::gl::types::*;
 use self::uuid::Uuid;
-use core::{BufferAttribute, BufferGeometry, BufferData, BufferType};
+use core::{BufferGeometry, BufferData, BufferType};
 use std::collections::HashMap;
 use std::mem;
 use std::os::raw::c_void;

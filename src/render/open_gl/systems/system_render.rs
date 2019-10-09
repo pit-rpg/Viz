@@ -25,7 +25,7 @@ use super::super::{
 	gl_frame_buffer::{GLFrameBuffer, GLFrameBufferIDs},
 	gl_geometry::VertexArraysIDs,
 	gl_material::GLMaterialIDs,
-	gl_render_buffer::{GLRenderBuffer, GLRenderBufferIDs},
+	gl_render_buffer::{GLRenderBufferIDs},
 	gl_texture::GLTextureIDs,
 	GLGeometry, GLMaterial,
 };
@@ -81,11 +81,11 @@ pub struct RenderSystem {
 impl RenderSystem {
 	pub fn new(world: &mut World, depth_test: bool, stencil_test: bool, blending: bool) -> Self {
 		// TODO: ensure once
-		world.add_resource(VertexArraysIDs::new());
-		world.add_resource(GLMaterialIDs::new());
-		world.add_resource(GLTextureIDs::new());
-		world.add_resource(GLRenderBufferIDs::new());
-		world.add_resource(GLFrameBufferIDs::new());
+		world.insert(VertexArraysIDs::new());
+		world.insert(GLMaterialIDs::new());
+		world.insert(GLTextureIDs::new());
+		world.insert(GLRenderBufferIDs::new());
+		world.insert(GLFrameBufferIDs::new());
 		// TODO: ensure once /
 
 		let events_loop = glutin::EventsLoop::new();
