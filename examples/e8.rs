@@ -130,9 +130,9 @@ fn main() {
 		mat.set_uniform(UniformName::Alpha, 1.0);
 
 		if item.find("emoji").is_some() {
-			mat.set_blending(Blending::Transparent);
+			mat.blending = Blending::Transparent;
 		} else {
-			mat.set_blending(Blending::Additive);
+			mat.blending = Blending::Additive;
 		}
 
 		mat.add_tag(ShaderTag::Shadeless);

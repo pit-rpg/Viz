@@ -3,7 +3,7 @@ use self::uuid::Uuid;
 
 extern crate specs;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use super::SharedTexture2D;
 
@@ -23,7 +23,7 @@ pub enum Uniform {
 	Texture2D(Option<SharedTexture2D>, u32),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum UniformName {
 	Color,
 	Alpha,
@@ -55,17 +55,6 @@ pub enum UniformName {
 }
 
 impl UniformName {
-	// pub fn get_tag(&self) -> Option<ShaderTag> {
-	// 	match self {
-	// 		UniformName::Metalness => Some(ShaderTag::Metalness),
-	// 		UniformName::AmbientLight => Some(ShaderTag::AmbientLight),
-	// 		UniformName::Emissive => Some(ShaderTag::Emissive),
-	// 		UniformName::Alpha => Some(ShaderTag::Transparent),
-	// 		UniformName::MapAlpha => Some(ShaderTag::Transparent),
-	// 		_ => None,
-	// 	}
-	// }
-
 	pub fn get_name(&self) -> String {
 		match self {
 			UniformName::Color => "color".to_string(),
@@ -99,9 +88,6 @@ impl UniformName {
 	}
 }
 
-
-
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
 pub enum Blending {
 	None,
@@ -130,51 +116,51 @@ pub struct UniformItem {
 	pub need_update: bool,
 }
 
-#[allow(dead_code)]
-pub trait ShaderProgram {
-	fn set_uniform<T: ToUniform>(&mut self, name: UniformName, value: T) {
-		let uniforms = self.get_uniforms_mut();
-		let uniform = value.to_uniform();
+// #[allow(dead_code)]
+// pub trait ShaderProgram {
+// 	fn set_uniform<T: ToUniform>(&mut self, name: UniformName, value: T) {
+// 		let uniforms = self.get_uniforms_mut();
+// 		let uniform = value.to_uniform();
 
-		let res = uniforms.iter_mut().find(|e| e.name == name);
-		if let Some(uniform_item) = res {
-			if uniform_item.uniform == uniform {
-				return;
-			}
-			uniform_item.uniform = uniform;
-			uniform_item.need_update = true;
-		} else {
-			let new_uniform = UniformItem {
-				name,
-				uniform: uniform,
-				need_update: true,
-			};
+// 		let res = uniforms.iter_mut().find(|e| e.name == name);
+// 		if let Some(uniform_item) = res {
+// 			if uniform_item.uniform == uniform {
+// 				return;
+// 			}
+// 			uniform_item.uniform = uniform;
+// 			uniform_item.need_update = true;
+// 		} else {
+// 			let new_uniform = UniformItem {
+// 				name,
+// 				uniform: uniform,
+// 				need_update: true,
+// 			};
 
-			uniforms.push(new_uniform);
-			self.set_need_update(true);
-		}
-	}
+// 			uniforms.push(new_uniform);
+// 			self.set_need_update(true);
+// 		}
+// 	}
 
-	fn get_src(&self) -> &str;
+// 	fn get_src(&self) -> &str;
 
-	fn get_uniforms(&self) -> &Vec<UniformItem>;
-	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
-	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
+// 	fn get_uniforms(&self) -> &Vec<UniformItem>;
+// 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
+// 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
 
-	fn remove_tag(&mut self, tag: ShaderTag);
-	fn add_tag(&mut self, tag: ShaderTag);
-	fn has_tag(&self, tag: ShaderTag) -> bool;
-	fn get_tags(&self) -> &HashSet<ShaderTag>;
-	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
+// 	fn remove_tag(&mut self, tag: ShaderTag);
+// 	fn add_tag(&mut self, tag: ShaderTag);
+// 	fn has_tag(&self, tag: ShaderTag) -> bool;
+// 	fn get_tags(&self) -> &HashSet<ShaderTag>;
+// 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
 
-	fn get_uuid(&self) -> Uuid;
+// 	fn get_uuid(&self) -> Uuid;
 
-	fn is_need_update(&self) -> bool;
-	fn set_need_update(&mut self, bool);
+// 	fn is_need_update(&self) -> bool;
+// 	fn set_need_update(&mut self, bool);
 
-	fn blending(&self) -> Blending;
-	fn set_blending(&mut self, blending: Blending);
-}
+// 	fn blending(&self) -> Blending;
+// 	fn set_blending(&mut self, blending: Blending);
+// }
 
 pub trait ToUniform: PartialEq {
 	fn to_uniform(self) -> Uniform;
@@ -233,5 +219,92 @@ impl ToUniform for Option<SharedTexture2D> {
 impl ToUniform for SharedTexture2D {
 	fn to_uniform(self) -> Uniform {
 		Uniform::Texture2D(Some(self), 0)
+	}
+}
+
+
+#[derive(Debug)]
+pub struct ShaderProgram {
+	uuid: Uuid,
+	src: String,
+	uniforms: HashMap<UniformName, Uniform>,
+	tags: HashSet<ShaderTag>,
+	need_update: bool,
+	blending_mode: Blending,
+}
+
+impl ShaderProgram {
+	pub fn new(src: String) -> Self {
+		Self {
+			uuid: Uuid::new_v4(),
+			src: src.to_string(),
+			uniforms: HashMap::default(),
+			tags: HashSet::new(),
+			need_update: true,
+			blending_mode: Blending::None,
+		}
+	}
+
+	pub fn set_uniform(&mut self, key: &UniformName, val: Uniform) -> bool {
+		if let Some(uniform) = self.uniforms.get(key) {
+			if *uniform == val {
+				return false;
+			}
+		}
+		self.uniforms.insert(key.clone(), val);
+		true
+	}
+
+	pub fn add_tag(&mut self, tag: ShaderTag) {
+		self.tags.insert(tag);
+		self.set_need_update(true);
+	}
+
+	pub fn remove_tag(&mut self, tag: ShaderTag) {
+		self.tags.remove(&tag);
+		self.set_need_update(true);
+	}
+
+	pub fn has_tag(&self, tag: ShaderTag) -> bool {
+		self.tags.get(&tag).is_some()
+	}
+
+	pub fn get_tags(&self) -> &HashSet<ShaderTag> {
+		&self.tags
+	}
+
+	pub fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag> {
+		&mut self.tags
+	}
+
+	pub fn get_uuid(&self) -> Uuid {
+		self.uuid
+	}
+
+	pub fn is_need_update(&self) -> bool {
+		self.need_update
+	}
+
+	pub fn set_need_update(&mut self, update: bool) {
+		self.need_update = update;
+	}
+
+	pub fn blending(&self) -> Blending {
+		self.blending_mode
+	}
+
+	pub fn set_blending(&mut self, blending: Blending) {
+		if self.blending_mode != blending {
+			self.blending_mode = blending;
+			self.set_need_update(true);
+		}
+	}
+
+	pub fn get_src(&self) -> &str {
+		&self.src[..]
+	}
+
+	pub fn get_uniforms(&self) -> &HashMap<UniformName, Uniform> {
+		&self.uniforms
 	}
 }

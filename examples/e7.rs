@@ -46,12 +46,12 @@ fn main() {
 		"res/emoji/face-with-uneven-eyes-and-wavy-mouth_1f974.png",
 		"res/emoji/flushed-face_1f633.png",
 		"res/emoji/ghost_1f47b.png",
-		"res/flash/1.jpg",
-		"res/flash/203565_preview.png",
-		"res/flash/266371335012212.png",
-		"res/flash/burst.jpg",
-		"res/flash/eb07a72e2a175be326a53cacac303139.png",
-		"res/flash/lolo.png",
+		// "res/flash/1.jpg",
+		// "res/flash/203565_preview.png",
+		// "res/flash/266371335012212.png",
+		// "res/flash/burst.jpg",
+		// "res/flash/eb07a72e2a175be326a53cacac303139.png",
+		// "res/flash/lolo.png",
 		"res/emoji/grimacing-face_1f62c.png",
 		"res/emoji/grinning-face-with-one-large-and-one-small-eye_1f92a.png",
 		"res/emoji/grinning-face-with-smiling-eyes_1f601.png",
@@ -114,20 +114,22 @@ fn main() {
 		.with(camera)
 		.build();
 
+	let base_mat = Material::new_mesh_standard();
+
 	emojis.iter().for_each(|item| {
 		let mut pos = Vector3::random();
 		pos.multiply_scalar(10.0);
 		pos.sub_scalar(5.0);
 
+		let mut mat = base_mat.clone();
 		let texture = SharedTexture2D::new_from_path(item);
-		let mut mat = Material::new_mesh_standard();
 		mat.set_uniform(UniformName::MapColor, texture);
 		mat.set_uniform(UniformName::Alpha, 1.0);
 
 		if item.find("emoji").is_some() {
-			mat.set_blending(Blending::Transparent);
+			mat.blending = Blending::Transparent;
 		} else {
-			mat.set_blending(Blending::Additive);
+			mat.blending = Blending::Additive;
 		}
 
 		mat.add_tag(ShaderTag::Shadeless);
