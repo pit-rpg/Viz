@@ -4,7 +4,7 @@ extern crate project;
 
 use project::{
 	core::{
-		create_world, EntityRelations, Material, PerspectiveCamera, ShaderProgram, SharedGeometry, SharedMaterials,
+		create_world, EntityRelations, Material, PerspectiveCamera, ShaderProgram, ShaderTag, SharedGeometry, SharedMaterials,
 		SharedTexture2D, SystemTransform, Transform, UniformName,
 	},
 	glutin,
@@ -62,8 +62,9 @@ fn main() {
 	let texture_container = SharedTexture2D::new_from_path("images/container2.png");
 	let texture_container_specular = SharedTexture2D::new_from_path("images/container2_specular.png");
 
-	let mut material2 = Material::new_basic_texture();
-	material2.set_uniform(UniformName::MapColor, texture2.clone());
+	let mut material2 = Material::new_mesh_standard();
+	material2.set_uniform(UniformName::MapColor, texture2);
+	material2.add_tag(ShaderTag::Shadeless);
 	let material2 = SharedMaterials::new(material2);
 
 	let mut material_sphere = Material::new_light_texture(

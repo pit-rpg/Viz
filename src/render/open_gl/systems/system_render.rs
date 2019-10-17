@@ -196,7 +196,7 @@ impl RenderSystem {
 
 		match blending {
 			Blending::None => {}
-			Blending::Transparent => gl_call!({
+			Blending::Mix => gl_call!({
 				gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
 			}),
 			Blending::Additive => gl_call!({
@@ -710,7 +710,7 @@ impl RenderSystem {
 // 					rot.copy(&transform.quaternion);
 // 					matrix_model.compose(&pos, &rot, &scale);
 // 				}
-// 				TransformLock::None => {}
+// 				TransformLock:Shadeless:None => {}
 // 			}
 
 // 			let mut matrix_normal = Matrix3::new();

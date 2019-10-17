@@ -130,60 +130,63 @@ pub fn set_uniforms(
 	shader_program: &mut ShaderProgram,
 	shader_program_id: &mut GLShaderProgramID,
 	texture_store: &mut GLTextureIDs,
-	force: bool
+	force: bool,
 ) {
-	uniforms
-		.iter()
-		.for_each(|(name, uniform)| {
-			if !force && !shader_program.set_uniform(name, (*uniform).clone()) {
-				return;
-			}
+	uniforms.iter().for_each(|(name, uniform)| {
+		let isTexture = match uniform {
+			Uniform::Texture2D(_, _) => true,
+			_ => false,
+		};
 
-			if shader_program_id.uniform_locations.get(name).is_none() {
-				let c_name = CString::new(name.get_name().as_bytes()).unwrap();
-				let location;
+		if !force && !shader_program.set_uniform(name, (*uniform).clone()) && !isTexture {
+			return;
+		}
 
+		if shader_program_id.uniform_locations.get(name).is_none() {
+			let c_name = CString::new(name.get_name().as_bytes()).unwrap();
+			let location;
+
+			gl_call!({
+				location = gl::GetUniformLocation(shader_program_id.id, c_name.as_ptr());
+			});
+
+			println!(">>...........{:?} {}", name, location);
+			if let Uniform::Texture2D(_, _) = uniform {
+				println!("...........{} {:?}", shader_program_id.texture_slots, name);
 				gl_call!({
-					location = gl::GetUniformLocation(shader_program_id.id, c_name.as_ptr());
+					gl::Uniform1i(location, shader_program_id.texture_slots);
 				});
-
-				println!(">>...........{:?} {}", name, location);
-				if let Uniform::Texture2D(_, _) = uniform {
-					println!("...........{} {:?}", shader_program_id.texture_slots, name);
-					gl_call!({
-						gl::Uniform1i(location, shader_program_id.texture_slots);
-					});
-					shader_program_id.uniform_locations.insert(
-						name.clone(),
-						UniformLocation {
-							location,
-							texture_slot: shader_program_id.texture_slots,
-						},
-					);
-					shader_program_id.texture_slots += 1;
-				} else {
-					shader_program_id.uniform_locations.insert(
-						name.clone(),
-						UniformLocation {
-							location,
-							texture_slot: -1,
-						},
-					);
-				}
+				shader_program_id.uniform_locations.insert(
+					name.clone(),
+					UniformLocation {
+						location,
+						texture_slot: shader_program_id.texture_slots,
+					},
+				);
+				shader_program_id.texture_slots += 1;
+			} else {
+				shader_program_id.uniform_locations.insert(
+					name.clone(),
+					UniformLocation {
+						location,
+						texture_slot: -1,
+					},
+				);
 			}
+		}
 
-			if let Some(uniform_location) = shader_program_id.uniform_locations.get(name) {
-				match uniform {
-					Uniform::Texture2D(_, _) => {
-						// TODO: check to remove
-						set_uniform(uniform.clone(), uniform_location, texture_store);
-					}
-					_ => {
-						set_uniform(uniform.clone(), uniform_location, texture_store);
-					}
-				}
-			}
-		});
+		if let Some(uniform_location) = shader_program_id.uniform_locations.get(name) {
+			set_uniform(uniform.clone(), uniform_location, texture_store);
+			// match uniform {
+			// 	Uniform::Texture2D(_, _) => {
+			// 		// TODO: check to remove
+			// 	}
+			// 	_ => {
+			// 		set_uniform(uniform.clone(), uniform_location, texture_store);
+			// 	}
+			// }
+		}
+	});
 }
 
 pub fn read_shader_file(bind_context: &BindContext, path: &str) -> String {
@@ -231,7 +234,7 @@ fn set_definitions_fragment(code: &String, shader: &ShaderProgram, bind_context:
 		.tags
 		.iter()
 		.chain(shader.get_tags())
-		.chain(get_blending_tags(shader.blending()).iter())
+		// .chain(get_blending_tags(shader.blending()).iter())
 		.map(|e| format!("#define {}\n", e.definition()))
 		.chain(
 			bind_context
@@ -268,7 +271,7 @@ fn set_definitions_vertex(code: &String, shader: &ShaderProgram, bind_context: &
 		.tags
 		.iter()
 		.chain(shader.get_tags())
-		.chain(get_blending_tags(shader.blending()).iter())
+		// .chain(get_blending_tags(shader.blending()).iter())
 		.map(|tag| format!("#define {}\n", tag.definition()))
 		.chain(
 			bind_context
@@ -435,19 +438,19 @@ impl GLShaderTag for ShaderTag {
 	}
 }
 
-fn get_blending_tags(blending: Blending) -> HashSet<ShaderTag> {
-	let mut set = HashSet::new();
+// fn get_blending_tags(blending: Blending) -> HashSet<ShaderTag> {
+// 	let mut set = HashSet::new();
 
-	match blending {
-		Blending::None => {}
-		Blending::Transparent => {
-			set.insert(ShaderTag::Transparent);
-		}
-		Blending::Additive => {
-			set.insert(ShaderTag::Transparent);
-			set.insert(ShaderTag::Additive);
-		}
-	};
+// 	match blending {
+// 		Blending::None => {}
+// 		Blending::Transparent => {
+// 			set.insert(ShaderTag::Transparent);
+// 		}
+// 		Blending::Additive => {
+// 			set.insert(ShaderTag::Transparent);
+// 			set.insert(ShaderTag::Additive);
+// 		}
+// 	};
 
-	set
-}
+// 	set
+// }

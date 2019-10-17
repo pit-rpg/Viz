@@ -91,7 +91,7 @@ impl UniformName {
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
 pub enum Blending {
 	None,
-	Transparent,
+	Mix,
 	Additive,
 }
 
@@ -230,7 +230,7 @@ pub struct ShaderProgram {
 	uniforms: HashMap<UniformName, Uniform>,
 	tags: HashSet<ShaderTag>,
 	need_update: bool,
-	blending_mode: Blending,
+	// blending_mode: Blending,
 }
 
 impl ShaderProgram {
@@ -241,7 +241,7 @@ impl ShaderProgram {
 			uniforms: HashMap::default(),
 			tags: HashSet::new(),
 			need_update: true,
-			blending_mode: Blending::None,
+			// blending_mode: Blending::None,
 		}
 	}
 
@@ -289,16 +289,16 @@ impl ShaderProgram {
 		self.need_update = update;
 	}
 
-	pub fn blending(&self) -> Blending {
-		self.blending_mode
-	}
+	// pub fn blending(&self) -> Blending {
+	// 	self.blending_mode
+	// }
 
-	pub fn set_blending(&mut self, blending: Blending) {
-		if self.blending_mode != blending {
-			self.blending_mode = blending;
-			self.set_need_update(true);
-		}
-	}
+	// pub fn set_blending(&mut self, blending: Blending) {
+	// 	if self.blending_mode != blending {
+	// 		self.blending_mode = blending;
+	// 		self.set_need_update(true);
+	// 	}
+	// }
 
 	pub fn get_src(&self) -> &str {
 		&self.src[..]

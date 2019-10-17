@@ -130,12 +130,13 @@ fn main() {
 		mat.set_uniform(UniformName::Alpha, 1.0);
 
 		if item.find("emoji").is_some() {
-			mat.blending = Blending::Transparent;
+			mat.blending = Blending::Mix;
 		} else {
 			mat.blending = Blending::Additive;
 		}
 
 		mat.add_tag(ShaderTag::Shadeless);
+		mat.add_tag(ShaderTag::Transparent);
 
 		let material = SharedMaterials::new(mat);
 		let mut transform = Transform::from_position(pos);
