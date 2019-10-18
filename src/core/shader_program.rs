@@ -105,6 +105,8 @@ pub enum ShaderTag {
 	Emissive,
 	Additive,
 	Shadeless,
+	ReceiveShadows,
+	CastShadows,
 
 	Other(String),
 }

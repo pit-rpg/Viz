@@ -11,8 +11,7 @@ use std::time::{Duration, Instant};
 
 use core::{
 	Blending, BufferGeometry, BufferGroup, DirectionalLight, EntityRelations, FrameBuffer, Material, PerspectiveCamera,
-	PointLight, ShaderProgram, ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterials, Transform, TransformLock,
-	UniformName,
+	PointLight, ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterials, Transform, TransformLock, UniformName,
 };
 
 use self::gl::types::*;
@@ -64,6 +63,8 @@ pub struct RenderSystem {
 	pub clear_color: Vector4<f32>,
 	pub clear_color_need_update: bool,
 	pub tags: Vec<ShaderTag>,
+	pub override_material: Option<SharedMaterials>,
+
 	lights_point_count: usize,
 	lights_directional_count: usize,
 	render_queue: Vec<DrawGroup>,
@@ -132,6 +133,7 @@ impl RenderSystem {
 			clear_color: Vector4::new_zero(),
 			clear_color_need_update: true,
 			tags: Vec::new(),
+			override_material: None,
 			// render_settings: RenderSettings::default(),
 			lights_point_count: 0,
 			lights_directional_count: 0,
@@ -272,9 +274,14 @@ impl RenderSystem {
 	}
 
 	pub fn run<'a>(&mut self, world: &'a mut World, root: Entity) {
+		let entities = world.get_all_children_entities(root);
+		self.render(world, &entities);
+	}
+
+	pub fn render<'a>(&mut self, world: &'a mut World, entities: &[Entity]) {
 		Self::gl_clear_error();
 
-		let mut entities = world.get_all_children_entities(root);
+		// let mut entities = world.get_all_children_entities(root);
 		let (
 			camera_coll,
 			transform_coll,
@@ -378,10 +385,12 @@ impl RenderSystem {
 			light_materials_need_update = true;
 		}
 
-		entities.drain(..).for_each(|entity| {
-			let transform = transform_coll.get(entity);
-			let geometry = geometry_coll.get_mut(entity);
-			let shared_materials = material_coll.get_mut(entity);
+		entities.iter().for_each(|entity| {
+			// TODO: optimize
+			let mut override_material = self.override_material.clone();
+			let shared_materials = override_material.as_mut().or(material_coll.get_mut(*entity));
+			let transform = transform_coll.get(*entity);
+			let geometry = geometry_coll.get_mut(*entity);
 
 			if transform.is_none() || geometry.is_none() || shared_materials.is_none() {
 				return;
@@ -508,284 +517,3 @@ impl RenderSystem {
 		self.swap_buffers().unwrap();
 	}
 }
-
-// impl<'a> System<'a> for RenderSystem {
-// 	type SystemData = (
-// 		ReadStorage<'a, PerspectiveCamera>,
-// 		ReadStorage<'a, Transform>,
-// 		WriteStorage<'a, SharedGeometry>,
-// 		WriteStorage<'a, SharedMaterials>,
-// 		WriteStorage<'a, PointLight>,
-// 		WriteStorage<'a, DirectionalLight>,
-// 		Write<'a, VertexArraysIDs>,
-// 		Write<'a, GLMaterialIDs>,
-// 		Write<'a, GLTextureIDs>,
-// 		Write<'a, GLFrameBufferIDs>,
-// 		Write<'a, GLRenderBufferIDs>,
-// 	);
-
-// 	fn run(&mut self, data: Self::SystemData) {
-// 		Self::gl_clear_error();
-
-// 		let (
-// 			camera_coll,
-// 			transform_coll,
-// 			mut geometry_coll,
-// 			mut material_coll,
-// 			light_point_coll,
-// 			light_direct_coll,
-// 			mut vertex_arrays_ids,
-// 			mut gl_material_ids,
-// 			mut gl_texture_ids,
-// 			mut gl_frame_buffer_ids,
-// 			mut gl_render_buffer_ids,
-// 		) = data;
-
-// 		self.bind_frame_buffer(
-// 			&mut gl_texture_ids,
-// 			&mut gl_frame_buffer_ids,
-// 			&mut gl_render_buffer_ids,
-// 		);
-
-// 		if self.clear_color_need_update {
-// 			gl_call!({
-// 				gl::ClearColor(
-// 					self.clear_color.x,
-// 					self.clear_color.y,
-// 					self.clear_color.z,
-// 					self.clear_color.w,
-// 				);
-// 			});
-// 			self.clear_color_need_update = false;
-// 		}
-// 		self.clear();
-
-// 		// Time
-// 		let new_now = Instant::now();
-// 		let mut delta = new_now.duration_since(self.timer);
-// 		self.timer = new_now;
-// 		match self.delta_max {
-// 			None => {}
-// 			Some(ref mut max) => {
-// 				if delta > *max {
-// 					delta = max.clone()
-// 				}
-// 			}
-// 		}
-
-// 		self.time += delta;
-
-// 		let time = self.get_duration();
-
-// 		let mut matrix_cam_position;
-// 		let matrix_projection;
-
-// 		match self.camera {
-// 			None => {
-// 				matrix_cam_position = Matrix4::new();
-// 				matrix_projection = Matrix4::new();
-// 			}
-// 			Some(ref cam) => {
-// 				let cam_transform = transform_coll.get(*cam).unwrap();
-// 				let camera = camera_coll.get(*cam).unwrap();
-// 				matrix_cam_position = Matrix4::new();
-// 				matrix_cam_position
-// 					.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local));
-// 				matrix_projection = camera.matrix_projection.clone();
-// 			}
-// 		}
-
-// 		let mut light_materials_need_update = false;
-
-// 		let lights_point: Vec<_> = (&light_point_coll, &transform_coll)
-// 			.join()
-// 			.map(|(light, transform)| {
-// 				let mut pos = transform.position.clone();
-// 				pos.apply_matrix_4(
-// 					&(matrix_cam_position * transform.matrix_world * transform.matrix_local),
-// 				);
-// 				(light, pos)
-// 			})
-// 			.collect();
-
-// 		let lights_direct: Vec<_> = (&light_direct_coll, &transform_coll)
-// 			.join()
-// 			.map(|(light, transform)| {
-// 				let mut direction = light.direction.clone();
-// 				let mut matrix_normal = Matrix3::new();
-// 				matrix_normal.get_normal_matrix(
-// 					&(matrix_cam_position * transform.matrix_world * transform.matrix_local),
-// 				);
-// 				direction.apply_matrix_3(&matrix_normal);
-// 				direction.normalize();
-// 				(light, direction)
-// 			})
-// 			.collect();
-
-// 		if lights_point.len() != self.lights_point_count {
-// 			self.lights_point_count = lights_point.len();
-// 			light_materials_need_update = true;
-// 		}
-
-// 		if lights_direct.len() != self.lights_directional_count {
-// 			self.lights_directional_count = lights_direct.len();
-// 			light_materials_need_update = true;
-// 		}
-
-// 		for (transform, geometry, shared_materials) in
-// 			(&transform_coll, &mut geometry_coll, &mut material_coll).join()
-// 		{
-// 			shared_materials.iter_mut().for_each(|shared_material| {
-// 				let material = &mut shared_material.lock().unwrap();
-
-// 				if !material.get_tags().contains(&ShaderTag::Lighting) {
-// 					return;
-// 				}
-
-// 				lights_point
-// 					.iter()
-// 					.enumerate()
-// 					.for_each(|(i, (light, pos))| {
-// 						let mut col = light.color.clone();
-// 						col.multiply_scalar(light.power);
-
-// 						material.set_uniform(
-// 							UniformName::Other(format!("pointLights[{}].position", i)),
-// 							pos.clone(),
-// 						);
-// 						material.set_uniform(
-// 							UniformName::Other(format!("pointLights[{}].color", i)),
-// 							col,
-// 						);
-// 						material.set_uniform(
-// 							UniformName::Other(format!("pointLights[{}].distance", i)),
-// 							light.distance,
-// 						);
-// 						material.set_uniform(
-// 							UniformName::Other(format!("pointLights[{}].decay", i)),
-// 							light.decay,
-// 						);
-// 					});
-// 				lights_direct
-// 					.iter()
-// 					.enumerate()
-// 					.for_each(|(i, (light, direction))| {
-// 						let mut col = light.color.clone();
-// 						col.multiply_scalar(light.power);
-
-// 						material.set_uniform(
-// 							UniformName::Other(format!("directionalLights[{}].color", i)),
-// 							col,
-// 						);
-// 						material.set_uniform(
-// 							UniformName::Other(format!("directionalLights[{}].direction", i)),
-// 							direction.clone(),
-// 						);
-// 					});
-
-// 				if light_materials_need_update {
-// 					material.set_need_update(true);
-// 				}
-// 			});
-
-// 			let mut matrix_model =
-// 				matrix_cam_position * transform.matrix_world * transform.matrix_local;
-
-// 			match transform.lock {
-// 				TransformLock::Rotation => {
-// 					let (pos, mut rot, scale) = matrix_model.decompose_to_new();
-// 					rot.copy(&transform.quaternion);
-// 					matrix_model.compose(&pos, &rot, &scale);
-// 				}
-// 				TransformLock::Scale => {
-// 					let (pos, rot, mut scale) = matrix_model.decompose_to_new();
-// 					let length = pos.length();
-// 					scale.multiply_scalar(length);
-// 					matrix_model.compose(&pos, &rot, &scale);
-// 				}
-// 				TransformLock::RotationScale => {
-// 					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
-// 					let length = pos.length();
-// 					scale.multiply_scalar(length);
-// 					rot.copy(&transform.quaternion);
-// 					matrix_model.compose(&pos, &rot, &scale);
-// 				}
-// 				TransformLock:Shadeless:None => {}
-// 			}
-
-// 			let mut matrix_normal = Matrix3::new();
-// 			matrix_normal.get_normal_matrix(
-// 				&(matrix_cam_position * transform.matrix_world * transform.matrix_local),
-// 			);
-
-// 			let mut groups = {
-// 				let geom = geometry.lock().unwrap();
-// 				if geom.groups.len() == 0 {
-// 					vec![BufferGroup {
-// 						count: geom.indices.len(),
-// 						start: 0,
-// 						material_index: 0,
-// 						name: None,
-// 					}]
-// 				} else {
-// 					geom.groups.clone()
-// 				}
-// 			};
-
-// 			groups.drain(..).for_each(|buffer_group| {
-// 				let material_index = shared_materials.len().min(buffer_group.material_index);
-// 				let material = shared_materials.clone_material(material_index);
-
-// 				let need_sorting =
-// 					{ self.blending && material.lock().unwrap().blending() != Blending::None };
-
-// 				let mut groupe = DrawGroup {
-// 					buffer_group,
-// 					matrix_model,
-// 					matrix_projection,
-// 					matrix_normal,
-// 					material,
-// 					geometry: geometry.clone(),
-// 					time,
-// 					distance: 0.0,
-// 				};
-
-// 				if need_sorting {
-// 					let mut pos = Vector3::zero();
-// 					(matrix_cam_position * transform.matrix_world * transform.matrix_local)
-// 						.get_position(&mut pos);
-// 					groupe.distance = pos.z;
-
-// 					self.render_queue.push(groupe);
-// 					return;
-// 				}
-
-// 				self.draw_buffer_group(
-// 					groupe,
-// 					&mut gl_material_ids,
-// 					&mut gl_texture_ids,
-// 					&mut vertex_arrays_ids,
-// 				);
-// 			});
-// 		}
-
-// 		if self.render_queue.len() > 0 {
-// 			self.render_queue
-// 				.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
-// 			{
-// 				let mut render_queue: Vec<DrawGroup> = self.render_queue.drain(..).collect();
-
-// 				render_queue.drain(..).for_each(|groupe| {
-// 					self.draw_buffer_group(
-// 						groupe,
-// 						&mut gl_material_ids,
-// 						&mut gl_texture_ids,
-// 						&mut vertex_arrays_ids,
-// 					);
-// 				});
-// 			}
-// 		}
-
-// 		self.swap_buffers().unwrap();
-// 	}
-// }

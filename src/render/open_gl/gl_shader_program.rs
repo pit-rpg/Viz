@@ -9,9 +9,9 @@ use self::heck::ShoutySnakeCase;
 use self::regex::Regex;
 use super::gl_texture::{GLTexture, GLTextureIDs};
 use super::BindContext;
-use core::{Blending, ShaderProgram, ShaderTag, Uniform, UniformItem, UniformName};
+use core::{ShaderProgram, ShaderTag, Uniform, UniformName};
 use helpers::{find_file, read_to_string};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ffi::CString;
 use std::ptr;
 use std::str;
@@ -133,12 +133,13 @@ pub fn set_uniforms(
 	force: bool,
 ) {
 	uniforms.iter().for_each(|(name, uniform)| {
-		let isTexture = match uniform {
+		// TODO: do not rebind textures if material is not changed
+		let is_texture = match uniform {
 			Uniform::Texture2D(_, _) => true,
 			_ => false,
 		};
 
-		if !force && !shader_program.set_uniform(name, (*uniform).clone()) && !isTexture {
+		if !force && !shader_program.set_uniform(name, (*uniform).clone()) && !is_texture {
 			return;
 		}
 
@@ -177,14 +178,6 @@ pub fn set_uniforms(
 
 		if let Some(uniform_location) = shader_program_id.uniform_locations.get(name) {
 			set_uniform(uniform.clone(), uniform_location, texture_store);
-			// match uniform {
-			// 	Uniform::Texture2D(_, _) => {
-			// 		// TODO: check to remove
-			// 	}
-			// 	_ => {
-			// 		set_uniform(uniform.clone(), uniform_location, texture_store);
-			// 	}
-			// }
 		}
 	});
 }
@@ -432,6 +425,8 @@ impl GLShaderTag for ShaderTag {
 			ShaderTag::Additive => "ADDITIVE",
 			ShaderTag::Emissive => "EMISSIVE",
 			ShaderTag::Shadeless => "SHADELESS",
+			ShaderTag::ReceiveShadows => "RECEIVE_SHADOWS",
+			ShaderTag::CastShadows => "CAST_SHADOWS",
 
 			ShaderTag::Other(data) => data,
 		}
