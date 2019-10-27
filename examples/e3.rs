@@ -104,7 +104,7 @@ fn main(){
 
 	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
-	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
+	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor();
 	let mut window_state = WindowState::default();
 
 	while running {

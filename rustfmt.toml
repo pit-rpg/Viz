@@ -4,3 +4,4 @@ blank_lines_upper_bound = 0
 reorder_imports = true
 hard_tabs = true
 tab_spaces = 4
+max_width = 128

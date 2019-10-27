@@ -114,23 +114,26 @@ fn main() {
 		.with(camera)
 		.build();
 
+	let base_mat = Material::new_mesh_standard();
+
 	emojis.iter().for_each(|item| {
 		let mut pos = Vector3::random();
 		pos.multiply_scalar(10.0);
 		pos.sub_scalar(5.0);
 
+		let mut mat = base_mat.clone();
 		let texture = SharedTexture2D::new_from_path(item);
-		let mut mat = Material::new_mesh_standard();
 		mat.set_uniform(UniformName::MapColor, texture);
 		mat.set_uniform(UniformName::Alpha, 1.0);
 
 		if item.find("emoji").is_some() {
-			mat.set_blending(Blending::Transparent);
+			mat.blending = Blending::Mix;
 		} else {
-			mat.set_blending(Blending::Additive);
+			mat.blending = Blending::Additive;
 		}
 
 		mat.add_tag(ShaderTag::Shadeless);
+		mat.add_tag(ShaderTag::Transparent);
 
 		let material = SharedMaterials::new(mat);
 		let mut transform = Transform::from_position(pos);
