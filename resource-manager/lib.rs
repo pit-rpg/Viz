@@ -46,12 +46,14 @@ pub struct ResourceManager {
 	data_loaded: HashMap<String, Vec<u8>>,
 }
 
+#[allow(dead_code)]
 impl Resource {
 	pub fn name_str(&self) -> String {
 		(*self.name.to_string_lossy()).to_string()
 	}
 }
 
+#[allow(dead_code)]
 impl ResourceManager {
 	pub fn parse_package_list(data: &str) -> Result<PackageList, String> {
 		let package_list: Result<PackageList, serde_json::Error> = serde_json::from_str(data);

@@ -115,6 +115,10 @@ impl RenderSystem {
 			if stencil_test {
 				gl::Enable(gl::STENCIL_TEST);
 			}
+
+
+			gl::Disable(gl::FRAMEBUFFER_SRGB);
+			// gl::Enable(gl::FRAMEBUFFER_SRGB);
 		});
 		// /Flags
 

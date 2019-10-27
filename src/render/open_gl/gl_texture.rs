@@ -183,6 +183,8 @@ pub fn to_gl_color_internal_type(color_type: TextureColorType) -> u32 {
 	match color_type {
 		TextureColorType::R(_) => gl::RED,
 		TextureColorType::RG(_) => gl::RG,
+		// TextureColorType::RGB(_) => gl::SRGB,
+		// TextureColorType::RGBA(_) => gl::SRGB_ALPHA,
 		TextureColorType::RGB(_) => gl::RGB,
 		TextureColorType::RGBA(_) => gl::RGBA,
 		TextureColorType::Stencil => gl::STENCIL_ATTACHMENT,

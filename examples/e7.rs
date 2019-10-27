@@ -149,7 +149,7 @@ fn main() {
 
 	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
-	// render_system.window.set_resizable(true);
+
 	let hidpi_factor = render_system
 		.windowed_context
 		.window()
@@ -157,11 +157,8 @@ fn main() {
 		.round();
 	let mut window_state = WindowState::default();
 
-	// let mut frame_count: u32 = 0;
 
 	while running {
-		// frame_count += 1;
-
 		{
 			let windowed_context = &render_system.windowed_context;
 			use self::glutin::WindowEvent::*;
