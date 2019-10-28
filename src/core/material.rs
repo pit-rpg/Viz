@@ -2,8 +2,7 @@ extern crate specs;
 extern crate uuid;
 
 use self::specs::{Component, VecStorage};
-use self::uuid::Uuid;
-use super::{Blending, ShaderProgram, ShaderTag, ToUniform, Uniform, UniformItem, UniformName};
+use super::{Blending, ShaderProgram, ShaderTag, ToUniform, Uniform, UniformName};
 use math::{Vector, Vector3, Vector4};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LockResult, Mutex, MutexGuard};
