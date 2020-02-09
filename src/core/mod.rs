@@ -22,7 +22,7 @@ pub use self::perspective_camera::*;
 pub use self::light::*;
 pub use self::shader_program::*;
 pub use self::boundings::*;
-pub use self::world::create_world;
+pub use self::world::*;
 pub use self::systems::*;
 pub use self::relation::*;
 pub use self::frame_buffer::*;

@@ -1,17 +1,25 @@
 extern crate specs;
 use self::specs::prelude::*;
 use super::{
-	SharedGeometry,
-	SharedMaterials,
-	Transform,
-	PerspectiveCamera,
-	PointLight,
-	Parent,
-	Children,
-	DirectionalLight,
-    SharedFrameBuffer,
-    SharedRenderBuffer
+	Children, DirectionalLight, Parent, PerspectiveCamera, PointLight, SharedFrameBuffer, SharedGeometry, SharedMaterials,
+	SharedRenderBuffer, Transform,
 };
+
+pub struct Context {
+	pub world: World,
+}
+
+impl Context {
+	// pub fn get_world(&mut self) -> &mut World {
+	// 	&mut self._world
+	// }
+
+	pub fn create_context() -> Self {
+		Context {
+			world: create_world()
+		}
+	}
+}
 
 pub fn create_world() -> World {
 	let mut world = World::new();

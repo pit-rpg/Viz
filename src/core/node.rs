@@ -2,8 +2,8 @@ extern crate specs;
 extern crate uuid;
 
 use self::uuid::Uuid;
-use super::Transform;
-use specs::prelude::Entity;
+use super::{Context, Transform};
+use specs::prelude::*;
 use std::cell::*;
 use std::rc::*;
 
@@ -16,6 +16,9 @@ struct NodeBase {
 	pub transform: Transform,
 	pub name: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct Node(Rc<RefCell<NodeBase>>);
 
 impl NodeBase {
 	pub fn new(name: &str, transform: Transform, entity: Entity) -> Self {
@@ -36,10 +39,15 @@ impl NodeBase {
 	pub fn entity(&self) -> Entity {
 		self._entity
 	}
-}
 
-#[derive(Debug, Clone)]
-pub struct Node(Rc<RefCell<NodeBase>>);
+	pub fn get_data(&self) -> (&str, &Entity, &Transform) {
+		(&self.name, &self._entity, &self.transform)
+	}
+
+	pub fn get_data_mut(&mut self) -> (&str, &Entity, &mut Transform) {
+		(&self.name, &self._entity, &mut self.transform)
+	}
+}
 
 impl Node {
 	pub fn new(name: &str, transform: Transform, entity: Entity) -> Node {
@@ -80,6 +88,25 @@ impl Node {
 	pub fn uuid(&self) -> Uuid {
 		self.0.borrow().uuid()
 	}
+
+	pub fn build_child(&mut self, name: &str, context: &mut Context) -> Node {
+		let entity = context.getWorld().create_entity().build();
+		let node = Node::new(name, Transform::default(), entity);
+		self.add_child(&node);
+		node
+	}
+
+	pub fn traverse<F: Fn(&Node, usize)>(&self, func: F) {
+		self.traverse_helper(&func, 0);
+	}
+
+	fn traverse_helper<F: Fn(&Node, usize)>(&self, func: &F, depth: usize) {
+		func(&self, depth);
+		let node_base = self.0.borrow_mut();
+		for node in node_base.children.iter() {
+			node.traverse_helper(func, depth + 1);
+		}
+	}
 }
 
 #[cfg(test)]
@@ -87,12 +114,11 @@ mod tests {
 	extern crate specs;
 	extern crate uuid;
 
+	use core::{create_world, Node, Transform, create_context};
 	use specs::prelude::*;
-	use core::{create_world, Transform, Node};
 	use std::rc::*;
 
 	#[test]
-	#[cfg(test)]
 	fn node_clone_test() {
 		let mut world = create_world();
 		let entity = world.create_entity().build();
@@ -106,5 +132,15 @@ mod tests {
 			assert_eq!(Rc::strong_count(&node3.0), 3);
 		}
 		assert_eq!(Rc::strong_count(&node1.0), 3);
+	}
+
+	#[test]
+	fn node_traverse_test() {
+		let mut context = create_context();
+		let entity = context.world.create_entity().build();
+		let transform = Transform::default();
+
+		let mut root = Node::new("root", transform, entity);
+		root.build_child("A", world);
 	}
 }
