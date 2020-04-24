@@ -4,7 +4,7 @@ extern crate uuid;
 use self::specs::{Component, VecStorage};
 use super::{Blending, ShaderProgram, ShaderTag, ToUniform, Uniform, UniformName};
 use math::{Vector, Vector3, Vector4};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::sync::{Arc, LockResult, Mutex, MutexGuard};
 
 #[allow(dead_code)]

@@ -89,12 +89,12 @@ impl Node {
 		self.0.borrow().uuid()
 	}
 
-	pub fn build_child(&mut self, name: &str, context: &mut Context) -> Node {
-		let entity = context.getWorld().create_entity().build();
-		let node = Node::new(name, Transform::default(), entity);
-		self.add_child(&node);
-		node
-	}
+	// pub fn build_child(&mut self, name: &str, context: &mut Context) -> Node {
+	// 	let entity = context.getWorld().create_entity().build();
+	// 	let node = Node::new(name, Transform::default(), entity);
+	// 	self.add_child(&node);
+	// 	node
+	// }
 
 	pub fn traverse<F: Fn(&Node, usize)>(&self, func: F) {
 		self.traverse_helper(&func, 0);
@@ -114,7 +114,8 @@ mod tests {
 	extern crate specs;
 	extern crate uuid;
 
-	use core::{create_world, Node, Transform, create_context};
+	use core::{create_world, Node, Transform};
+	// use core::{create_world, Node, Transform, create_context};
 	use specs::prelude::*;
 	use std::rc::*;
 
@@ -134,13 +135,13 @@ mod tests {
 		assert_eq!(Rc::strong_count(&node1.0), 3);
 	}
 
-	#[test]
-	fn node_traverse_test() {
-		let mut context = create_context();
-		let entity = context.world.create_entity().build();
-		let transform = Transform::default();
+	// #[test]
+	// fn node_traverse_test() {
+	// 	let mut context = create_context();
+	// 	let entity = context.world.create_entity().build();
+	// 	let transform = Transform::default();
 
-		let mut root = Node::new("root", transform, entity);
-		root.build_child("A", world);
-	}
+	// 	let mut root = Node::new("root", transform, entity);
+	// 	root.build_child("A", world);
+	// }
 }

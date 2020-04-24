@@ -3,7 +3,7 @@ extern crate uuid;
 
 use self::uuid::Uuid;
 
-use core::{Material, ShaderProgram};
+use core::{Material};
 
 use super::{
 	gl_shader_program::{compile_shader_program, set_uniforms, GLShaderProgramID},

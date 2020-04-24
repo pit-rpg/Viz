@@ -23,28 +23,28 @@ Sub<Output=Self>+
 Neg<Output=Self>+
 Div<Output=Self>
 {
-	#[inline] fn zero() -> Self;
-	#[inline] fn one() -> Self;
-	#[inline] fn two() -> Self;
-	#[inline] fn random() -> Self;
-	#[inline] fn sqrt(&self) -> Self;
-	#[inline] fn abs(&self) -> Self;
-	#[inline] fn round(&self) -> Self;
-	#[inline] fn floor(&self) -> Self;
-	#[inline] fn ceil(&self) -> Self;
-	#[inline] fn cos(&self) -> Self;
-	#[inline] fn sin(&self) -> Self;
-	#[inline] fn acos(&self) -> Self;
-	#[inline] fn asin(&self) -> Self;
-	#[inline] fn min(&self, other:Self) -> Self;
-	#[inline] fn max(&self, other:Self) -> Self;
-	#[inline] fn max_val() -> Self;
-	#[inline] fn min_val() -> Self;
-	#[inline] fn atan2(y:Self, x:Self) -> Self;
-	#[inline] fn epsilon() -> Self;
-	#[inline] fn clamp(&self, min: Self, max: Self) -> Self;
-	#[inline] fn from_f32(n: f32) -> Self;
-	#[inline] fn from_f64(n: f64) -> Self;
+	fn zero() -> Self;
+	fn one() -> Self;
+	fn two() -> Self;
+	fn random() -> Self;
+	fn sqrt(&self) -> Self;
+	fn abs(&self) -> Self;
+	fn round(&self) -> Self;
+	fn floor(&self) -> Self;
+	fn ceil(&self) -> Self;
+	fn cos(&self) -> Self;
+	fn sin(&self) -> Self;
+	fn acos(&self) -> Self;
+	fn asin(&self) -> Self;
+	fn min(&self, other:Self) -> Self;
+	fn max(&self, other:Self) -> Self;
+	fn max_val() -> Self;
+	fn min_val() -> Self;
+	fn atan2(y:Self, x:Self) -> Self;
+	fn epsilon() -> Self;
+	fn clamp(&self, min: Self, max: Self) -> Self;
+	fn from_f32(n: f32) -> Self;
+	fn from_f64(n: f64) -> Self;
 	fn as_u8(&self) -> u8;
 }
 

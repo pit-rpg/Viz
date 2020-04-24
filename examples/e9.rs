@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use project::{
 	core::{
-		create_world, DirectionalLight, EntityRelations, FrameOutput, Material, PerspectiveCamera, PointLight,
+		create_world, DirectionalLight, EntityRelations, FrameOutput, Material, PerspectiveCamera,
 		SharedFrameBuffer, SharedGeometry, SharedMaterials, SystemTransform, Transform, UniformName,
 	},
 	glutin,
@@ -50,7 +50,6 @@ fn main() {
 	world.add_child(root, e_cam);
 
 	let mut frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
-	let mut buffer_plane = root;
 	{
 		let buffer_texture = {
 			let buffer = frame_buffer.lock().unwrap();
@@ -241,8 +240,6 @@ fn main() {
 			});
 		}
 
-		let time = render_system.get_duration();
-
 		{
 			let mut transform_store = world.write_storage::<Transform>();
 			let mut cam_store = world.write_storage::<PerspectiveCamera>();
@@ -258,7 +255,7 @@ fn main() {
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
 				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
-				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;;
+				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
 				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
@@ -280,6 +277,6 @@ fn main() {
 		render_system.run(&mut world, root);
 
 		render_system.set_frame_buffer(None);
-		render_system.run(&mut world, buffer_plane);
+		render_system.run(&mut world, root);
 	}
 }

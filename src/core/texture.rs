@@ -105,7 +105,7 @@ impl Texture2D {
 		e
 	}
 
-	pub fn load(&mut self) -> Result<&TextureData, (String)> {
+	pub fn load(&mut self) -> Result<&TextureData, String> {
 		match (&self.path, self.texture_data.is_none()) {
 			(_, false) => Ok(self.texture_data.as_ref().unwrap()),
 			(Some(path), true) => {

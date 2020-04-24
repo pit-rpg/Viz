@@ -3,7 +3,7 @@ extern crate uuid;
 
 use project::{
 	core::{
-		create_world, EntityRelations, Material, PerspectiveCamera, ShaderProgram, SharedGeometry,
+		create_world, EntityRelations, Material, PerspectiveCamera, SharedGeometry,
 		SharedMaterials, SharedTexture2D, Transform, UniformName,
 	},
 	glutin,
@@ -241,7 +241,7 @@ fn main() {
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
 				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
-				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;;
+				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
 				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 				transform_camera.update();
