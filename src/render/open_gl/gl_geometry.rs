@@ -4,14 +4,14 @@ extern crate uuid;
 
 use self::byteorder::{LittleEndian, WriteBytesExt};
 use self::gl::types::*;
-use self::uuid::Uuid;
+use uuid::Uuid;
 use core::{BufferGeometry, BufferData, BufferType};
 use std::collections::HashMap;
 use std::mem;
 use std::os::raw::c_void;
 
 // #[derive(Debug)]
-pub type VertexArraysIDs = HashMap<Uuid, Buffers>;
+pub type GLVertexArraysIDs = HashMap<Uuid, Buffers>;
 
 #[derive(Debug)]
 pub struct Buffers {
@@ -43,7 +43,7 @@ impl Default for Buffers {
 
 #[allow(dead_code)]
 pub trait GLGeometry {
-	fn bind(&self, hash_map: &mut VertexArraysIDs);
+	fn bind(&self, hash_map: &mut GLVertexArraysIDs);
 	fn unbind(&self);
 
 	fn alloc_gl_gom(geom: &BufferGeometry) -> Buffers {
@@ -264,7 +264,7 @@ pub trait GLGeometry {
 }
 
 impl GLGeometry for BufferGeometry {
-	fn bind(&self, hash_map: &mut VertexArraysIDs) {
+	fn bind(&self, hash_map: &mut GLVertexArraysIDs) {
 		match hash_map.get_mut(&self.uuid) {
 			None => {}
 			Some(ref buffers) => {

@@ -2,7 +2,7 @@ extern crate gl;
 extern crate uuid;
 
 use self::gl::types::*;
-use self::uuid::Uuid;
+use uuid::Uuid;
 use core::{RenderBuffer};
 use super::gl_texture::{to_gl_color_internal_type};
 use std::collections::HashMap;

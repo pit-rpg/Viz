@@ -2,34 +2,33 @@ extern crate gl;
 extern crate glutin;
 extern crate rand;
 extern crate rayon;
-extern crate specs;
-extern crate uuid;
 
 use std::ffi::CStr;
 use std::os::raw::c_void;
 use std::time::{Duration, Instant};
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
 use core::{
-	Blending, BufferGeometry, BufferGroup, DirectionalLight, EntityRelations, FrameBuffer, Material, PerspectiveCamera,
-	PointLight, ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterials, Transform, TransformLock, UniformName,
+	Blending, BufferGeometry, BufferGroup, Light, LightType, FrameBuffer, Material, PerspectiveCamera,
+	ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterial, Transform, TransformLock, UniformName,
+	Node, NodeData,
 };
 
 use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::dpi::*;
 use self::glutin::{ContextError, ContextWrapper, EventsLoop, Window};
-use self::specs::prelude::*;
 
 use super::super::{
 	gl_frame_buffer::{GLFrameBuffer, GLFrameBufferIDs},
-	gl_geometry::VertexArraysIDs,
+	gl_geometry::GLVertexArraysIDs,
 	gl_material::GLMaterialIDs,
 	gl_render_buffer::GLRenderBufferIDs,
 	gl_texture::GLTextureIDs,
 	GLGeometry, GLMaterial,
 };
 use math::{Matrix3, Matrix4, Vector, Vector3, Vector4};
-use std::sync::{Arc, Mutex};
 
 pub struct BindContext<'z, 'x> {
 	pub tags: &'z Vec<ShaderTag>,
@@ -46,28 +45,31 @@ struct DrawGroup {
 	matrix_model: Matrix4<f32>,
 	matrix_projection: Matrix4<f32>,
 	matrix_normal: Matrix3<f32>,
-	material: Arc<Mutex<Material>>,
+	material: SharedMaterial,
 	geometry: SharedGeometry,
-	time: f32,
 	distance: f32,
 }
 
 pub struct RenderSystem {
-	pub camera: Option<Entity>,
+	pub camera: Node,
 	pub windowed_context: ContextWrapper<glutin::PossiblyCurrent, Window>,
 	pub events_loop: EventsLoop,
 	pub timer: Instant,
 	pub time: Duration,
 	pub delta_time: Duration,
 	pub delta_max: Option<Duration>,
-	pub clear_color: Vector4<f32>,
-	pub clear_color_need_update: bool,
+	pub clear_color: Option<Vector4<f32>>,
 	pub tags: Vec<ShaderTag>,
-	pub override_material: Option<SharedMaterials>,
+	pub override_material: Option<SharedMaterial>,
+
+	pub _gl_vertex_arrays_ids: GLVertexArraysIDs,
+	pub _gl_material_ids: GLMaterialIDs,
+	pub _gl_texture_ids: GLTextureIDs,
+	pub _gl_frame_buffer_ids: GLFrameBufferIDs,
+	pub _gl_render_buffer_ids: GLRenderBufferIDs,
 
 	lights_point_count: usize,
 	lights_directional_count: usize,
-	render_queue: Vec<DrawGroup>,
 
 	depth_test: bool,
 	stencil_test: bool,
@@ -80,14 +82,7 @@ pub struct RenderSystem {
 }
 
 impl RenderSystem {
-	pub fn new(world: &mut World, depth_test: bool, stencil_test: bool, blending: bool) -> Self {
-		// TODO: ensure once
-		world.insert(VertexArraysIDs::new());
-		world.insert(GLMaterialIDs::new());
-		world.insert(GLTextureIDs::new());
-		world.insert(GLRenderBufferIDs::new());
-		world.insert(GLFrameBufferIDs::new());
-		// TODO: ensure once /
+	pub fn new(camera: Node, depth_test: bool, stencil_test: bool, blending: bool) -> Self {
 
 		let events_loop = glutin::EventsLoop::new();
 
@@ -126,7 +121,7 @@ impl RenderSystem {
 		RenderSystem::print_gl_version();
 
 		let render_system = Self {
-			camera: None,
+			camera,
 			// window: window,
 			windowed_context: windowed_context,
 			events_loop,
@@ -134,14 +129,12 @@ impl RenderSystem {
 			time: Duration::new(0, 0),
 			delta_time: Duration::new(0, 0),
 			delta_max: None,
-			clear_color: Vector4::new_zero(),
-			clear_color_need_update: true,
+			clear_color: Some(Vector4::new_zero()),
 			tags: Vec::new(),
 			override_material: None,
 			// render_settings: RenderSettings::default(),
 			lights_point_count: 0,
 			lights_directional_count: 0,
-			render_queue: vec![],
 
 			depth_test,
 			stencil_test,
@@ -151,7 +144,12 @@ impl RenderSystem {
 
 			frame_buffer: None,
 			current_frame_buffer: None,
-			// override_material: None,
+
+			_gl_vertex_arrays_ids: GLVertexArraysIDs::new(),
+			_gl_material_ids: GLMaterialIDs::new(),
+			_gl_texture_ids: GLTextureIDs::new(),
+			_gl_frame_buffer_ids: GLFrameBufferIDs::new(),
+			_gl_render_buffer_ids: GLRenderBufferIDs::new(),
 		};
 		render_system
 	}
@@ -185,6 +183,22 @@ impl RenderSystem {
 		self.delta_time.as_secs() as f32 + self.delta_time.subsec_nanos() as f32 * 1e-9
 	}
 
+	fn update_time(&mut self) {
+		let new_now = Instant::now();
+		let mut delta = new_now.duration_since(self.timer);
+		self.timer = new_now;
+		match self.delta_max {
+			None => {}
+			Some(ref mut max) => {
+				if delta > *max {
+					delta = max.clone()
+				}
+			}
+		}
+
+		self.time += delta;
+	}
+
 	fn set_blending_mode(&mut self, blending: Blending) {
 		if !self.blending || self.blending_state == blending {
 			return;
@@ -216,20 +230,17 @@ impl RenderSystem {
 	fn draw_buffer_group<'x, 'z>(
 		&mut self,
 		mut groupe: DrawGroup,
-		mut gl_material_ids: &'z mut GLMaterialIDs,
-		mut gl_texture_ids: &'z mut GLTextureIDs,
-		mut vertex_arrays_ids: &'z mut VertexArraysIDs,
 	) {
 		{
 			let geometry = &groupe.geometry.lock().unwrap();
-			geometry.bind(&mut vertex_arrays_ids);
+			geometry.bind(&mut self._gl_vertex_arrays_ids);
 
 			let material = &mut groupe.material.lock().unwrap();
 			self.set_blending_mode(material.blending);
 
 			let mut bind_context = BindContext {
-				gl_texture_ids: &mut gl_texture_ids,
-				gl_material_ids: &mut gl_material_ids,
+				gl_texture_ids: &mut self._gl_texture_ids,
+				gl_material_ids: &mut self._gl_material_ids,
 				tags: &self.tags,
 				lights_point_count: self.lights_point_count,
 				lights_directional_count: self.lights_directional_count,
@@ -239,7 +250,6 @@ impl RenderSystem {
 			material.set_uniform(UniformName::MatrixModel, groupe.matrix_model);
 			material.set_uniform(UniformName::MatrixView, groupe.matrix_projection);
 			material.set_uniform(UniformName::MatrixNormal, groupe.matrix_normal);
-			material.set_uniform(UniformName::Time, groupe.time);
 			material.bind(&mut bind_context);
 		}
 
@@ -253,19 +263,14 @@ impl RenderSystem {
 		});
 	}
 
-	pub fn bind_frame_buffer(
-		&mut self,
-		texture_ids: &mut GLTextureIDs,
-		frame_buffer_ids: &mut GLFrameBufferIDs,
-		render_buffer_ids: &mut GLRenderBufferIDs,
-	) {
+	pub fn bind_frame_buffer(&mut self) {
 		if self.current_frame_buffer == self.frame_buffer {
 			return;
 		}
 
 		if let Some(frame_buffer) = &mut self.frame_buffer {
 			let mut buffer = frame_buffer.lock().unwrap();
-			buffer.bind(frame_buffer_ids, texture_ids, render_buffer_ids);
+			buffer.bind(&mut self._gl_frame_buffer_ids, &mut self._gl_texture_ids, &mut self._gl_render_buffer_ids);
 		} else {
 			FrameBuffer::bind_default();
 		}
@@ -277,107 +282,103 @@ impl RenderSystem {
 		self.frame_buffer = frame_buffer;
 	}
 
-	pub fn run<'a>(&mut self, world: &'a mut World, root: Entity) {
-		let entities = world.get_all_children_entities(root);
-		self.render(world, &entities);
+	pub fn run<'a>(&mut self, root: &Node) {
+		root.update_transform(false);
+		self.render(root);
 	}
 
-	pub fn render<'a>(&mut self, world: &'a mut World, entities: &[Entity]) {
+	pub fn render<'a>(&mut self, root: &Node) {
+				// let (
+				// 	camera_coll,
+				// 	transform_coll,
+				// 	mut geometry_coll,
+				// 	mut material_coll,
+				// 	light_point_coll,
+				// 	light_direct_coll,
+				// 	mut gl_vertex_arrays_ids,
+				// 	mut gl_material_ids,
+				// 	mut gl_texture_ids,
+				// 	mut gl_frame_buffer_ids,
+				// 	mut gl_render_buffer_ids,
+				// ): (
+				// 	ReadStorage<PerspectiveCamera>,
+				// 	ReadStorage<Transform>,
+				// 	WriteStorage<SharedGeometry>,
+				// 	WriteStorage<SharedMaterials>,
+				// 	WriteStorage<PointLight>,
+				// 	WriteStorage<DirectionalLight>,
+				// 	Write<GLVertexArraysIDs>,
+				// 	Write<GLMaterialIDs>,
+				// 	Write<GLTextureIDs>,
+				// 	Write<GLFrameBufferIDs>,
+				// 	Write<GLRenderBufferIDs>,
+				// ) = SystemData::fetch(&world);
+
 		Self::gl_clear_error();
 
-		// let mut entities = world.get_all_children_entities(root);
-		let (
-			camera_coll,
-			transform_coll,
-			mut geometry_coll,
-			mut material_coll,
-			light_point_coll,
-			light_direct_coll,
-			mut vertex_arrays_ids,
-			mut gl_material_ids,
-			mut gl_texture_ids,
-			mut gl_frame_buffer_ids,
-			mut gl_render_buffer_ids,
-		): (
-			ReadStorage<PerspectiveCamera>,
-			ReadStorage<Transform>,
-			WriteStorage<SharedGeometry>,
-			WriteStorage<SharedMaterials>,
-			WriteStorage<PointLight>,
-			WriteStorage<DirectionalLight>,
-			Write<VertexArraysIDs>,
-			Write<GLMaterialIDs>,
-			Write<GLTextureIDs>,
-			Write<GLFrameBufferIDs>,
-			Write<GLRenderBufferIDs>,
-		) = SystemData::fetch(&world);
+		self.update_time();
 
-		self.bind_frame_buffer(&mut gl_texture_ids, &mut gl_frame_buffer_ids, &mut gl_render_buffer_ids);
+		self.bind_frame_buffer();
 
-		if self.clear_color_need_update {
+		if let Some(color) = &self.clear_color {
 			gl_call!({
-				gl::ClearColor(self.clear_color.x, self.clear_color.y, self.clear_color.z, self.clear_color.w);
+				gl::ClearColor(color.x, color.y, color.z, color.w);
 			});
-			self.clear_color_need_update = false;
-		}
-		self.clear();
-
-		// Time
-		let new_now = Instant::now();
-		let mut delta = new_now.duration_since(self.timer);
-		self.timer = new_now;
-		match self.delta_max {
-			None => {}
-			Some(ref mut max) => {
-				if delta > *max {
-					delta = max.clone()
-				}
-			}
+			self.clear();
 		}
 
-		self.time += delta;
-
-		let time = self.get_duration();
 
 		let mut matrix_cam_position;
 		let matrix_projection;
 
-		match self.camera {
-			None => {
-				matrix_cam_position = Matrix4::new();
-				matrix_projection = Matrix4::new();
-			}
-			Some(ref cam) => {
-				let cam_transform = transform_coll.get(*cam).unwrap();
-				let camera = camera_coll.get(*cam).unwrap();
-				matrix_cam_position = Matrix4::new();
-				matrix_cam_position.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local));
-				matrix_projection = camera.matrix_projection.clone();
+		{
+			let node_data = self.camera.lock();
+			let cam_transform = &node_data.transform;
+			matrix_cam_position = Matrix4::new();
+			matrix_cam_position.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local));
+
+			match &node_data.camera {
+				Some(camera) => {matrix_projection = camera.matrix_projection.clone()}
+				None => {matrix_projection = Matrix4::new()}
 			}
 		}
 
 		let mut light_materials_need_update = false;
+		let mut lights_point: Vec<(Light, Vector3<f32>)> = vec![];
+		let mut lights_direct: Vec<(Light, Vector3<f32>)> = vec![];
+		let mut lights_affected_materials = HashMap::new();
 
-		let lights_point: Vec<_> = (&light_point_coll, &transform_coll)
-			.join()
-			.map(|(light, transform)| {
-				let mut pos = transform.position.clone();
-				pos.apply_matrix_4(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
-				(light, pos)
-			})
-			.collect();
+		root.traverse(&mut |node, _| {
+			let mut node_data = node.lock();
+			let transform = &node_data.transform;
 
-		let lights_direct: Vec<_> = (&light_direct_coll, &transform_coll)
-			.join()
-			.map(|(light, transform)| {
-				let mut direction = light.direction.clone();
-				let mut matrix_normal = Matrix3::new();
-				matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
-				direction.apply_matrix_3(&matrix_normal);
-				direction.normalize();
-				(light, direction)
-			})
-			.collect();
+			if let Some(light) = &node_data.light {
+				match light.light_type {
+					LightType::Point => {
+						let mut pos = transform.position.clone();
+						pos.apply_matrix_4(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+						lights_point.push((light.clone(), pos));
+					}
+					LightType::Directional => {
+						let mut direction = Vector3::new_down();
+						let mut matrix_normal = Matrix3::new();
+						matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+						direction.apply_matrix_3(&matrix_normal);
+						direction.normalize();
+						lights_direct.push((light.clone(), direction));
+					}
+				}
+
+				node_data.materials
+					.iter_mut()
+					.for_each(|material| {
+						let isLighted = {material.lock().unwrap().has_tag(ShaderTag::Lighting)};
+						if isLighted {
+							lights_affected_materials.insert(material.uuid(), material.clone());
+						}
+					})
+			}
+		});
 
 		if lights_point.len() != self.lights_point_count {
 			self.lights_point_count = lights_point.len();
@@ -389,97 +390,91 @@ impl RenderSystem {
 			light_materials_need_update = true;
 		}
 
-		entities.iter().for_each(|entity| {
-			// TODO: optimize
-			let mut override_material = self.override_material.clone();
-			let shared_materials = override_material.as_mut().or(material_coll.get_mut(*entity));
-			let transform = transform_coll.get(*entity);
-			let geometry = geometry_coll.get_mut(*entity);
-
-			if transform.is_none() || geometry.is_none() || shared_materials.is_none() {
-				return;
-			}
-
-			let transform = transform.unwrap();
-			let geometry = geometry.unwrap();
-			let shared_materials = shared_materials.unwrap();
-
-			shared_materials.iter_mut().for_each(|shared_material| {
-				let material = &mut shared_material.lock().unwrap();
-
-				if !material.has_tag(ShaderTag::Lighting) {
-					return;
-				}
+		lights_affected_materials
+			.iter_mut()
+			.for_each(|(_, material)| {
+				let mut mat = material.lock().unwrap();
 
 				lights_point.iter().enumerate().for_each(|(i, (light, pos))| {
 					let mut col = light.color.clone();
 					col.multiply_scalar(light.power);
 
-					material.set_uniform(UniformName::Other(format!("pointLights[{}].position", i)), pos.clone());
-					material.set_uniform(UniformName::Other(format!("pointLights[{}].color", i)), col);
-					material.set_uniform(UniformName::Other(format!("pointLights[{}].distance", i)), light.distance);
-					material.set_uniform(UniformName::Other(format!("pointLights[{}].decay", i)), light.decay);
+					mat.set_uniform(UniformName::Other(format!("pointLights[{}].position", i)), pos.clone());
+					mat.set_uniform(UniformName::Other(format!("pointLights[{}].color", i)), col);
+					mat.set_uniform(UniformName::Other(format!("pointLights[{}].distance", i)), light.distance);
+					mat.set_uniform(UniformName::Other(format!("pointLights[{}].decay", i)), light.decay);
 				});
+
 				lights_direct.iter().enumerate().for_each(|(i, (light, direction))| {
 					let mut col = light.color.clone();
 					col.multiply_scalar(light.power);
 
-					material.set_uniform(UniformName::Other(format!("directionalLights[{}].color", i)), col);
-					material.set_uniform(
+					mat.set_uniform(UniformName::Other(format!("directionalLights[{}].color", i)), col);
+					mat.set_uniform(
 						UniformName::Other(format!("directionalLights[{}].direction", i)),
 						direction.clone(),
 					);
 				});
 
 				if light_materials_need_update {
-					material.need_update();
+					mat.need_update();
 				}
 			});
 
-			let mut matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
+		let mut render_queue = vec![];
 
-			match transform.lock {
-				TransformLock::Rotation => {
-					let (pos, mut rot, scale) = matrix_model.decompose_to_new();
-					rot.copy(&transform.quaternion);
-					matrix_model.compose(&pos, &rot, &scale);
+		root.traverse(&mut |node, _| {
+			let mut node_data = node.lock();
+
+			if node_data.materials.len() == 0 || node_data.geometry.is_none() {return}
+
+			let matrix_model = {
+				let transform = &node_data.transform;
+				let mut matrix_model = matrix_cam_position * transform.matrix_world * transform.matrix_local;
+
+				match transform.lock {
+					TransformLock::Rotation => {
+						let (pos, mut rot, scale) = matrix_model.decompose_to_new();
+						rot.copy(&transform.quaternion);
+						matrix_model.compose(&pos, &rot, &scale);
+					}
+					TransformLock::Scale => {
+						let (pos, rot, mut scale) = matrix_model.decompose_to_new();
+						let length = pos.length();
+						scale.multiply_scalar(length);
+						matrix_model.compose(&pos, &rot, &scale);
+					}
+					TransformLock::RotationScale => {
+						let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
+						let length = pos.length();
+						scale.multiply_scalar(length);
+						rot.copy(&transform.quaternion);
+						matrix_model.compose(&pos, &rot, &scale);
+					}
+					TransformLock::None => {}
 				}
-				TransformLock::Scale => {
-					let (pos, rot, mut scale) = matrix_model.decompose_to_new();
-					let length = pos.length();
-					scale.multiply_scalar(length);
-					matrix_model.compose(&pos, &rot, &scale);
-				}
-				TransformLock::RotationScale => {
-					let (pos, mut rot, mut scale) = matrix_model.decompose_to_new();
-					let length = pos.length();
-					scale.multiply_scalar(length);
-					rot.copy(&transform.quaternion);
-					matrix_model.compose(&pos, &rot, &scale);
-				}
-				TransformLock::None => {}
-			}
+				matrix_model
+			};
 
 			let mut matrix_normal = Matrix3::new();
-			matrix_normal.get_normal_matrix(&(matrix_cam_position * transform.matrix_world * transform.matrix_local));
+			matrix_normal.get_normal_matrix(&(matrix_cam_position * node_data.transform.matrix_world * node_data.transform.matrix_local));
 
 			let mut groups = {
-				let geom = geometry.lock().unwrap();
-				if geom.groups.len() == 0 {
-					vec![BufferGroup {
-						count: geom.indices.len(),
-						start: 0,
-						material_index: 0,
-						name: None,
-					}]
-				} else {
-					geom.groups.clone()
-				}
+				let geometry = node_data.geometry
+					.as_mut()
+					.unwrap()
+					.lock()
+					.unwrap();
+
+				if geometry.groups.len() == 0 {vec![geometry.get_default_group()]} else {geometry.groups.clone()}
 			};
 
 			groups.drain(..).for_each(|buffer_group| {
-				let material_index = shared_materials.len().min(buffer_group.material_index);
-				let material = shared_materials.clone_material(material_index);
+				// let materials = &mut node_data.materials;
+				// let transform = &mut node_data.transform;
+
+				let material_index = node_data.materials.len().min(buffer_group.material_index);
+				let mut material = node_data.materials[material_index].clone();
 
 				let need_sorting = { self.blending && material.lock().unwrap().blending != Blending::None };
 
@@ -489,35 +484,34 @@ impl RenderSystem {
 					matrix_projection,
 					matrix_normal,
 					material,
-					geometry: geometry.clone(),
-					time,
+					geometry: node_data.geometry.as_ref().unwrap().clone(),
 					distance: 0.0,
 				};
 
 				if need_sorting {
+					let transform = &mut node_data.transform;
+
 					let mut pos = Vector3::zero();
 					(matrix_cam_position * transform.matrix_world * transform.matrix_local).get_position(&mut pos);
 					groupe.distance = pos.z;
 
-					self.render_queue.push(groupe);
+					render_queue.push(groupe);
 					return;
 				}
 
-				self.draw_buffer_group(groupe, &mut gl_material_ids, &mut gl_texture_ids, &mut vertex_arrays_ids);
+				self.draw_buffer_group(groupe);
 			});
+
 		});
 
-		if self.render_queue.len() > 0 {
-			self.render_queue.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
-			{
-				let mut render_queue: Vec<DrawGroup> = self.render_queue.drain(..).collect();
-
-				render_queue.drain(..).for_each(|groupe| {
-					self.draw_buffer_group(groupe, &mut gl_material_ids, &mut gl_texture_ids, &mut vertex_arrays_ids);
-				});
-			}
+		if render_queue.len() > 0 {
+			render_queue.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap());
+			render_queue.drain(..).for_each(|groupe| {
+				self.draw_buffer_group(groupe);
+			});
 		}
 
 		self.swap_buffers().unwrap();
+
 	}
 }

@@ -1,21 +1,12 @@
 extern crate uuid;
-use self::uuid::Uuid;
+use uuid::Uuid;
 use math::vector3::Vector3;
 use math::vector3::Vector;
-// use math::Matrix4;
-// use math::Matrix3;
 use core::Face3;
 use helpers::Nums;
-// use std::cmp::{ Eq, Ord, Ordering};
 use std::ops::{Div,AddAssign,SubAssign,MulAssign, Mul, Add, DivAssign, Sub, Neg};
 
-extern crate specs;
-use self::specs::{Component, VecStorage};
 
-// 	this.name = '';
-// 	this.type = 'Geometry';
-
-// #[derive(Clone, Debug, Copy)]
 #[derive(Clone, Debug)]
 pub struct Geometry<T>
 where T:Nums
@@ -107,12 +98,6 @@ where T:Nums
 	// }
 
 }
-
-
-impl Component for Geometry {
-    type Storage = VecStorage<Self>;
-}
-
 
 
 

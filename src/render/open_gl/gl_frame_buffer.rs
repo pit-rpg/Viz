@@ -2,7 +2,7 @@ extern crate gl;
 extern crate uuid;
 
 use self::gl::types::*;
-use self::uuid::Uuid;
+use uuid::Uuid;
 use super::gl_render_buffer::{GLRenderBuffer, GLRenderBufferIDs};
 use super::gl_texture::{GLTexture, GLTextureIDs};
 use core::{FrameBuffer, FrameOutput};

@@ -21,6 +21,14 @@ where T:Nums
         Self { x, y, z }
     }
 
+    pub fn new_up() -> Self {
+        Self { x: T::zero(), y: T::one(), z: T::zero() }
+    }
+
+    pub fn new_down() -> Self {
+        Self { x: T::zero(), y: -T::one(), z: T::zero() }
+    }
+
     pub fn set(&mut self, x:T, y:T, z:T) -> &mut Self {
         self.x = x;
         self.y = y;
@@ -108,7 +116,6 @@ where T:Nums
 	fn new_min() -> Self{
         Self { x: T::min_val(), y: T::min_val(), z: T::min_val() }
     }
-
 
     fn random() -> Self {
         Self { x: T::random(), y: T::random(), z: T::random() }

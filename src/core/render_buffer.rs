@@ -1,8 +1,4 @@
-extern crate specs;
-extern crate uuid;
-
-use self::specs::{Component, VecStorage};
-use self::uuid::Uuid;
+use uuid::Uuid;
 use super::TextureColorType;
 use std::sync::{Arc, LockResult, Mutex, MutexGuard};
 
@@ -69,8 +65,4 @@ impl PartialEq for SharedRenderBuffer {
 	fn eq(&self, other: &Self) -> bool {
 		self.uuid == other.uuid
 	}
-}
-
-impl Component for SharedRenderBuffer {
-	type Storage = VecStorage<Self>;
 }

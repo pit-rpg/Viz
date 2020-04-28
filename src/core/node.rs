@@ -1,147 +1,267 @@
-extern crate specs;
-extern crate uuid;
+use uuid::Uuid;
+use super::{Transform, SharedMaterial, SharedGeometry, Light, PerspectiveCamera};
+use std::sync::{Arc, LockResult, Mutex, MutexGuard};
 
-use self::uuid::Uuid;
-use super::{Context, Transform};
-use specs::prelude::*;
-use std::cell::*;
-use std::rc::*;
-
-#[derive(Debug)]
-struct NodeBase {
+#[derive(Debug, Clone)]
+pub struct NodeData {
 	_uuid: Uuid,
 	parent: Option<Node>,
 	children: Vec<Node>,
-	_entity: Entity,
 	pub transform: Transform,
 	pub name: String,
+	pub materials: Vec<SharedMaterial>,
+	pub geometry: Option<SharedGeometry>,
+	pub light: Option<Light>,
+	pub camera: Option<PerspectiveCamera>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Node(Rc<RefCell<NodeBase>>);
+pub struct Node (Uuid, Arc<Mutex<NodeData>>);
 
-impl NodeBase {
-	pub fn new(name: &str, transform: Transform, entity: Entity) -> Self {
+impl NodeData {
+	pub fn new(name: &str) -> Self {
 		Self {
 			_uuid: Uuid::new_v4(),
 			parent: None,
 			children: vec![],
-			_entity: entity,
-			transform,
+			transform: Transform::default(),
 			name: name.to_string(),
+			materials: vec![],
+			geometry: None,
+			light: None,
+			camera: None,
 		}
+	}
+
+	pub fn set_name(mut self, name: &str) -> Self {
+		self.name = name.to_string();
+		self
+	}
+
+	pub fn set_transform(mut self, transform: Transform) -> Self {
+		self.transform = transform;
+		self
+	}
+
+	pub fn set_materials(mut self, materials: Vec<SharedMaterial>) -> Self {
+		self.materials = materials;
+		self
+	}
+
+	pub fn set_material(mut self, materials: SharedMaterial) -> Self {
+		self.materials.clear();
+		self.materials.push(materials);
+		self
+	}
+
+	pub fn set_geometry(mut self, geometry: SharedGeometry) -> Self {
+		self.geometry = Some(geometry);
+		self
+	}
+
+	pub fn set_light(mut self, light: Light) -> Self {
+		self.light = Some(light);
+		self
+	}
+
+	pub fn set_camera(mut self, camera: PerspectiveCamera) -> Self {
+		self.camera = Some(camera);
+		self
 	}
 
 	pub fn uuid(&self) -> Uuid {
 		self._uuid
 	}
 
-	pub fn entity(&self) -> Entity {
-		self._entity
-	}
-
-	pub fn get_data(&self) -> (&str, &Entity, &Transform) {
-		(&self.name, &self._entity, &self.transform)
-	}
-
-	pub fn get_data_mut(&mut self) -> (&str, &Entity, &mut Transform) {
-		(&self.name, &self._entity, &mut self.transform)
+	pub fn to_shared(self) -> Node {
+		Node::from_node_data(self)
 	}
 }
 
 impl Node {
-	pub fn new(name: &str, transform: Transform, entity: Entity) -> Node {
-		let node_base = NodeBase::new(name, transform, entity);
-		Node(Rc::new(RefCell::new(node_base)))
+
+	pub fn from_node_data(data: NodeData) -> Node {
+		Node(data._uuid, Arc::new(Mutex::new(data)))
 	}
 
-	pub fn add_child(&self, node: &Node) {
+	pub fn new(name: &str) -> Node {
+		let data = NodeData::new(name);
+		let uuid = data._uuid;
+
+		Node(uuid, Arc::new(Mutex::new(data)))
+	}
+
+	pub fn add_child(&self, node: Node) -> Node {
 		{
-			node.0.borrow_mut().parent = Some(Node(Rc::clone(&self.0)));
+			let mut base = node.lock();
+			if let Some(parent) = &base.parent {
+				parent.remove_child(self);
+			}
+			base.parent = Some(self.clone());
 		}
-		let mut nb = self.0.borrow_mut();
+		let mut nb = self.lock();
 		nb.children.push(node.clone());
+		node
 	}
 
-	pub fn remove_child(&self, node: &Node) -> bool {
+	pub fn remove_child(&self, node: &Node) -> &Self {
 		{
-			node.0.borrow_mut().parent = None;
+			node.lock().parent = None;
 		}
-		let mut nb = self.0.borrow_mut();
+		let mut nb = self.lock();
 		let uuid = nb.uuid();
 		let index = nb.children.iter().position(|e| uuid == e.uuid());
 		if let Some(index) = index {
 			nb.children.swap_remove(index);
-			return true;
 		}
-		false
+		self
 	}
 
-	pub fn set_parent(&self, node: &Node) {
-		node.add_child(self);
+	pub fn set_parent(&self, node: Node) -> &Self {
+		node.add_child(self.clone());
+		self
 	}
 
-	pub fn clear_children(&self) {
-		self.0.borrow_mut().children.clear();
+	pub fn clear_children(&self) -> &Self {
+		self.lock().children.clear();
+		self
 	}
 
 	pub fn uuid(&self) -> Uuid {
-		self.0.borrow().uuid()
+		self.0
 	}
 
-	// pub fn build_child(&mut self, name: &str, context: &mut Context) -> Node {
-	// 	let entity = context.getWorld().create_entity().build();
-	// 	let node = Node::new(name, Transform::default(), entity);
-	// 	self.add_child(&node);
-	// 	node
-	// }
-
-	pub fn traverse<F: Fn(&Node, usize)>(&self, func: F) {
-		self.traverse_helper(&func, 0);
+	pub fn lock(&self) -> MutexGuard<'_, NodeData> {
+		self.1.lock().unwrap()
 	}
 
-	fn traverse_helper<F: Fn(&Node, usize)>(&self, func: &F, depth: usize) {
+	pub fn build_child(&mut self, name: &str) -> Node {
+		let node = Node::new(name);
+		self.add_child(node.clone());
+		node
+	}
+
+	pub fn traverse<F: FnMut(&Node, usize)>(&self, func: &mut F) {
+		self.traverse_helper(func, 0);
+	}
+
+	fn traverse_helper<F: FnMut(&Node, usize)>(&self, func: &mut F, depth: usize) {
 		func(&self, depth);
-		let node_base = self.0.borrow_mut();
+		let node_base = self.lock();
 		for node in node_base.children.iter() {
 			node.traverse_helper(func, depth + 1);
 		}
 	}
+
+	pub fn update_transform(&self, force: bool) {
+		let mut node_data = self.lock();
+
+		if !node_data.transform.auto_update {return}
+
+		node_data.transform.update();
+
+		Self::update_transform_helper(&node_data, force);
+	}
+
+	fn update_transform_helper(node: &NodeData, force: bool) {
+		node.children
+			.iter()
+			.for_each(|child| {
+				let mut nd = child.lock();
+				if !nd.transform.auto_update && !force {return}
+
+				nd.transform.update();
+				Self::update_transform_helper(&nd, force);
+			});
+	}
+
 }
 
 #[cfg(test)]
 mod tests {
-	extern crate specs;
 	extern crate uuid;
 
-	use core::{create_world, Node, Transform};
+	use core::{Node, Transform};
 	// use core::{create_world, Node, Transform, create_context};
-	use specs::prelude::*;
 	use std::rc::*;
+	use std::sync::{Arc, LockResult, Mutex, MutexGuard};
+
 
 	#[test]
-	fn node_clone_test() {
-		let mut world = create_world();
-		let entity = world.create_entity().build();
+	fn node_clone() {
 		let transform = Transform::default();
 
-		let node1 = Node::new("node", transform, entity);
+		let node1 = Node::new("node");
 		{
 			let node2 = node1.clone();
 			let node3 = node2.clone();
 
-			assert_eq!(Rc::strong_count(&node3.0), 3);
+			assert_eq!(Arc::strong_count(&node3.1), 3);
 		}
-		assert_eq!(Rc::strong_count(&node1.0), 3);
+		assert_eq!(Arc::strong_count(&node1.1), 1);
 	}
 
-	// #[test]
-	// fn node_traverse_test() {
-	// 	let mut context = create_context();
-	// 	let entity = context.world.create_entity().build();
-	// 	let transform = Transform::default();
+	#[test]
+	fn node_traverse() {
+		let mut root = Node::new("root");
+		let mut a = root.build_child("a");
+		root.build_child("b");
+		let mut aa = a.build_child("aa");
+		aa.build_child("aaa");
 
-	// 	let mut root = Node::new("root", transform, entity);
-	// 	root.build_child("A", world);
-	// }
+		root.traverse(&mut |node, depth| {
+			println!("{}: {}", depth, node.lock().name);
+		});
+	}
+
+	#[test]
+	fn node_traverse_mut() {
+		let mut root = Node::new("root");
+		let mut a = root.build_child("a");
+		root.build_child("b");
+		let mut aa = a.build_child("aa");
+		aa.build_child("aaa");
+
+		root.traverse(&mut |node, depth| {
+			let mut nb = node.lock();
+			nb.name += "<><>";
+			println!("{}: {}", depth, nb.name);
+		});
+	}
+
+	#[test]
+	fn node_set_parrent() {
+
+		let a = Node::new("a");
+		let b = Node::new("b");
+		let c = Node::new("c");
+
+		c.set_parent(b.clone());
+		b.set_parent(a.clone());
+
+		a.traverse(&mut |node, depth| {
+			println!("{}: {}", depth, node.lock().name);
+		});
+	}
+
+	#[test]
+	fn node_remove_child() {
+
+		let mut root = Node::new("a");
+		let aaaa = root
+			.build_child("a")
+			.build_child("aa")
+			.build_child("aaa")
+			.build_child("aaaa");
+
+		let aaa = {aaaa.lock().parent.clone()};
+
+		if let Some(aaa) = aaa {
+			aaa.remove_child(&aaaa);
+		}
+
+		root.traverse(&mut |node, depth| {
+			println!("{}: {}", depth, node.lock().name);
+		});
+	}
 }

@@ -2,7 +2,7 @@ extern crate gl;
 extern crate uuid;
 
 use self::gl::types::*;
-use self::uuid::Uuid;
+use uuid::Uuid;
 use core::{MagFilter, MinFilter, Texture2D, TextureColorType, TextureDataSource, Wrapping};
 use std::collections::HashMap;
 use std::os::raw::c_void;

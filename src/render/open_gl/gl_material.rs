@@ -1,7 +1,7 @@
 extern crate gl;
 extern crate uuid;
 
-use self::uuid::Uuid;
+use uuid::Uuid;
 
 use core::{Material};
 

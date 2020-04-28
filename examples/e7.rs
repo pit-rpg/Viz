@@ -6,16 +6,15 @@ use std::f64::consts::PI as PI_f64;
 
 use project::{
 	core::{
-		create_world, Blending, EntityRelations, Material, PerspectiveCamera,
-		ShaderTag, SharedGeometry, SharedMaterials,
-		SharedTexture2D, SystemTransform, Transform, TransformLock, UniformName,
+		Blending, Material, PerspectiveCamera, NodeData, Node,
+		ShaderTag, SharedGeometry,
+		SharedTexture2D, Transform, TransformLock, UniformName,
 	},
 	glutin,
 	glutin::MouseScrollDelta,
 	helpers::geometry_generators,
 	math::{Vector, Vector3},
 	render,
-	specs::*,
 };
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
@@ -88,33 +87,31 @@ fn main() {
 		"res/emoji/zipper-mouth-face_1f910.png",
 	];
 
-	let mut world = create_world();
-	let mut render_system =
-		render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
-	let mut system_transform = SystemTransform::new();
+	let root = Node::new("root");
 
-	let up = Vector3::new(0.0, 1.0, 0.0);
+	let up = Vector3::new_up();
 	let center = Vector3::new_zero();
 	let mut radius = 20.0;
 	let zoom_speed = 0.5;
 	let mut running = true;
 
-	let mut camera = PerspectiveCamera::new();
-	let mut transform_camera = Transform::default();
-	transform_camera.position.z = 6.0;
-	camera.view.enabled = false;
+	let camera = {
+		let mut camera = PerspectiveCamera::new();
+		let mut transform_camera = Transform::default();
+		transform_camera.position.z = 6.0;
+		camera.view.enabled = false;
 
-	let geom_plane =
-		SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
+		root.add_child(
+			NodeData::new("camera")
+				.set_camera(camera)
+				.set_transform(transform_camera)
+				.to_shared()
+		)
+	};
 
-	let root = world.create_entity().build();
-	let e_cam = world
-		.create_entity()
-		.with(transform_camera)
-		.with(camera)
-		.build();
 
 	let base_mat = Material::new_mesh_standard();
+	let geom_plane = SharedGeometry::new(geometry_generators::plane_buffer_geometry(1.0, 1.0, 1, 1));
 
 	emojis.iter().for_each(|item| {
 		let mut pos = Vector3::random();
@@ -135,22 +132,22 @@ fn main() {
 		mat.add_tag(ShaderTag::Shadeless);
 		mat.add_tag(ShaderTag::Transparent);
 
-		let material = SharedMaterials::new(mat);
+		let material = mat.to_shared();
 		let mut transform = Transform::from_position(pos);
 		transform.lock = TransformLock::RotationScale;
 		transform.scale.multiply_scalar(0.1);
 
-		let entity = world
-			.create_entity()
-			.with(transform)
-			.with(geom_plane.clone())
-			.with(material.clone())
-			.build();
-
-		world.add_child(root, entity);
+		root.add_child(
+			NodeData::new("emojy")
+				.set_material(material.clone())
+				.set_geometry(geom_plane.clone())
+				.set_transform(transform)
+				.to_shared()
+		);
 	});
 
-	render_system.camera = Some(e_cam);
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(camera.clone(), true, true, true);
+
 	render_system.windowed_context.window().set_resizable(true);
 
 	let hidpi_factor = render_system
@@ -212,17 +209,9 @@ fn main() {
 		}
 
 		{
-			let mut transform_store = world.write_storage::<Transform>();
-			let mut cam_store = world.write_storage::<PerspectiveCamera>();
-
+			let mut node_data = camera.lock();
 			{
-				let transform_camera = transform_store.get_mut(e_cam).unwrap();
-				let aspect = window_state.window_size.0 / window_state.window_size.1;
-
-				let camera = cam_store.get_mut(e_cam).unwrap();
-				camera.aspect = aspect as f32;
-				camera.update_projection_matrix();
-
+				let transform_camera = &mut node_data.transform;
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
 				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
@@ -230,9 +219,14 @@ fn main() {
 				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
+
+			if let Some(camera) = &mut node_data.camera {
+				let aspect = window_state.window_size.0 / window_state.window_size.1;
+				camera.aspect = aspect as f32;
+				camera.update_projection_matrix();
+			}
 		}
 
-		system_transform.run_now(&world);
-		render_system.run(&mut world, root);
+		render_system.run(&root);
 	}
 }

@@ -1,11 +1,8 @@
-extern crate specs;
-extern crate uuid;
-
-use self::specs::{Component, VecStorage};
 use super::{Blending, ShaderProgram, ShaderTag, ToUniform, Uniform, UniformName};
 use math::{Vector, Vector3, Vector4};
 use std::collections::{HashMap};
 use std::sync::{Arc, LockResult, Mutex, MutexGuard};
+use uuid::Uuid;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -14,6 +11,7 @@ pub struct Material {
 	pub blending: Blending,
 	pub uniforms: HashMap<UniformName, Uniform>,
 	shader_program: Arc<Mutex<ShaderProgram>>,
+	_uuid: Uuid,
 }
 
 // impl ShaderProgram for Material {
@@ -71,12 +69,17 @@ impl Material {
 		self.uniforms.insert(name, value.to_uniform());
 	}
 
+	pub fn uuid(&self) -> Uuid {
+		self._uuid
+	}
+
 	pub fn new(src: &str) -> Self {
 		Self {
 			uniforms: HashMap::new(),
 			name: "".to_string(),
 			blending: Blending::None,
 			shader_program: Arc::new(Mutex::new(ShaderProgram::new(src.to_string()))),
+			_uuid: Uuid::new_v4(),
 		}
 	}
 
@@ -186,46 +189,38 @@ impl Material {
 	pub fn new_frame_buffer() -> Self {
 		Material::new("frame_buffer")
 	}
+
+	pub fn to_shared(self) -> SharedMaterial {
+		SharedMaterial::new(self)
+	}
 }
 
 #[derive(Debug, Clone)]
-pub struct SharedMaterials(Vec<Arc<Mutex<Material>>>);
+pub struct SharedMaterial(Uuid, Arc<Mutex<Material>>);
 
-impl Component for SharedMaterials {
-	type Storage = VecStorage<Self>;
-}
-
-impl SharedMaterials {
+impl SharedMaterial {
 	pub fn new(material: Material) -> Self {
-		SharedMaterials(vec![Arc::new(Mutex::new(material))])
+		let uuid = material.uuid();
+		SharedMaterial(uuid, Arc::new(Mutex::new(material)))
 	}
 
-	pub fn len(&self) -> usize {
-		self.0.len()
+	pub fn lock(&mut self) -> LockResult<MutexGuard<Material>> {
+		self.1.lock()
 	}
 
-	pub fn new_collection(mut materials: Vec<Material>) -> Self {
-		let materials = materials
-			.drain(..)
-			.map(|mat| Arc::new(Mutex::new(mat)))
-			.collect();
-
-		SharedMaterials(materials)
+	pub fn uuid(&mut self) -> Uuid {
+		self.0
 	}
 
-	pub fn lock(&mut self, index: usize) -> LockResult<MutexGuard<Material>> {
-		self.0[index].lock()
-	}
+	// pub fn iter(&self) -> std::slice::Iter<'_, Arc<Mutex<Material>>> {
+	// 	self.0.iter()
+	// }
 
-	pub fn iter(&self) -> std::slice::Iter<'_, Arc<Mutex<Material>>> {
-		self.0.iter()
-	}
+	// pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Arc<Mutex<Material>>> {
+	// 	self.0.iter_mut()
+	// }
 
-	pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Arc<Mutex<Material>>> {
-		self.0.iter_mut()
-	}
-
-	pub fn clone_material(&self, index: usize) -> Arc<Mutex<Material>> {
-		self.0[index].clone()
-	}
+	// pub fn clone_material(&self, index: usize) -> Arc<Mutex<Material>> {
+	// 	self.0[index].clone()
+	// }
 }

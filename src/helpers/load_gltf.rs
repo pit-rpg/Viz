@@ -1,8 +1,6 @@
 extern crate gltf;
-extern crate specs;
 extern crate byteorder;
 extern crate regex;
-extern crate uuid;
 
 use std::string::ToString;
 use std::collections::HashSet;
@@ -41,8 +39,6 @@ use self::gltf::{
 	Document,
 };
 
-use self::specs::prelude::*;
-
 use core::{
 	Transform,
 	BufferData,
@@ -51,9 +47,8 @@ use core::{
 	BufferType,
 	Texture2D,
 	Material,
-	SharedMaterials,
+	SharedMaterial,
 	SharedGeometry,
-	EntityRelations,
 	ShaderTag,
 	Blending,
 	ShaderProgram,
@@ -64,7 +59,9 @@ use core::{
 	MinFilter,
 	SharedTexture2D,
 	UniformName,
-	TextureDataSource
+	TextureDataSource,
+	Node,
+	NodeData,
 };
 
 struct Context {
@@ -73,12 +70,12 @@ struct Context {
 	images: Vec<TextureData>,
 	textures: Vec<SharedTexture2D>,
 	buffers: Vec<gltf::buffer::Data>,
-	materials: Vec<SharedMaterials>,
-	defaultMaterial: SharedMaterials,
+	materials: Vec<SharedMaterial>,
+	defaultMaterial: SharedMaterial,
 }
 
 
-pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdError>> {
+pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 	println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
 
 	let (doc, buffers, images) = gltf::import(path.clone())?;
@@ -143,15 +140,13 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 				mat.set_uniform(UniformName::MapOcclusion, (Some(texture), map.tex_coord()));
 			}
 
-			// println!("{:?}", pbr);
-
-			SharedMaterials::new(mat)
+			mat.to_shared()
 		})
 		.collect();
 	println!("<><><><><>==========++++++==========<><><><><>");
 
 	let context = Context {
-		defaultMaterial: SharedMaterials::new(Material::new_normal()),
+		defaultMaterial: Material::new_normal().to_shared(),
 		materials,
 		textures,
 		doc,
@@ -160,9 +155,7 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 		path: path.clone(),
 	};
 
-	let root = world.create_entity()
-		.with(Transform::default())
-		.build();
+	let root = NodeData::new(name).to_shared();
 
 	for scene in context.doc.scenes() {
 		print!("Scene {}", scene.index());
@@ -170,7 +163,7 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 		print!(" ({})", scene.name().unwrap_or("<Unnamed>"));
 		println!();
 		for node in scene.nodes() {
-			load_node(world, &node, &context, 1, root);
+			load_node(&node, &context, 1, &root);
 			// print_tree(&node, 1);
 		}
 	}
@@ -181,21 +174,27 @@ pub fn load_gltf(world: &mut World, path: PathBuf) -> Result<Entity, Box<StdErro
 }
 
 
-fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32, parent: Entity) {
-	print!(" Node {}", node.index());
-	print!(" ({})", node.name().unwrap_or("<dimensions {:?}>"));
+fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Node) {
+	let mut current_node_data = NodeData::new(gltf_node.name().unwrap_or("<dimensions {:?}>"));
+
+	print!(" Node {}", gltf_node.index());
+	print!(" ({})", current_node_data.name);
 	println!();
 
+
 	// Transform
-	let matrix = Matrix4::from_column_row_array( node.transform().matrix() );
-	let transform = Transform::from_matrix(matrix);
+	let matrix = Matrix4::from_column_row_array( gltf_node.transform().matrix() );
+	current_node_data.transform = Transform::from_matrix(matrix);
 	// / Transform
 
-	// Mesh
-	let meshes = node.mesh().map(|mesh| {
+	let current_node = current_node_data.to_shared();
+	parent.add_child(current_node.clone());
+
+	if let Some(mesh) = gltf_node.mesh() {
 		println!(" -> Mesh: {} {}", mesh.index(), mesh.name().unwrap_or("<Unnamed>"));
 
-		let primitives: Vec<_> = mesh.primitives()
+		mesh
+			.primitives()
 			.map(|primitive| {
 				println!();
 
@@ -298,62 +297,33 @@ fn load_node(world: &mut World, node: &gltf::Node, context: &Context, depth: i32
 
 				let mut geom = BufferGeometry::new();
 				attributes.into_iter().for_each(|e| {geom.add_buffer_attribute(e);} );
-				indices.map(|data| {geom.set_indices(data)} );
-				(geom, primitive.material().index())
+				indices.map(|data| {geom.set_indices(data)});
+
+				let shard_mat = match primitive.material().index() {
+					None => context.defaultMaterial.clone(),
+					Some(index) => context.materials[index].clone(),
+				};
+
+				current_node.add_child(
+					NodeData::new("node")
+						.set_material(shard_mat)
+						.set_geometry(geom.to_shared())
+						.to_shared()
+				);
+
+				// mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
+				// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
+				// mat.set_uniform("roughness", &Uniform::Float(1.0));
+				// mat.set_uniform("metalness", &Uniform::Float(0.0));
+				// mat.set_uniform("ambient_light", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
+
+				// let shard_mat = SharedMaterials::new(mat);
 			})
-			.collect();
-			primitives
-	});
-	// /Mesh
-
-	let current = world.create_entity()
-		.with(transform)
-		.build();
-
-	world.add_child(parent, current);
-	// let parent = current;
-
-	// let mut child_node = parent.clone();
-
-	if let Some(meshes) = meshes {
-		// println!("++++++++++++++++++++++++++++++++++++++++++");
-		// println!("++++++++++++++++++++++++++++++++++++++++++");
-		// meshes.iter().for_each(|mesh|{
-		// 	mesh.attributes.iter().for_each(|attr|{
-		// 		println!("NAME: {:?}", attr.buffer_type);
-		// 	});
-		// });
-		// println!("++++++++++++++++++++++++++++++++++++++++++");
-		// println!("++++++++++++++++++++++++++++++++++++++++++");
-
-
-		for (mesh, material_index) in meshes {
-			// let mut mat = Material::new_mesh_standard();
-			let shard_mat = match material_index {
-				None => context.defaultMaterial.clone(),
-				Some(index) => context.materials[index].clone(),
-			};
-			// mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
-			// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
-			// mat.set_uniform("roughness", &Uniform::Float(1.0));
-			// mat.set_uniform("metalness", &Uniform::Float(0.0));
-			// mat.set_uniform("ambient_light", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
-
-			// let shard_mat = SharedMaterials::new(mat);
-			let e  = world.create_entity()
-				// .with(transform.clone())
-				.with(Transform::default())
-				.with(shard_mat)
-				.with(SharedGeometry::new(mesh))
-				.build();
-			world.add_child(current, e);
-		}
+			.collect()
 	}
 
-	// println!();
-
-	for child in node.children() {
-		load_node(world, &child, context, depth + 1, current);
+	for child in gltf_node.children() {
+		load_node(&child, context, depth + 1, &current_node);
 	}
 }
 

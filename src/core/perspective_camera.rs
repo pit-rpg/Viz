@@ -1,8 +1,5 @@
-extern crate specs;
-
 use math::{Matrix4};
 use std::f32::consts::PI;
-use self::specs::{Component, VecStorage};
 
 
 #[allow(dead_code)]
@@ -153,9 +150,4 @@ impl PerspectiveCamera {
 		self.view.enabled = false;
 		self.update_projection_matrix()
 	}
-
-}
-
-impl Component for PerspectiveCamera {
-	type Storage = VecStorage<Self>;
 }

@@ -1,8 +1,5 @@
 use math::{Euler, Matrix4, Quaternion, Vector, Vector3};
 
-extern crate specs;
-use self::specs::{Component, VecStorage};
-
 #[derive(Copy, Clone, Debug)]
 pub enum TransformLock {
 	None,
@@ -22,6 +19,7 @@ pub struct Transform {
 	pub rotation: Euler<f32>,
 	pub quaternion: Quaternion<f32>,
 	pub lock: TransformLock,
+	pub auto_update: bool,
 }
 
 
@@ -61,6 +59,7 @@ impl Transform {
 			rotation: rot_e,
 			quaternion: rot_q,
 			lock: TransformLock::None,
+			auto_update: true,
 		}
 	}
 
@@ -73,6 +72,7 @@ impl Transform {
 			rotation: Euler::default(),
 			quaternion: Quaternion::new(),
 			lock: TransformLock::None,
+			auto_update: true,
 		}
 	}
 
@@ -85,6 +85,7 @@ impl Transform {
 			rotation: Euler::from_quaternion(&quaternion),
 			quaternion,
 			lock: TransformLock::None,
+			auto_update: true,
 		}
 	}
 }
@@ -100,10 +101,7 @@ impl Default for Transform {
 			rotation: Euler::default(),
 			quaternion: Quaternion::new(),
 			lock: TransformLock::None,
+			auto_update: true,
 		}
 	}
-}
-
-impl Component for Transform {
-	type Storage = VecStorage<Self>;
 }

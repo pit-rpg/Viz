@@ -1,7 +1,8 @@
 #[macro_use] extern crate lazy_static;
+#[macro_use] extern crate derive_builder;
 
-pub extern crate specs;
 pub extern crate glutin;
+pub extern crate uuid;
 
 pub mod macros;
 pub mod math;

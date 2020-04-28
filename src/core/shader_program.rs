@@ -1,7 +1,4 @@
-extern crate uuid;
-use self::uuid::Uuid;
-
-extern crate specs;
+use uuid::Uuid;
 
 use std::collections::{HashMap, HashSet};
 

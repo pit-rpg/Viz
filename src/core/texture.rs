@@ -2,7 +2,7 @@ extern crate image;
 extern crate uuid;
 
 use self::image::{ColorType, GenericImageView};
-use self::uuid::Uuid;
+use uuid::Uuid;
 use std::path::Path;
 use std::sync::{Arc, LockResult, Mutex, MutexGuard};
 

@@ -1,17 +1,13 @@
 extern crate uuid;
 extern crate heck;
-extern crate specs;
 
-
-use self::uuid::Uuid;
+use uuid::Uuid;
 use self::heck::ShoutySnakeCase;
 use std::vec::Vec;
 use std::fmt;
 use std::sync::{Arc,Mutex, LockResult, MutexGuard};
 use std::mem;
 use std::error::Error;
-use self::specs::{Component, VecStorage};
-
 
 use math::{
 	Vector,
@@ -433,6 +429,19 @@ impl BufferGeometry {
 	pub fn get_vertex_byte_size(&self) -> usize {
 		self.iter_attributes().map(|attr| attr.data.elem_byte_len()).sum()
 	}
+
+	pub fn get_default_group(&self) -> BufferGroup {
+		BufferGroup {
+			count: self.indices.len(),
+			start: 0,
+			material_index: 0,
+			name: None,
+		}
+	}
+
+	pub fn to_shared(self) -> SharedGeometry {
+		SharedGeometry::new(self)
+	}
 }
 
 impl Drop for BufferGeometry {
@@ -446,7 +455,7 @@ impl Drop for BufferGeometry {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SharedGeometry (Arc<Mutex<BufferGeometry>>);
 
 impl SharedGeometry {
@@ -457,9 +466,4 @@ impl SharedGeometry {
 	pub fn lock(&mut self) -> LockResult<MutexGuard<BufferGeometry>> {
 		self.0.lock()
 	}
-}
-
-
-impl Component for SharedGeometry {
-	type Storage = VecStorage<Self>;
 }
