@@ -6,21 +6,13 @@ use std::f64::consts::PI as PI_f64;
 use std::path::PathBuf;
 
 use project::{
-	specs::*,
 	glutin::{MouseScrollDelta},
 	glutin,
 	render,
 	math::{Vector3, Vector, Vector4},
-	core::{SharedGeometry,
-		PerspectiveCamera,
-		Transform,
-		Material,
-		SharedMaterials,
-		create_world,
-		PointLight,
-		DirectionalLight,
-		SystemTransform,
-		EntityRelations,
+	core::{
+		SharedGeometry, Node, NodeData, PerspectiveCamera, Transform,
+		Material, Light,
 	},
 	helpers::{
 		load_gltf,
@@ -39,71 +31,61 @@ pub struct WindowState {
 
 
 fn main(){
+	let root = Node::new("root");
 
-	let mut world = create_world();
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(&mut world, true, true, true);
-	let mut system_transform = SystemTransform::new();
-
-
-	let up = Vector3::new(0.0, 1.0, 0.0);
+	let up = Vector3::new_up();
 	let center = Vector3::new_zero();
 	let mut radius = 20.0;
 	let zoom_speed = 0.5;
 	let mut running = true;
 
-	let mut camera = PerspectiveCamera::new();
-	let mut transform_camera = Transform::default();
-	transform_camera.position.z = 6.0;
-	camera.view.enabled = false;
+	let camera = {
+		let mut camera = PerspectiveCamera::new();
+		let mut transform_camera = Transform::default();
+		transform_camera.position.z = 6.0;
+		camera.view.enabled = false;
+
+		root.add_child(
+			NodeData::new("camera")
+				.set_camera(camera)
+				.set_transform(transform_camera)
+				.to_shared()
+		)
+	};
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
-	let root = world
-		.create_entity()
-		.build();
-
-	let e_cam = world
-		.create_entity()
-		.with(transform_camera)
-		.with(camera)
-		.build();
-
-
-
 	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/girl_speedsculpt/scene.gltf")).unwrap();
-		world.add_child(root, entity);
-		let mut transform_store = world.write_storage::<Transform>();
-		let transform = transform_store.get_mut(entity).unwrap();
-		transform.position.y += 2.2;
-		transform.position.x -= 2.0;
-		transform.scale.set_scalar(0.4);
+		let node = load_gltf(PathBuf::from("models/girl_speedsculpt/scene.gltf"), "girl").unwrap();
+		{
+			let mut node_data = node.lock();
+			node_data.transform.position.y += 2.2;
+			node_data.transform.position.x -= 2.0;
+			node_data.transform.scale.set_scalar(0.4);
+		}
+		root.add_child(node.clone());
 	}
 
 	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/Duck.glb")).unwrap();
-		world.add_child(root, entity);
+		let node = load_gltf(PathBuf::from("models/Duck.glb"), "duck").unwrap();
+		root.add_child(node);
 	}
 
 	{
-		let entity = load_gltf(&mut world, PathBuf::from("models/pony_cartoon/scene.gltf")).unwrap();
-		world.add_child(root, entity);
-		let mut transform_store = world.write_storage::<Transform>();
-		let transform = transform_store.get_mut(entity).unwrap();
-		transform.scale.set_scalar(0.02);
-		transform.position.y -= 5.0;
-		transform.position.x += 5.0;
+		let node = load_gltf(PathBuf::from("models/pony_cartoon/scene.gltf"), "pony").unwrap();
+		{
+			let mut node_data = node.lock();
+			node_data.transform.scale.set_scalar(0.02);
+			node_data.transform.position.y -= 5.0;
+			node_data.transform.position.x += 5.0;
+		}
+		root.add_child(node);
+
 	}
 
+	let lights_parent = root.add_child(NodeData::new("lights_parent").to_shared());
+	// let mut lights = Vec::new();
 
-
-	let lights_parent = world
-		.create_entity()
-		.with(Transform::default())
-		.build();
-	world.add_child(root, lights_parent);
-
-	let mut lights = Vec::new();
 	for _ in  0..5 {
 		let mut transform = Transform::default();
 		transform.scale.set(0.2,0.2,0.2);
@@ -113,46 +95,42 @@ fn main(){
 			.sub_scalar(20.0);
 
 		let color = Vector3::random();
-		let point_light = PointLight::new(color.clone(), 1.0, 200.0, 1.0);
+		let point_light = Light::new(color.clone(), 1.0);
+		// let point_light = Light::new(color.clone(), 1.0, 200.0, 1.0);
 
-		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
+		let material_light = Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)).to_shared();
 
-		let e_light = world
-			.create_entity()
-			.with(transform)
-			.with(geom_light.clone())
-			.with(material_light.clone())
-			.with(point_light.clone())
-			.build();
+		let node = NodeData::new("light")
+			.set_transform(transform)
+			.set_light(point_light)
+			.set_geometry(geom_light.clone())
+			.set_material(material_light.clone())
+			.to_shared();
 
-		world.add_child(lights_parent, e_light);
-
-		lights.push(e_light);
+		lights_parent.add_child(node.clone());
+		// lights.push(node);
 	}
 
 	{
 		let mut transform = Transform::default();
 		transform.rotation.x = 3.14/2.0;
 
-
 		let color = Vector3::new_one();
-		let material_light = SharedMaterials::new(Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)));
-		let light = DirectionalLight::new(color.clone(), Vector3::new(0.0, 1.0, 0.0), 5.0);
+		let material_light = Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)).to_shared();
+		let light = Light::new(color.clone(), 1.0);
 
-		let entity = world
-			.create_entity()
-			.with(transform)
-			.with(geom_light.clone())
-			.with(material_light.clone())
-			.with(light.clone())
-			.build();
-		world.add_child(root, entity);
+		root.add_child(
+			NodeData::new("light")
+				.set_transform(transform)
+				.set_light(light.clone())
+				.set_material(material_light.clone())
+				.set_geometry(geom_light.clone())
+				.to_shared()
+		);
 	}
 
+	let mut render_system = render::open_gl::system_render::RenderSystem::new(camera.clone(), true, true, true);
 
-
-
-	render_system.camera = Some(e_cam);
 	render_system.windowed_context.window().set_resizable(true);
 	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
 	let mut window_state = WindowState::default();
@@ -203,33 +181,31 @@ fn main(){
 		let time = render_system.get_duration();
 
 		{
-			let mut transform_store = world.write_storage::<Transform>();
-			let mut cam_store = world.write_storage::<PerspectiveCamera>();
-
+			let mut node_data = camera.lock();
 			{
-				let transform_camera = transform_store.get_mut(e_cam).unwrap();
-				let aspect = window_state.window_size.0/window_state.window_size.1;
-
-				let  camera = cam_store.get_mut(e_cam).unwrap();
-				camera.aspect = aspect as f32;
-				camera.update_projection_matrix();
-
+				let transform_camera = &mut node_data.transform;
 				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
 				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
-				transform_camera.position.z = ( (x_prog * (PI_f64*2.0)).sin() * radius ) as f32;
-				transform_camera.position.x = ( (x_prog * (PI_f64*2.0)).cos() * radius ) as f32;
-				transform_camera.position.y = (( y_prog * radius - radius/2.0) * -2.0) as f32;
+				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
+				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
+				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
-			{
-				let transform = transform_store.get_mut(lights_parent).unwrap();
-				transform.rotation.y = time * 0.5;
-				transform.rotation.x = time * 0.3;
-				transform.rotation.z = time * 0.1;
+
+			if let Some(camera) = &mut node_data.camera {
+				let aspect = window_state.window_size.0 / window_state.window_size.1;
+				camera.aspect = aspect as f32;
+				camera.update_projection_matrix();
 			}
 		}
 
-		system_transform.run_now(&world);
-		render_system.run(&mut world, root);
+		{
+			let mut node_data = lights_parent.lock();
+			node_data.transform.rotation.y = time * 0.5;
+			node_data.transform.rotation.x = time * 0.3;
+			node_data.transform.rotation.z = time * 0.1;
+		}
+
+		render_system.run(&root);
 	}
 }

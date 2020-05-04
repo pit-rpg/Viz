@@ -110,10 +110,9 @@ void main()
 	// float z = gl_FragCoord.z * 2.0 - 1.0;
     // float d = (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 
-	// FragColor = vec4(vec3( d ), 1.0);
-	// return;
 	vec3 diffuseColor = color;
-
+	// FragColor = vec4(diffuseColor, 1.0);
+	// return;
 
 
 #if defined TRANSPARENT

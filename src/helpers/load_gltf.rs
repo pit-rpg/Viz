@@ -3,7 +3,6 @@ extern crate byteorder;
 extern crate regex;
 
 use std::string::ToString;
-use std::collections::HashSet;
 use std::path::PathBuf;
 use std::boxed::Box;
 use std::error::Error as StdError;
@@ -15,26 +14,12 @@ use math::{
 	Matrix4,
 };
 
-
 use self::gltf::{
-	// accessor::{
-	// 	Accessor,
-	// 	DataType,
-	// 	Dimensions,
-	// },
 	mesh::{
 		Semantic,
-		// Reader,
 		util::ReadTexCoords,
 		util::ReadColors,
 	},
-	// buffer::{
-	// 	Source,
-	// },
-	// material::{
-	// 	Material,
-	// },
-	// image,
 	image,
 	Document,
 };
@@ -48,10 +33,8 @@ use core::{
 	Texture2D,
 	Material,
 	SharedMaterial,
-	SharedGeometry,
 	ShaderTag,
 	Blending,
-	ShaderProgram,
 	TextureData,
 	TextureColorType,
 	Wrapping,
@@ -65,15 +48,11 @@ use core::{
 };
 
 struct Context {
-	path: PathBuf,
 	doc: Document,
-	images: Vec<TextureData>,
-	textures: Vec<SharedTexture2D>,
 	buffers: Vec<gltf::buffer::Data>,
 	materials: Vec<SharedMaterial>,
-	defaultMaterial: SharedMaterial,
+	default_material: SharedMaterial,
 }
-
 
 pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 	println!("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
@@ -143,28 +122,24 @@ pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 			mat.to_shared()
 		})
 		.collect();
+
 	println!("<><><><><>==========++++++==========<><><><><>");
 
 	let context = Context {
-		defaultMaterial: Material::new_normal().to_shared(),
+		default_material: Material::new_normal().to_shared(),
 		materials,
-		textures,
 		doc,
 		buffers,
-		images,
-		path: path.clone(),
 	};
 
 	let root = NodeData::new(name).to_shared();
 
 	for scene in context.doc.scenes() {
 		print!("Scene {}", scene.index());
-		// #[cfg(feature = "names")]
 		print!(" ({})", scene.name().unwrap_or("<Unnamed>"));
 		println!();
 		for node in scene.nodes() {
 			load_node(&node, &context, 1, &root);
-			// print_tree(&node, 1);
 		}
 	}
 
@@ -172,7 +147,6 @@ pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 
 	Ok(root)
 }
-
 
 fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Node) {
 	let mut current_node_data = NodeData::new(gltf_node.name().unwrap_or("<dimensions {:?}>"));
@@ -245,7 +219,6 @@ fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Nod
 							Semantic::Colors(n) => {
 								let en = reader.read_colors(n).expect("cant find colors");
 
-
 								match en {
 									ReadColors::RgbU8(iter) => {
 										let color: Vec<_> = iter.map(|e| Vector3::new(e[0] as f32, e[1] as f32, e[2] as f32) ).collect();
@@ -300,7 +273,7 @@ fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Nod
 				indices.map(|data| {geom.set_indices(data)});
 
 				let shard_mat = match primitive.material().index() {
-					None => context.defaultMaterial.clone(),
+					None => context.default_material.clone(),
 					Some(index) => context.materials[index].clone(),
 				};
 
@@ -310,14 +283,6 @@ fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Nod
 						.set_geometry(geom.to_shared())
 						.to_shared()
 				);
-
-				// mat.set_uniform("diffuse", &Uniform::Vector3(Vector3::new_one()));
-				// mat.set_uniform("specular", &Uniform::Vector3(Vector3::new_one()));
-				// mat.set_uniform("roughness", &Uniform::Float(1.0));
-				// mat.set_uniform("metalness", &Uniform::Float(0.0));
-				// mat.set_uniform("ambient_light", &Uniform::Vector3(Vector3::new(0.0,0.0,0.0)));
-
-				// let shard_mat = SharedMaterials::new(mat);
 			})
 			.collect()
 	}
@@ -408,7 +373,6 @@ impl From<Option<gltf::texture::MagFilter>> for MagFilter {
 		data.map_or(MagFilter::Linear, |e| e.into())
 	}
 }
-
 
 impl From<gltf::Texture<'_>> for Texture2D {
 	fn from(data: gltf::texture::Texture) -> Self {

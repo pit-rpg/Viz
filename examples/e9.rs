@@ -51,6 +51,7 @@ fn main() {
 
 
 	let mut frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
+	let mut buffer_plane = root.clone();
 	{
 		let buffer_texture = {
 			let buffer = frame_buffer.lock().unwrap();
@@ -80,15 +81,26 @@ fn main() {
 			transform.position.x = -1.0;
 			transform.position.z = -3.3;
 
-			root.add_child(
-				NodeData::new("plane")
-					.set_transform(transform)
-					.set_geometry(geometry_generators::plane_buffer_geometry(
-						1.0, 1.0, 1, 1,
-					).to_shared())
-					.set_material(material)
-					.to_shared()
-			);
+			buffer_plane = NodeData::new("plane")
+				.set_transform(transform)
+				.set_geometry(geometry_generators::plane_buffer_geometry(
+					1.0, 1.0, 1, 1,
+				).to_shared())
+				.set_material(material)
+				.to_shared();
+
+			root.add_child(buffer_plane.clone());
+
+
+			// root.add_child(
+			// 	NodeData::new("plane")
+			// 		.set_transform(transform)
+			// 		.set_geometry(geometry_generators::plane_buffer_geometry(
+			// 			1.0, 1.0, 1, 1,
+			// 		).to_shared())
+			// 		.set_material(material)
+			// 		.to_shared()
+			// );
 		}
 	}
 
@@ -121,9 +133,16 @@ fn main() {
 		node_data.transform.scale.set_scalar(0.4);
 	}
 
-	root.add_child(
-		load_gltf(PathBuf::from("models/Duck.glb"), "Duck").unwrap()
-	);
+
+	{
+		let duck = load_gltf(PathBuf::from("models/Duck.glb"), "Duck").unwrap();
+		// {
+		// 	let mut node_data = duck.lock();
+		// 	node_data.transform.scale.set(0.2,0.2,0.2);
+		// }
+		root.add_child(duck);
+	}
+
 
 	{
 		let mut transform = Transform::default();
@@ -223,6 +242,8 @@ fn main() {
 
 		render_system.set_frame_buffer(Some(frame_buffer.clone()));
 		render_system.render(&root);
+
+		// buffer_plane.update_transform(false);
 
 		render_system.set_frame_buffer(None);
 		render_system.render(&root);

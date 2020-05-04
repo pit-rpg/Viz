@@ -171,6 +171,8 @@ impl Node {
 				if !nd.transform.auto_update && !force {return}
 
 				nd.transform.update();
+				nd.transform.matrix_world = node.transform.matrix_world * node.transform.matrix_local;
+
 				Self::update_transform_helper(&nd, force);
 			});
 	}

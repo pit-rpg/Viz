@@ -288,32 +288,6 @@ impl RenderSystem {
 	}
 
 	pub fn render<'a>(&mut self, root: &Node) {
-				// let (
-				// 	camera_coll,
-				// 	transform_coll,
-				// 	mut geometry_coll,
-				// 	mut material_coll,
-				// 	light_point_coll,
-				// 	light_direct_coll,
-				// 	mut gl_vertex_arrays_ids,
-				// 	mut gl_material_ids,
-				// 	mut gl_texture_ids,
-				// 	mut gl_frame_buffer_ids,
-				// 	mut gl_render_buffer_ids,
-				// ): (
-				// 	ReadStorage<PerspectiveCamera>,
-				// 	ReadStorage<Transform>,
-				// 	WriteStorage<SharedGeometry>,
-				// 	WriteStorage<SharedMaterials>,
-				// 	WriteStorage<PointLight>,
-				// 	WriteStorage<DirectionalLight>,
-				// 	Write<GLVertexArraysIDs>,
-				// 	Write<GLMaterialIDs>,
-				// 	Write<GLTextureIDs>,
-				// 	Write<GLFrameBufferIDs>,
-				// 	Write<GLRenderBufferIDs>,
-				// ) = SystemData::fetch(&world);
-
 		Self::gl_clear_error();
 
 		self.update_time();
@@ -470,9 +444,6 @@ impl RenderSystem {
 			};
 
 			groups.drain(..).for_each(|buffer_group| {
-				// let materials = &mut node_data.materials;
-				// let transform = &mut node_data.transform;
-
 				let material_index = node_data.materials.len().min(buffer_group.material_index);
 				let mut material = node_data.materials[material_index].clone();
 
