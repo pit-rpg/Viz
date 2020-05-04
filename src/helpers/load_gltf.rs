@@ -94,9 +94,7 @@ pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 			mat.set_uniform(UniformName::Alpha, color_f[3]);
 			mat.set_uniform(UniformName::Emissive, emissive);
 
-			if let Some(name) = in_mat.name() {
-				mat.name = name.to_string();
-			}
+			mat.name = in_mat.name().unwrap_or("gltf_material").to_string();
 
 			if let Some(map) = pbr.base_color_texture() {
 				let texture = textures[ map.texture().index() ].clone();
@@ -149,7 +147,7 @@ pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 }
 
 fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Node) {
-	let mut current_node_data = NodeData::new(gltf_node.name().unwrap_or("<dimensions {:?}>"));
+	let mut current_node_data = NodeData::new(gltf_node.name().unwrap_or("gltf_node"));
 
 	print!(" Node {}", gltf_node.index());
 	print!(" ({})", current_node_data.name);
@@ -278,7 +276,7 @@ fn load_node(gltf_node: &gltf::Node, context: &Context, depth: i32, parent: &Nod
 				};
 
 				current_node.add_child(
-					NodeData::new("node")
+					NodeData::new("gltf_sub_node")
 						.set_material(shard_mat)
 						.set_geometry(geom.to_shared())
 						.to_shared()

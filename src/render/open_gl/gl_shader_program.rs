@@ -314,11 +314,11 @@ pub fn get_program(shader: &ShaderProgram, bind_context: &mut BindContext) -> GL
 	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, shader, bind_context);
 	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, shader, bind_context);
 
-	println!("=============================================");
-	println!("{}", shader_program.vs_source);
-	println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-	println!("{}", shader_program.fs_source);
-	println!("=============================================");
+	// println!("=============================================");
+	// println!("{}", shader_program.vs_source);
+	// println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	// println!("{}", shader_program.fs_source);
+	// println!("=============================================");
 
 	shader_program
 }

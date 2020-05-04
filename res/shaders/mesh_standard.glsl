@@ -136,6 +136,9 @@ void main()
 #endif
 
 
+	// FragColor = vec4(diffuseColor, 1.0);
+	// return;
+
 	// PhysicalMaterial material;
 	// material.diffuseColor = diffuse;
 	// material.specularColor = specular;

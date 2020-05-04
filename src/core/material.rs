@@ -14,35 +14,6 @@ pub struct Material {
 	_uuid: Uuid,
 }
 
-// impl ShaderProgram for Material {
-// 	fn get_src(&self) -> &str {
-// 		&self.src[..]
-// 	}
-
-// 	fn add_tag(&mut self, tag: ShaderTag) {
-// 		self.tags.insert(tag);
-// 		self.set_need_update(true);
-// 	}
-
-// 	fn remove_tag(&mut self, tag: ShaderTag) {
-// 		self.tags.remove(&tag);
-// 		self.set_need_update(true);
-// 	}
-
-// 	fn has_tag(&self, tag: ShaderTag) -> bool {
-// 		self.tags.get(&tag).is_some()
-// 	}
-
-// 	fn get_tags(&self) -> &HashSet<ShaderTag> {
-// 		&self.tags
-// 	}
-
-// 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag> {
-// 		&mut self.tags
-// 	}
-
-// }
-
 #[allow(dead_code)]
 impl Material {
 	pub fn get_shader_program(&self) -> LockResult<MutexGuard<ShaderProgram>> {
@@ -211,16 +182,4 @@ impl SharedMaterial {
 	pub fn uuid(&mut self) -> Uuid {
 		self.0
 	}
-
-	// pub fn iter(&self) -> std::slice::Iter<'_, Arc<Mutex<Material>>> {
-	// 	self.0.iter()
-	// }
-
-	// pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Arc<Mutex<Material>>> {
-	// 	self.0.iter_mut()
-	// }
-
-	// pub fn clone_material(&self, index: usize) -> Arc<Mutex<Material>> {
-	// 	self.0[index].clone()
-	// }
 }

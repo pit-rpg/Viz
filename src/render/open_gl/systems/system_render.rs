@@ -342,16 +342,16 @@ impl RenderSystem {
 						lights_direct.push((light.clone(), direction));
 					}
 				}
-
-				node_data.materials
-					.iter_mut()
-					.for_each(|material| {
-						let isLighted = {material.lock().unwrap().has_tag(ShaderTag::Lighting)};
-						if isLighted {
-							lights_affected_materials.insert(material.uuid(), material.clone());
-						}
-					})
 			}
+
+			node_data.materials
+				.iter_mut()
+				.for_each(|material| {
+					let is_lighted = {material.lock().unwrap().has_tag(ShaderTag::Lighting)};
+					if is_lighted {
+						lights_affected_materials.insert(material.uuid(), material.clone());
+					}
+				})
 		});
 
 		if lights_point.len() != self.lights_point_count {
