@@ -12,7 +12,7 @@ use project::{
 	math::{Vector3, Vector, Vector4},
 	core::{
 		SharedGeometry, Node, NodeData, PerspectiveCamera, Transform,
-		Material, Light,
+		Material, Light, LightType
 	},
 	helpers::{
 		load_gltf,
@@ -86,7 +86,7 @@ fn main(){
 	let lights_parent = root.add_child(NodeData::new("lights_parent").to_shared());
 	// let mut lights = Vec::new();
 
-	for _ in  0..5 {
+	for _ in 0..5 {
 		let mut transform = Transform::default();
 		transform.scale.set(0.2,0.2,0.2);
 		transform.position
@@ -113,14 +113,15 @@ fn main(){
 
 	{
 		let mut transform = Transform::default();
-		transform.rotation.x = 3.14/2.0;
+		transform.rotation.x = -3.14/2.0;
 
 		let color = Vector3::new_one();
 		let material_light = Material::new_basic(Vector4::new(color.x,color.y,color.z,5.0)).to_shared();
-		let light = Light::new(color.clone(), 1.0);
+		let mut light = Light::new(color.clone(), 5.0);
+		light.light_type = LightType::Directional;
 
 		root.add_child(
-			NodeData::new("light")
+			NodeData::new("light directional")
 				.set_transform(transform)
 				.set_light(light.clone())
 				.set_material(material_light.clone())

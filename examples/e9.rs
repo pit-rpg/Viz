@@ -89,18 +89,7 @@ fn main() {
 				.set_material(material)
 				.to_shared();
 
-			root.add_child(buffer_plane.clone());
-
-
-			// root.add_child(
-			// 	NodeData::new("plane")
-			// 		.set_transform(transform)
-			// 		.set_geometry(geometry_generators::plane_buffer_geometry(
-			// 			1.0, 1.0, 1, 1,
-			// 		).to_shared())
-			// 		.set_material(material)
-			// 		.to_shared()
-			// );
+			// root.add_child(buffer_plane.clone());
 		}
 	}
 
@@ -146,12 +135,12 @@ fn main() {
 
 	{
 		let mut transform = Transform::default();
-		transform.rotation.x = 3.14 / 180.0 * 45.0;
-		transform.rotation.z = 3.14 / 180.0 * 45.0;
+		transform.rotation.x = -3.14 / 180.0 * 45.0;
+		transform.rotation.z = -3.14 / 180.0 * 45.0;
 
 		let color = Vector3::new_one();
 		let material_light = Material::new_basic(Vector4::new(color.x, color.y, color.z, 5.0)).to_shared();
-		let mut light = Light::new(color.clone(), 1.0);
+		let mut light = Light::new(color.clone(), 5.0);
 		light.light_type = LightType::Directional;
 
 		root.add_child(
@@ -239,13 +228,11 @@ fn main() {
 
 
 		root.update_transform(false);
-
 		render_system.set_frame_buffer(Some(frame_buffer.clone()));
 		render_system.render(&root);
 
-		// buffer_plane.update_transform(false);
-
+		buffer_plane.update_transform(false);
 		render_system.set_frame_buffer(None);
-		render_system.render(&root);
+		render_system.render(&buffer_plane);
 	}
 }

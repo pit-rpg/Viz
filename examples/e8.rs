@@ -171,26 +171,22 @@ fn main() {
 			mat.set_uniform(UniformName::MapColor, texture);
 			let material = mat.to_shared();
 
-			buffer_plane = root.add_child(
-				NodeData::new("bufferOut")
-					.set_geometry(geom_plane)
-					.set_material(material)
-					.to_shared()
-			)
+			buffer_plane = NodeData::new("bufferOut")
+				.set_geometry(geom_plane)
+				.set_material(material)
+				.to_shared()
 		}
 	}
 
 	let mut render_system = render::open_gl::system_render::RenderSystem::new(camera.clone(), true, true, true);
 	render_system.windowed_context.window().set_resizable(true);
-	// render_system.window.set_resizable(true);
+
 	let mut hidpi_factor = render_system
 		.windowed_context
 		.window()
 		.get_hidpi_factor();
 
 	let mut window_state = WindowState::default();
-
-	// let mut frame_count: u32 = 0;
 
 	render_system.clear_color = Some(Vector4::new(0.0, 0.5, 0.5, 1.0));
 
@@ -279,15 +275,11 @@ fn main() {
 		}
 
 		root.update_transform(false);
-		buffer_plane.update_transform(false);
-
 		render_system.set_frame_buffer(Some(frame_buffer.clone()));
 		render_system.render(&root);
 
+		buffer_plane.update_transform(false);
 		render_system.set_frame_buffer(None);
 		render_system.render(&buffer_plane);
-
-		// render_system.set_frame_buffer(None);
-		// render_system.render(&root);
 	}
 }
