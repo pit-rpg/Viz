@@ -9,7 +9,6 @@ use project::{
 		SharedTexture2D, Transform, TransformLock, UniformName,
 	},
 	glutin,
-	glutin::MouseScrollDelta,
 	helpers::geometry_generators,
 	math::{Vector, Vector3, Vector4},
 	render,

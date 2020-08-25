@@ -66,7 +66,7 @@ impl TextDinamic {
 
 	pub fn create_elements(&mut self, fonts: &Vec<(String, Font)>) -> (SharedGeometry, SharedTexture2D) {
 		let texture_data = TextureData {
-			color_type: TextureColorType::RGBA(8),
+			color_type: TextureColorType::RGBA8,
 			width: 0,
 			height: 0,
 			data: TextureDataSource::Raw(Vec::new()),
@@ -107,7 +107,7 @@ impl Text for TextDinamic {
 		let mut texture = texture.lock().unwrap();
 		let texture_data = texture.get_texture_data_ref_mut().unwrap();
 
-		texture_data.color_type = TextureColorType::RGBA(8);
+		texture_data.color_type = TextureColorType::RGBA8;
 		texture_data.width = buffer.width as u32;
 		texture_data.height = buffer.height as u32;
 		texture_data.data = TextureDataSource::Raw(buffer.buffer);

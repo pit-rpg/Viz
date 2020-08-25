@@ -181,12 +181,12 @@ pub fn to_gl_min_filter(min_filter: MinFilter) -> u32 {
 
 pub fn to_gl_color_internal_type(color_type: TextureColorType) -> u32 {
 	match color_type {
-		TextureColorType::R(_) => gl::RED,
-		TextureColorType::RG(_) => gl::RG,
-		// TextureColorType::RGB(_) => gl::SRGB,
-		// TextureColorType::RGBA(_) => gl::SRGB_ALPHA,
-		TextureColorType::RGB(_) => gl::RGB,
-		TextureColorType::RGBA(_) => gl::RGBA,
+		TextureColorType::R8 => gl::RED,
+		TextureColorType::RG8 => gl::RG,
+		// TextureColorType::RGB8 => gl::SRGB,
+		// TextureColorType::RGBA8 => gl::SRGB_ALPHA,
+		TextureColorType::RGB8 => gl::RGB,
+		TextureColorType::RGBA8 => gl::RGBA,
 		TextureColorType::Stencil => gl::STENCIL_ATTACHMENT,
 		TextureColorType::Depth => gl::DEPTH_ATTACHMENT,
 		TextureColorType::DepthStencil => gl::DEPTH24_STENCIL8,
@@ -195,10 +195,10 @@ pub fn to_gl_color_internal_type(color_type: TextureColorType) -> u32 {
 
 pub fn to_gl_color_pixel_data_type(color_type: TextureColorType) -> u32 {
 	match color_type {
-		TextureColorType::R(_) => gl::RED,
-		TextureColorType::RG(_) => gl::RG,
-		TextureColorType::RGB(_) => gl::RGB,
-		TextureColorType::RGBA(_) => gl::RGBA,
+		TextureColorType::R8 => gl::RED,
+		TextureColorType::RG8 => gl::RG,
+		TextureColorType::RGB8 => gl::RGB,
+		TextureColorType::RGBA8 => gl::RGBA,
 		TextureColorType::Stencil => gl::STENCIL_INDEX,
 		TextureColorType::Depth => gl::DEPTH_COMPONENT,
 		TextureColorType::DepthStencil => gl::UNSIGNED_INT_24_8,

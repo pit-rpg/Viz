@@ -18,7 +18,12 @@ use core::{
 use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::dpi::*;
-use self::glutin::{ContextError, ContextWrapper, EventsLoop, Window};
+use self::glutin::{
+	ContextError, ContextWrapper,
+	window::{Window},
+	event_loop::{EventLoop},
+	PossiblyCurrent
+};
 
 use super::super::{
 	gl_frame_buffer::{GLFrameBuffer, GLFrameBufferIDs},
@@ -51,9 +56,8 @@ struct DrawGroup {
 }
 
 pub struct RenderSystem {
-	pub camera: Node,
-	pub windowed_context: ContextWrapper<glutin::PossiblyCurrent, Window>,
-	pub events_loop: EventsLoop,
+	// pub windowed_context: ContextWrapper<glutin::PossiblyCurrent, Window>,
+	// pub events_loop: EventLoop<()>,
 	pub timer: Instant,
 	pub time: Duration,
 	pub delta_time: Duration,
@@ -68,12 +72,13 @@ pub struct RenderSystem {
 	pub _gl_frame_buffer_ids: GLFrameBufferIDs,
 	pub _gl_render_buffer_ids: GLRenderBufferIDs,
 
-	lights_point_count: usize,
-	lights_directional_count: usize,
-
 	depth_test: bool,
 	stencil_test: bool,
 	blending: bool,
+
+	lights_point_count: usize,
+	lights_directional_count: usize,
+
 
 	blending_state: Blending,
 
@@ -82,13 +87,17 @@ pub struct RenderSystem {
 }
 
 impl RenderSystem {
-	pub fn new(camera: Node, depth_test: bool, stencil_test: bool, blending: bool) -> Self {
+	pub fn build(
+		depth_test: bool,
+		stencil_test: bool,
+		blending: bool
+	) -> (Self, EventLoop<()>, ContextWrapper<PossiblyCurrent, Window>)
+	{
+		let events_loop = glutin::event_loop::EventLoop::new();
 
-		let events_loop = glutin::EventsLoop::new();
-
-		let window = glutin::WindowBuilder::new()
+		let window = glutin::window::WindowBuilder::new()
 			.with_title("Hello, world!")
-			.with_dimensions(LogicalSize::new(1024.0, 768.0));
+			.with_inner_size(LogicalSize::new(1024.0, 768.0));
 
 		let windowed_context = glutin::ContextBuilder::new()
 			.with_vsync(true)
@@ -121,10 +130,7 @@ impl RenderSystem {
 		RenderSystem::print_gl_version();
 
 		let render_system = Self {
-			camera,
-			// window: window,
-			windowed_context: windowed_context,
-			events_loop,
+			// windowed_context: windowed_context,
 			timer: Instant::now(),
 			time: Duration::new(0, 0),
 			delta_time: Duration::new(0, 0),
@@ -151,17 +157,14 @@ impl RenderSystem {
 			_gl_frame_buffer_ids: GLFrameBufferIDs::new(),
 			_gl_render_buffer_ids: GLRenderBufferIDs::new(),
 		};
-		render_system
+
+		(render_system, events_loop, windowed_context)
 	}
 
 	pub fn clear(&self) {
 		gl_call!({
 			gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
 		});
-	}
-
-	pub fn swap_buffers(&self) -> Result<(), ContextError> {
-		self.windowed_context.swap_buffers()
 	}
 
 	pub fn gl_clear_error() {
@@ -282,12 +285,14 @@ impl RenderSystem {
 		self.frame_buffer = frame_buffer;
 	}
 
-	pub fn run<'a>(&mut self, root: &Node) {
+	pub fn run<'a>(&mut self, camera: &Node, root: &Node) {
 		root.update_transform(false);
-		self.render(root);
+		self.render(camera, root);
 	}
 
-	pub fn render<'a>(&mut self, root: &Node) {
+	pub fn render<'a>(&mut self, camera: &Node, root: &Node) {
+		println!("render pass");
+
 		Self::gl_clear_error();
 
 		self.update_time();
@@ -306,7 +311,7 @@ impl RenderSystem {
 		let matrix_projection;
 
 		{
-			let node_data = self.camera.lock();
+			let node_data = camera.lock();
 			let cam_transform = &node_data.transform;
 			matrix_cam_position = Matrix4::new();
 			matrix_cam_position.get_inverse(&(cam_transform.matrix_world * cam_transform.matrix_local));
@@ -481,8 +486,5 @@ impl RenderSystem {
 				self.draw_buffer_group(groupe);
 			});
 		}
-
-		self.swap_buffers().unwrap();
-
 	}
 }

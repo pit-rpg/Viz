@@ -8,19 +8,22 @@ use project::{
 		FrameOutput, Material, PerspectiveCamera, NodeData, Node, Light, LightType,
 		SharedFrameBuffer, SharedGeometry, Transform, UniformName,
 	},
-	glutin,
-	glutin::MouseScrollDelta,
+	glutin::event_loop::ControlFlow,
+	glutin::event::MouseScrollDelta,
+	glutin::event::WindowEvent,
+	glutin::event::Event,
 	helpers::{geometry_generators, load_gltf},
 	math::{Vector, Vector3, Vector4},
 	render,
 };
+
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub struct WindowState {
 	pub pointer_pos: (f64, f64),
 	pub pointer_pressed: (bool, bool, bool),
 	pub pointer_wheel: f32,
-	pub window_size: (f64, f64),
+	pub window_size: (u32, u32),
 }
 
 fn main() {
@@ -30,8 +33,6 @@ fn main() {
 	let center = Vector3::new_zero();
 	let mut radius = 20.0;
 	let zoom_speed = 0.5;
-	let mut running = true;
-
 
 	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
@@ -124,12 +125,7 @@ fn main() {
 
 
 	{
-		let duck = load_gltf(PathBuf::from("models/Duck.glb"), "Duck").unwrap();
-		// {
-		// 	let mut node_data = duck.lock();
-		// 	node_data.transform.scale.set(0.2,0.2,0.2);
-		// }
-		root.add_child(duck);
+		root.add_child(load_gltf(PathBuf::from("models/Duck.glb"), "Duck").unwrap());
 	}
 
 
@@ -153,86 +149,100 @@ fn main() {
 		);
 	}
 
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(camera.clone(), true, true, true);
+	let (mut render_system, event_loop) = render::open_gl::system_render::RenderSystem::build(true, true, true);
+
 	render_system.clear_color = Some(Vector4::new(0.0, 0.1, 0.1, 1.0));
 
 	render_system.windowed_context.window().set_resizable(true);
-	let hidpi_factor = render_system.windowed_context.window().get_hidpi_factor().round();
+
+	let hidpi_factor = render_system.windowed_context.window().scale_factor();
 	let mut window_state = WindowState::default();
 
-	while running {
 
-		let windowed_context = &render_system.windowed_context;
-		use self::glutin::WindowEvent::*;
 
-		render_system.events_loop.poll_events(|event| match event {
-			glutin::Event::WindowEvent { event, .. } => match event {
-				glutin::WindowEvent::CloseRequested => running = false,
-				glutin::WindowEvent::Resized(logical_size) => {
-					window_state.window_size.0 = logical_size.width;
-					window_state.window_size.1 = logical_size.height;
+	event_loop.run(move |event, _, control_flow| {
+		*control_flow = ControlFlow::Wait;
 
-					let dpi_factor = windowed_context.window().get_hidpi_factor();
-					windowed_context.resize(logical_size.to_physical(dpi_factor));
+		match event {
+			Event::WindowEvent {event, .. } => {
+				match event {
+					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
 
-					gl_call!({
-						gl::Viewport(
-							0,
-							0,
-							(logical_size.width * dpi_factor) as i32,
-							(logical_size.height * dpi_factor) as i32,
-						);
-					});
-					println!("logical_size: {:?}, dpi_factor: {:?}", logical_size, dpi_factor);
-				}
-				glutin::WindowEvent::MouseWheel { delta, .. } => match delta {
-					MouseScrollDelta::LineDelta(_, y) => {
-						if y > 0.0 {
-							radius -= zoom_speed
-						} else {
-							radius += zoom_speed
-						};
+					WindowEvent::Resized(physical_scale) => {
+						let logical_size = physical_scale.to_logical::<u32>(hidpi_factor);
+
+						window_state.window_size.0 = logical_size.width;
+						window_state.window_size.1 = logical_size.height;
+
+						render_system.windowed_context.resize(physical_scale);
+
+						gl_call!({
+							gl::Viewport(
+								0,
+								0,
+								(logical_size.width as f64 * hidpi_factor) as i32,
+								(logical_size.height as f64 * hidpi_factor) as i32,
+							);
+						});
+						println!("logical_size: {:?}, hidpi_factor: {:?}", logical_size, hidpi_factor);
 					}
-					MouseScrollDelta::PixelDelta(_) => {}
-				},
-				CursorMoved { position: pos, .. } => {
-					window_state.pointer_pos = pos
-						.to_physical(windowed_context.window().get_hidpi_factor())
-						.to_logical(hidpi_factor)
-						.into();
+
+					WindowEvent::MouseWheel{ delta, .. } => {
+						match delta {
+							MouseScrollDelta::LineDelta(_, y) => {
+								if y > 0.0 {
+									radius -= zoom_speed
+								} else {
+									radius += zoom_speed
+								};
+							}
+							MouseScrollDelta::PixelDelta(_) => {}
+						}
+					}
+
+					WindowEvent::CursorMoved{ position: pos, .. } => {
+						window_state.pointer_pos = pos
+							.to_logical::<f64>(hidpi_factor)
+							.into();
+					}
+					_ => (),
 				}
-				_ => (),
 			},
+			Event::Resumed => {
+				println!("LOLOLOLOLO 12");
+			},
+			Event::RedrawRequested(_) => {
+				println!("LOLOLOLOLO");
+
+				{
+					let mut node_data = camera.lock();
+					{
+						let transform_camera = &mut node_data.transform;
+						let x_prog = window_state.pointer_pos.0 / window_state.window_size.0 as f64;
+						let y_prog = window_state.pointer_pos.1 / window_state.window_size.1 as f64;
+						transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
+						transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
+						transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
+						transform_camera.look_at(&center, &up);
+					}
+
+					if let Some(camera) = &mut node_data.camera {
+						let aspect = window_state.window_size.0 / window_state.window_size.1;
+						camera.aspect = aspect as f32;
+						camera.update_projection_matrix();
+					}
+				}
+
+
+				root.update_transform(false);
+				render_system.set_frame_buffer(Some(frame_buffer.clone()));
+				render_system.render(&camera, &root);
+
+				buffer_plane.update_transform(false);
+				render_system.set_frame_buffer(None);
+				render_system.render(&camera, &buffer_plane);
+			}
 			_ => (),
-		});
-
-
-		{
-			let mut node_data = camera.lock();
-			{
-				let transform_camera = &mut node_data.transform;
-				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
-				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
-				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
-				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
-				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
-				transform_camera.look_at(&center, &up);
-			}
-
-			if let Some(camera) = &mut node_data.camera {
-				let aspect = window_state.window_size.0 / window_state.window_size.1;
-				camera.aspect = aspect as f32;
-				camera.update_projection_matrix();
-			}
 		}
-
-
-		root.update_transform(false);
-		render_system.set_frame_buffer(Some(frame_buffer.clone()));
-		render_system.render(&root);
-
-		buffer_plane.update_transform(false);
-		render_system.set_frame_buffer(None);
-		render_system.render(&buffer_plane);
-	}
+	});
 }

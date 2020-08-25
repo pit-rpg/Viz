@@ -35,10 +35,10 @@ pub enum MinFilter {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TextureColorType {
-	R(u8),
-	RG(u8),
-	RGB(u8),
-	RGBA(u8),
+	R8,
+	RG8,
+	RGB8,
+	RGBA8,
 	DepthStencil,
 	Stencil,
 	Depth,
@@ -92,7 +92,7 @@ impl Texture2D {
 
 		let color_type = img.color().into();
 
-		let data = img.raw_pixels();
+		let data = img.to_bytes();
 		let (width, height) = img.dimensions();
 
 		let mut e = Self::default();
@@ -118,7 +118,7 @@ impl Texture2D {
 
 				let color_type = img.color().into();
 
-				let data = img.raw_pixels();
+				let data = img.to_bytes();
 				let (width, height) = img.dimensions();
 
 				self.texture_data = Some(TextureData {
@@ -186,7 +186,7 @@ impl SharedTexture2D {
 
 	pub fn new_color_buffer(width: u32, height: u32) -> Self {
 		let data = TextureData {
-			color_type: TextureColorType::RGB(8),
+			color_type: TextureColorType::RGB8,
 			width,
 			height,
 			data: TextureDataSource::TextureBuffer,
@@ -264,9 +264,9 @@ impl PartialEq for SharedTexture2D {
 impl From<ColorType> for TextureColorType {
 	fn from(color_type: ColorType) -> Self {
 		match color_type {
-			ColorType::Gray(d) => TextureColorType::R(d),
-			ColorType::RGB(d) => TextureColorType::RGB(d),
-			ColorType::RGBA(d) => TextureColorType::RGBA(d),
+			ColorType::L8 => TextureColorType::R8,
+			ColorType::Rgb8 => TextureColorType::RGB8,
+			ColorType::Rgba8 => TextureColorType::RGBA8,
 			_ => panic!(format!("can't convert color type from: {:?}", color_type)),
 		}
 	}

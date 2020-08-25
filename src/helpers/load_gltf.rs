@@ -312,10 +312,10 @@ impl SemanticToBufferType for Semantic {
 impl From<&image::Data> for TextureData {
 	fn from(data: &image::Data) -> Self {
 		let color_type = match data.format {
-			image::Format::R8 => TextureColorType::R(8),
-			image::Format::R8G8 => TextureColorType::RG(8),
-			image::Format::R8G8B8 => TextureColorType::RGB(8),
-			image::Format::R8G8B8A8 => TextureColorType::RGBA(8),
+			image::Format::R8 => TextureColorType::R8,
+			image::Format::R8G8 => TextureColorType::RG8,
+			image::Format::R8G8B8 => TextureColorType::RGB8,
+			image::Format::R8G8B8A8 => TextureColorType::RGBA8,
 			_ => unimplemented!()
 		};
 
