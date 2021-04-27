@@ -52,7 +52,7 @@ impl DemoRunner {
 		let zoom_speed = 0.5;
 
 		event_loop.run(move |event, _, control_flow| {
-			*control_flow = ControlFlow::Wait;
+			// *control_flow = ControlFlow::Wait;
 
 			match event {
 				Event::WindowEvent { event, .. } => match event {
@@ -101,7 +101,10 @@ impl DemoRunner {
 					windowed_context.swap_buffers().unwrap();
 				}
 				_ => (),
+
 			}
+
+			windowed_context.window().request_redraw();
 		});
 	}
 }

@@ -291,8 +291,6 @@ impl RenderSystem {
 	}
 
 	pub fn render<'a>(&mut self, camera: &Node, root: &Node) {
-		println!("render pass");
-
 		Self::gl_clear_error();
 
 		self.update_time();
