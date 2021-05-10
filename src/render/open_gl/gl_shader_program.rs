@@ -9,7 +9,7 @@ use self::heck::ShoutySnakeCase;
 use self::regex::Regex;
 use super::gl_texture::{GLTexture, GLTextureIDs};
 use super::BindContext;
-use core::{ShaderProgram, ShaderTag, Uniform, UniformName};
+use core::{ShaderProgram, ShaderDef, Uniform, UniformName};
 use helpers::{find_file, read_to_string};
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -202,15 +202,7 @@ pub fn read_shader_file(bind_context: &BindContext, path: &str) -> String {
 	code
 }
 
-fn set_definitions_fragment(code: &String, shader: &ShaderProgram, bind_context: &mut BindContext) -> String {
-	let core_definitions = format!(
-		r###"
-		#define NUM_POINT_LIGHTS {}
-		#define NUM_DIR_LIGHTS {}
-		"###,
-		bind_context.lights_point_count, bind_context.lights_directional_count
-	);
-
+fn set_definitions(code: &String, shader: &ShaderProgram, bind_context: &mut BindContext) -> String {
 	let textures: String = shader
 		.get_uniforms()
 		.iter()
@@ -223,49 +215,9 @@ fn set_definitions_fragment(code: &String, shader: &ShaderProgram, bind_context:
 		})
 		.collect();
 
-	let definitions: String = bind_context
-		.tags
+	let definitions: String = shader.get_definitions()
 		.iter()
-		.chain(shader.get_tags())
-		// .chain(get_blending_tags(shader.blending()).iter())
-		.map(|e| format!("#define {}\n", e.definition()))
-		.chain(
-			bind_context
-				.geometry
-				.attributes
-				.iter()
-				.map(|attribute| format!("#define {}\n", attribute.definition())),
-		)
-		.collect();
-
-	// println!("<><><><<><><><>><><<><><\n{}", core_definitions);
-	// println!("..................\n{}..................\n", textures);
-
-	format!(
-		"#version 330 core\n{}\n{}\n{}\n{}",
-		core_definitions, definitions, textures, code
-	)
-}
-
-fn set_definitions_vertex(code: &String, shader: &ShaderProgram, bind_context: &mut BindContext) -> String {
-	let textures: String = shader
-		.get_uniforms()
-		.iter()
-		.map(|(name, uniform)| {
-			if let Uniform::Texture2D(_, n) = uniform {
-				let texture = name.get_name().to_shouty_snake_case();
-				return format!("#define {}\n#define {}_UV_INDEX = {}\n", texture, texture, n);
-			}
-			"".to_string()
-		})
-		.collect();
-
-	let definitions: String = bind_context
-		.tags
-		.iter()
-		.chain(shader.get_tags())
-		// .chain(get_blending_tags(shader.blending()).iter())
-		.map(|tag| format!("#define {}\n", tag.definition()))
+		.map(|(key, val)| format!("#define {} {}\n", key.definition(), val))
 		.chain(
 			bind_context
 				.geometry
@@ -311,8 +263,12 @@ pub fn get_program(shader: &ShaderProgram, bind_context: &mut BindContext) -> GL
 		}
 	}
 
-	shader_program.fs_source = set_definitions_fragment(&shader_program.fs_source, shader, bind_context);
-	shader_program.vs_source = set_definitions_vertex(&shader_program.vs_source, shader, bind_context);
+	shader_program.fs_source = set_definitions(&shader_program.fs_source, shader, bind_context);
+	shader_program.vs_source = set_definitions(&shader_program.vs_source, shader, bind_context);
+
+	println!("TAGS==========================================");
+	println!("{:?}", shader.get_definitions());
+	println!("/TAGS=========================================");
 
 	// println!("=============================================");
 	// println!("{}", shader_program.vs_source);
@@ -411,39 +367,39 @@ pub fn compile_shader(t: GLenum, src: &str, src_path: &str) -> u32 {
 	id
 }
 
-trait GLShaderTag {
+trait GLShaderDef {
 	fn definition(&self) -> &str;
 }
 
-impl GLShaderTag for ShaderTag {
+impl GLShaderDef for ShaderDef {
 	fn definition(&self) -> &str {
 		match self {
-			ShaderTag::Lighting => "LIGHTING",
-			ShaderTag::Metalness => "METALNESS",
-			ShaderTag::AmbientLight => "AMBIENT_LIGHT",
-			ShaderTag::Transparent => "TRANSPARENT",
-			ShaderTag::Additive => "ADDITIVE",
-			ShaderTag::Emissive => "EMISSIVE",
-			ShaderTag::Shadeless => "SHADELESS",
-			ShaderTag::ReceiveShadows => "RECEIVE_SHADOWS",
-			ShaderTag::CastShadows => "CAST_SHADOWS",
+			ShaderDef::Lighting => "LIGHTING",
+			ShaderDef::Metalness => "METALNESS",
+			ShaderDef::AmbientLight => "AMBIENT_LIGHT",
+			ShaderDef::Transparent => "TRANSPARENT",
+			ShaderDef::Additive => "ADDITIVE",
+			ShaderDef::Emissive => "EMISSIVE",
+			ShaderDef::Shadeless => "SHADELESS",
+			ShaderDef::ReceiveShadows => "RECEIVE_SHADOWS",
+			ShaderDef::CastShadows => "CAST_SHADOWS",
 
-			ShaderTag::Other(data) => data,
+			ShaderDef::Other(data) => data,
 		}
 	}
 }
 
-// fn get_blending_tags(blending: Blending) -> HashSet<ShaderTag> {
+// fn get_blending_tags(blending: Blending) -> HashSet<ShaderDef> {
 // 	let mut set = HashSet::new();
 
 // 	match blending {
 // 		Blending::None => {}
 // 		Blending::Transparent => {
-// 			set.insert(ShaderTag::Transparent);
+// 			set.insert(ShaderDef::Transparent);
 // 		}
 // 		Blending::Additive => {
-// 			set.insert(ShaderTag::Transparent);
-// 			set.insert(ShaderTag::Additive);
+// 			set.insert(ShaderDef::Transparent);
+// 			set.insert(ShaderDef::Additive);
 // 		}
 // 	};
 

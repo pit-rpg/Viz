@@ -77,19 +77,19 @@ where
 
 
 
-pub struct BSphare<T>
-where
-	T:Nums
-{
-	center: Vector3<T>,
-	radius: T,
-}
+// pub struct BSphare<T>
+// where
+// 	T:Nums
+// {
+// 	center: Vector3<T>,
+// 	radius: T,
+// }
 
-impl <T> BSphare<T>
-where
-	T:Nums
-{
-	pub fn new(center: Vector3<T>, radius: T) -> Self {
-		Self{center, radius}
-	}
-}
+// impl <T> BSphare<T>
+// where
+// 	T:Nums
+// {
+// 	pub fn new(center: Vector3<T>, radius: T) -> Self {
+// 		Self{center, radius}
+// 	}
+// }

@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 use super::SharedTexture2D;
 
@@ -94,7 +94,7 @@ pub enum Blending {
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum ShaderTag {
+pub enum ShaderDef {
 	Lighting,
 	Metalness,
 	AmbientLight,
@@ -146,11 +146,11 @@ pub struct UniformItem {
 // 	fn get_uniforms_mut(&mut self) -> &mut Vec<UniformItem>;
 // 	fn get_uniforms_slice_mut(&mut self) -> &mut [UniformItem];
 
-// 	fn remove_tag(&mut self, tag: ShaderTag);
-// 	fn add_tag(&mut self, tag: ShaderTag);
-// 	fn has_tag(&self, tag: ShaderTag) -> bool;
-// 	fn get_tags(&self) -> &HashSet<ShaderTag>;
-// 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag>;
+// 	fn remove_tag(&mut self, tag: ShaderDef);
+// 	fn add_tag(&mut self, tag: ShaderDef);
+// 	fn has_tag(&self, tag: ShaderDef) -> bool;
+// 	fn get_tags(&self) -> &HashSet<ShaderDef>;
+// 	fn get_tags_mut(&mut self) -> &mut HashSet<ShaderDef>;
 
 // 	fn get_uuid(&self) -> Uuid;
 
@@ -227,7 +227,7 @@ pub struct ShaderProgram {
 	uuid: Uuid,
 	src: String,
 	uniforms: HashMap<UniformName, Uniform>,
-	tags: HashSet<ShaderTag>,
+	definitions: HashMap<ShaderDef, String>,
 	need_update: bool,
 	// blending_mode: Blending,
 }
@@ -238,7 +238,7 @@ impl ShaderProgram {
 			uuid: Uuid::new_v4(),
 			src: src.to_string(),
 			uniforms: HashMap::default(),
-			tags: HashSet::new(),
+			definitions: HashMap::new(),
 			need_update: true,
 			// blending_mode: Blending::None,
 		}
@@ -254,26 +254,34 @@ impl ShaderProgram {
 		true
 	}
 
-	pub fn add_tag(&mut self, tag: ShaderTag) {
-		self.tags.insert(tag);
+	pub fn add_definition(&mut self, key: ShaderDef, val: String) {
+		if matches!(self.definitions.get(&key), Some(def_val) if def_val == &val) {
+			return;
+		}
+
+		self.definitions.insert(key, val);
 		self.set_need_update(true);
 	}
 
-	pub fn remove_tag(&mut self, tag: ShaderTag) {
-		self.tags.remove(&tag);
+	pub fn remove_definition(&mut self, key: ShaderDef) {
+		if self.definitions.get(&key).is_none() {
+			return
+		}
+
+		self.definitions.remove(&key);
 		self.set_need_update(true);
 	}
 
-	pub fn has_tag(&self, tag: ShaderTag) -> bool {
-		self.tags.get(&tag).is_some()
+	pub fn has_definition(&self, key: ShaderDef) -> bool {
+		self.definitions.get(&key).is_some()
 	}
 
-	pub fn get_tags(&self) -> &HashSet<ShaderTag> {
-		&self.tags
+	pub fn get_definitions(&self) -> &HashMap<ShaderDef, String> {
+		&self.definitions
 	}
 
-	pub fn get_tags_mut(&mut self) -> &mut HashSet<ShaderTag> {
-		&mut self.tags
+	pub fn get_definitions_mut(&mut self) -> &mut HashMap<ShaderDef, String> {
+		&mut self.definitions
 	}
 
 	pub fn get_uuid(&self) -> Uuid {

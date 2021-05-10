@@ -6,20 +6,19 @@ extern crate rayon;
 use std::ffi::CStr;
 use std::os::raw::c_void;
 use std::time::{Duration, Instant};
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
 use core::{
-	Blending, BufferGeometry, BufferGroup, Light, LightType, FrameBuffer, Material, PerspectiveCamera,
-	ShaderTag, SharedFrameBuffer, SharedGeometry, SharedMaterial, Transform, TransformLock, UniformName,
-	Node, NodeData,
+	Blending, BufferGeometry, BufferGroup, Light, LightType, FrameBuffer,
+	ShaderDef, SharedFrameBuffer, SharedGeometry, SharedMaterial, TransformLock, UniformName,
+	Node,
 };
 
 use self::gl::types::*;
 use self::gl::GetString;
 use self::glutin::dpi::*;
 use self::glutin::{
-	ContextError, ContextWrapper,
+	ContextWrapper,
 	window::{Window},
 	event_loop::{EventLoop},
 	PossiblyCurrent
@@ -36,12 +35,8 @@ use super::super::{
 use math::{Matrix3, Matrix4, Vector, Vector3, Vector4};
 
 pub struct BindContext<'z, 'x> {
-	pub tags: &'z Vec<ShaderTag>,
 	pub gl_material_ids: &'z mut GLMaterialIDs,
 	pub gl_texture_ids: &'z mut GLTextureIDs,
-
-	pub lights_point_count: usize,
-	pub lights_directional_count: usize,
 	pub geometry: &'x BufferGeometry,
 }
 
@@ -63,7 +58,6 @@ pub struct RenderSystem {
 	pub delta_time: Duration,
 	pub delta_max: Option<Duration>,
 	pub clear_color: Option<Vector4<f32>>,
-	pub tags: Vec<ShaderTag>,
 	pub override_material: Option<SharedMaterial>,
 
 	pub _gl_vertex_arrays_ids: GLVertexArraysIDs,
@@ -72,13 +66,9 @@ pub struct RenderSystem {
 	pub _gl_frame_buffer_ids: GLFrameBufferIDs,
 	pub _gl_render_buffer_ids: GLRenderBufferIDs,
 
-	depth_test: bool,
-	stencil_test: bool,
+	// depth_test: bool,
+	// stencil_test: bool,
 	blending: bool,
-
-	lights_point_count: usize,
-	lights_directional_count: usize,
-
 
 	blending_state: Blending,
 
@@ -136,14 +126,11 @@ impl RenderSystem {
 			delta_time: Duration::new(0, 0),
 			delta_max: None,
 			clear_color: Some(Vector4::new_zero()),
-			tags: Vec::new(),
 			override_material: None,
 			// render_settings: RenderSettings::default(),
-			lights_point_count: 0,
-			lights_directional_count: 0,
 
-			depth_test,
-			stencil_test,
+			// depth_test,
+			// stencil_test,
 			blending,
 
 			blending_state: Blending::None,
@@ -244,9 +231,6 @@ impl RenderSystem {
 			let mut bind_context = BindContext {
 				gl_texture_ids: &mut self._gl_texture_ids,
 				gl_material_ids: &mut self._gl_material_ids,
-				tags: &self.tags,
-				lights_point_count: self.lights_point_count,
-				lights_directional_count: self.lights_directional_count,
 				geometry,
 			};
 
@@ -320,7 +304,6 @@ impl RenderSystem {
 			}
 		}
 
-		let mut light_materials_need_update = false;
 		let mut lights_point: Vec<(Light, Vector3<f32>)> = vec![];
 		let mut lights_direct: Vec<(Light, Vector3<f32>)> = vec![];
 		let mut lights_affected_materials = HashMap::new();
@@ -350,22 +333,15 @@ impl RenderSystem {
 			node_data.materials
 				.iter_mut()
 				.for_each(|material| {
-					let is_lighted = {material.lock().unwrap().has_tag(ShaderTag::Lighting)};
+					let is_lighted = {material.lock().unwrap().has_definition(ShaderDef::Lighting)};
 					if is_lighted {
 						lights_affected_materials.insert(material.uuid(), material.clone());
 					}
 				})
 		});
 
-		if lights_point.len() != self.lights_point_count {
-			self.lights_point_count = lights_point.len();
-			light_materials_need_update = true;
-		}
-
-		if lights_direct.len() != self.lights_directional_count {
-			self.lights_directional_count = lights_direct.len();
-			light_materials_need_update = true;
-		}
+		let lights_point_count = lights_point.len();
+		let lights_directional_count = lights_direct.len();
 
 		lights_affected_materials
 			.iter_mut()
@@ -393,9 +369,15 @@ impl RenderSystem {
 					);
 				});
 
-				if light_materials_need_update {
-					mat.need_update();
-				}
+				mat.add_definition(
+					ShaderDef::Other("NUM_POINT_LIGHTS".to_string()),
+					lights_point_count.to_string()
+				);
+
+				mat.add_definition(
+					ShaderDef::Other("NUM_DIR_LIGHTS".to_string()),
+					lights_directional_count.to_string()
+				);
 			});
 
 		let mut render_queue = vec![];

@@ -2,7 +2,7 @@ extern crate obj;
 
 use core::{BufferGeometry, BufferData, BufferGroup, BufferType};
 use math::{Vector3, Vector2};
-use self::obj::{Obj, SimplePolygon, IndexTuple};
+use self::obj::{Obj, IndexTuple};
 use std::path::Path;
 
 #[derive(Clone, Debug)]

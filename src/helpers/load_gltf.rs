@@ -33,7 +33,7 @@ use core::{
 	Texture2D,
 	Material,
 	SharedMaterial,
-	ShaderTag,
+	ShaderDef,
 	Blending,
 	TextureData,
 	TextureColorType,
@@ -85,7 +85,7 @@ pub fn load_gltf(path: PathBuf, name: &str) -> Result<Node, Box<dyn StdError>> {
 
 			if color_f[3] != 0.0 {
 				mat.blending = Blending::Mix;
-				mat.add_tag(ShaderTag::Transparent);
+				mat.add_definition(ShaderDef::Transparent, "".to_string());
 			}
 
 			mat.set_uniform(UniformName::Color, diffuse);

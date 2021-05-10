@@ -265,22 +265,15 @@ impl BufferGeometry {
 	}
 
 	pub fn gen_indices(&mut self) -> Result<(), &str> {
-		let mut len = 0;
+		if let Some(positions) = self.get_attribute(BufferType::Position) {
+			let indices = (0..positions.len() as u32).collect();
 
-		match self.get_attribute(BufferType::Position) {
-			None => {
-				return Err("BufferGeometry: cant find position");
-			}
-			Some(positions) => {
-				len = positions.len();
-			}
-		};
+			self.set_indices(indices);
 
-		let indices = (0..len as u32).collect();
+			return Ok(());
+		}
 
-		self.set_indices(indices);
-
-		Ok(())
+		Err("BufferGeometry: cant find position")
 	}
 
 	pub fn add_buffer_attribute(
@@ -388,7 +381,7 @@ impl BufferGeometry {
 		data
 	}
 
-	pub fn update_box3 (&mut self) -> Result <(), Box<Error>> {
+	pub fn update_box3 (&mut self) -> Result <(), Box<dyn Error>> {
 		let mut b_box = None;
 		if let Some(attr) = self.get_attribute(BufferType::Position) {
 			if let BufferData::Vector3(positions) = &attr.data {
@@ -402,7 +395,7 @@ impl BufferGeometry {
 		Ok(())
 	}
 
-	pub fn get_b_box(&mut self) -> Result<BBox3<f32>, Box<Error>> {
+	pub fn get_b_box(&mut self) -> Result<BBox3<f32>, Box<dyn Error>> {
 		if self.b_box.is_some() {
 			return Ok(self.b_box.as_ref().unwrap().clone())
 		}

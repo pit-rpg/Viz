@@ -267,7 +267,10 @@ impl From<ColorType> for TextureColorType {
 			ColorType::L8 => TextureColorType::R8,
 			ColorType::Rgb8 => TextureColorType::RGB8,
 			ColorType::Rgba8 => TextureColorType::RGBA8,
-			_ => panic!(format!("can't convert color type from: {:?}", color_type)),
+			_ => {
+				println!("can't convert color type from: {:?}", color_type);
+				panic!("can't convert color type");
+			}
 		}
 	}
 }

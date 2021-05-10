@@ -1,17 +1,15 @@
-#[macro_use] extern crate project;
+extern crate project;
 
 use std::f64::consts::PI as PI_f64;
 
 use project::{
 	core::{
 		Blending, FrameOutput, Material, PerspectiveCamera, Node, NodeData,
-		ShaderTag, SharedFrameBuffer, SharedGeometry,
+		ShaderDef, SharedFrameBuffer, SharedGeometry,
 		SharedTexture2D, Transform, TransformLock, UniformName,
 	},
-	glutin,
-	helpers::geometry_generators,
-	math::{Vector, Vector3, Vector4},
-	render,
+	helpers::{geometry_generators, DemoRunner},
+	math::{Vector, Vector3},
 };
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
@@ -87,8 +85,7 @@ fn main() {
 
 	let up = Vector3::new_up();
 	let center = Vector3::new_zero();
-	let mut radius = 20.0;
-	let zoom_speed = 0.5;
+	let radius = 20.0;
 
 	let camera = {
 		let mut camera = PerspectiveCamera::new();
@@ -124,8 +121,8 @@ fn main() {
 			mat.blending = Blending::Additive;
 		}
 
-		mat.add_tag(ShaderTag::Shadeless);
-		mat.add_tag(ShaderTag::Transparent);
+		mat.add_definition(ShaderDef::Shadeless, "".to_string());
+		mat.add_definition(ShaderDef::Transparent, "".to_string());
 
 		let material = mat.to_shared();
 		let mut transform = Transform::from_position(pos);
@@ -141,7 +138,7 @@ fn main() {
 		);
 	});
 
-	let mut frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
+	let frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
 	let mut buffer_plane = root.clone();
 
 	{
@@ -177,108 +174,37 @@ fn main() {
 		}
 	}
 
-	let mut render_system = render::open_gl::system_render::RenderSystem::new(camera.clone(), true, true, true);
-	render_system.windowed_context.window().set_resizable(true);
 
-	let mut hidpi_factor = render_system
-		.windowed_context
-		.window()
-		.get_hidpi_factor();
-
-	let mut window_state = WindowState::default();
-
-	render_system.clear_color = Some(Vector4::new(0.0, 0.5, 0.5, 1.0));
-
-	let mut running = true;
-
-	while running {
-		{
-			let windowed_context = &render_system.windowed_context;
-			use self::glutin::WindowEvent::*;
-
-			render_system.events_loop.poll_events(|event| match event {
-				glutin::Event::WindowEvent { event, .. } => match event {
-					glutin::WindowEvent::CloseRequested => running = false,
-					glutin::WindowEvent::Resized(logical_size) => {
-						println!("{:?}", logical_size);
-						println!(
-							"{} : {}",
-							(logical_size.width * hidpi_factor) as i32,
-							(logical_size.height * hidpi_factor) as i32,
-						);
-
-						hidpi_factor = windowed_context.window().get_hidpi_factor();
-
-						windowed_context.resize(logical_size.to_physical(hidpi_factor));
-						window_state.window_size.0 = logical_size.width;
-						window_state.window_size.1 = logical_size.height;
-
-						gl_call!({
-							gl::Viewport(
-								0,
-								0,
-								(logical_size.width * hidpi_factor) as i32,
-								(logical_size.height * hidpi_factor) as i32,
-							);
-						});
-
-						frame_buffer.set_size(
-							(logical_size.width * hidpi_factor) as u32,
-							(logical_size.height * hidpi_factor) as u32,
-						);
-
-						println!(
-							"logical_size: {:?}, hidpi_factor: {:?}",
-							logical_size, hidpi_factor
-						);
-					}
-					glutin::WindowEvent::MouseWheel { delta, .. } => match delta {
-						MouseScrollDelta::LineDelta(_, y) => {
-							if y > 0.0 {
-								radius -= zoom_speed
-							} else {
-								radius += zoom_speed
-							};
-						}
-						MouseScrollDelta::PixelDelta(_) => {}
-					},
-					CursorMoved { position: pos, .. } => {
-						window_state.pointer_pos = pos
-							.to_physical(windowed_context.window().get_hidpi_factor())
-							.to_logical(hidpi_factor)
-							.into();
-					}
-					_ => (),
-				},
-				_ => (),
-			});
-		}
-
+	DemoRunner::run(camera.clone(), move |render_system, window_state|{
 		{
 			let mut node_data = camera.lock();
 			{
 				let transform_camera = &mut node_data.transform;
-				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0;
-				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1;
+				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0 as f64;
+				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1 as f64;
 				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
 				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
 				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
 				transform_camera.look_at(&center, &up);
 			}
-
-			if let Some(camera) = &mut node_data.camera {
-				let aspect = window_state.window_size.0 / window_state.window_size.1;
-				camera.aspect = aspect as f32;
-				camera.update_projection_matrix();
-			}
 		}
+
+		println!("render");
+
+
+		let size = frame_buffer.get_size();
+
+		if window_state.window_size.0 != size.0 || window_state.window_size.1 != size.1 {
+			frame_buffer.set_size(window_state.window_size.0, window_state.window_size.1);
+		}
+
 
 		root.update_transform(false);
 		render_system.set_frame_buffer(Some(frame_buffer.clone()));
-		render_system.render(&root);
+		render_system.run(&camera, &root);
 
 		buffer_plane.update_transform(false);
 		render_system.set_frame_buffer(None);
-		render_system.render(&buffer_plane);
-	}
+		render_system.run(&camera, &buffer_plane);
+	});
 }

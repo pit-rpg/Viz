@@ -32,6 +32,7 @@ impl GLMaterial for Material {
 			let mut shader_program = self.get_shader_program().unwrap();
 
 			if shader_program.is_need_update() {
+				println!("shader_program.is_need_update");
 				bind_context.gl_material_ids.remove(&shader_program.get_uuid());
 				shader_program.set_need_update(false);
 			} else {

@@ -5,12 +5,10 @@ use std::path::Path;
 
 use project::{
 	core::{
-		FrameOutput, Material, PerspectiveCamera, NodeData, Node, Light, LightType,
-		SharedFrameBuffer, SharedGeometry, Transform, UniformName, SharedTexture2D, BufferType,
+		Material, PerspectiveCamera, NodeData, Node,
+		SharedGeometry, Transform, UniformName, SharedTexture2D, BufferType,
 	},
-	helpers::{geometry_generators, load_gltf, load_obj, DemoRunner},
-	math::{Vector, Vector3, Vector4},
-	render,
+	helpers::{load_obj, DemoRunner},
 };
 
 fn main() {
@@ -65,7 +63,7 @@ fn main() {
 
 
 
-	DemoRunner::run(move |render_system|{
+	DemoRunner::run(camera.clone(), move |render_system, _| {
 		render_system.run(&camera, &root);
 
 		for node in &nodes {

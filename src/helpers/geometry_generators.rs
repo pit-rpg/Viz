@@ -112,7 +112,7 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: usize, hei
 	let mut group_start = 0;
 
 	{
-		let mut build_plane = |u: char, v: char, w: char, udir: f32, vdir: f32, width: f32, height: f32, depth: f32, grid_x: usize, grid_y: usize, material_index: i32| {
+		let mut build_plane = |u: char, v: char, w: char, udir: f32, vdir: f32, width: f32, height: f32, depth: f32, grid_x: usize, grid_y: usize | {
 
 			let segment_width = width / grid_x as f32;
 			let segment_height = height / grid_y as f32;
@@ -204,12 +204,12 @@ pub fn param_box(width: f32, height: f32, depth: f32, width_segments: usize, hei
 		};
 
 		// build each side of the box geometry
-		build_plane( 'z', 'y', 'x', - 1.0, - 1.0, depth, height, width, depth_segments, height_segments, 0 ); // px
-		build_plane( 'z', 'y', 'x', 1.0, - 1.0, depth, height, - width, depth_segments, height_segments, 1 ); // nx
-		build_plane( 'x', 'z', 'y', 1.0, 1.0, width, depth, height, width_segments, depth_segments, 2 ); // py
-		build_plane( 'x', 'z', 'y', 1.0, - 1.0, width, depth, - height, width_segments, depth_segments, 3 ); // ny
-		build_plane( 'x', 'y', 'z', 1.0, - 1.0, width, height, depth, width_segments, height_segments, 4 ); // pz
-		build_plane( 'x', 'y', 'z', - 1.0, - 1.0, width, height, - depth, width_segments, height_segments, 5 ); // nz
+		build_plane( 'z', 'y', 'x', - 1.0, - 1.0, depth, height, width, depth_segments, height_segments); // px
+		build_plane( 'z', 'y', 'x', 1.0, - 1.0, depth, height, - width, depth_segments, height_segments); // nx
+		build_plane( 'x', 'z', 'y', 1.0, 1.0, width, depth, height, width_segments, depth_segments); // py
+		build_plane( 'x', 'z', 'y', 1.0, - 1.0, width, depth, - height, width_segments, depth_segments); // ny
+		build_plane( 'x', 'y', 'z', 1.0, - 1.0, width, height, depth, width_segments, height_segments); // pz
+		build_plane( 'x', 'y', 'z', - 1.0, - 1.0, width, height, - depth, width_segments, height_segments); // nz
 	}
 
 	let mut geom = BufferGeometry::new();
@@ -298,13 +298,14 @@ pub fn plane_buffer_geometry( width: f32, height: f32, grid_x: usize, grid_y: us
 pub fn simple_plane() -> BufferGeometry {
 
 	// buffers
-	let mut vertices = vec![
+	let vertices = vec![
 		Vector3::new(-1.0, -1.0, 0.0),
 		Vector3::new(-1.0, 1.0, 0.0),
 		Vector3::new(1.0, 1.0, 0.0),
 		Vector3::new(1.0, -1.0, 0.0),
 	];
-	let mut indices = vec![
+
+	let indices = vec![
 		0,1,2,
 		0,2,3
 	];

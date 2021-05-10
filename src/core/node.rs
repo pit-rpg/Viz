@@ -1,6 +1,6 @@
 use uuid::Uuid;
 use super::{Transform, SharedMaterial, SharedGeometry, Light, PerspectiveCamera};
-use std::sync::{Arc, LockResult, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 #[derive(Debug, Clone)]
 pub struct NodeData {
@@ -183,15 +183,12 @@ impl Node {
 mod tests {
 	extern crate uuid;
 
-	use core::{Node, Transform};
-	// use core::{create_world, Node, Transform, create_context};
-	use std::rc::*;
-	use std::sync::{Arc, LockResult, Mutex, MutexGuard};
-
+	use core::{Node};
+	use std::sync::{Arc};
 
 	#[test]
 	fn node_clone() {
-		let transform = Transform::default();
+		// let transform = Transform::default();
 
 		let node1 = Node::new("node");
 		{

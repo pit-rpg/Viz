@@ -1,4 +1,4 @@
-#[macro_use] extern crate project;
+extern crate project;
 
 use std::f64::consts::PI as PI_f64;
 use std::path::PathBuf;
@@ -8,33 +8,13 @@ use project::{
 		FrameOutput, Material, PerspectiveCamera, NodeData, Node, Light, LightType,
 		SharedFrameBuffer, SharedGeometry, Transform, UniformName,
 	},
-	glutin::event_loop::ControlFlow,
-	glutin::event::MouseScrollDelta,
-	glutin::event::WindowEvent,
-	glutin::event::Event,
-	helpers::{geometry_generators, load_gltf},
+	helpers::{geometry_generators, load_gltf, DemoRunner},
 	math::{Vector, Vector3, Vector4},
-	render,
 };
 
-
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
-pub struct WindowState {
-	pub pointer_pos: (f64, f64),
-	pub pointer_pressed: (bool, bool, bool),
-	pub pointer_wheel: f32,
-	pub window_size: (u32, u32),
-}
-
 fn main() {
+
 	let root = Node::new("root");
-
-	let up = Vector3::new(0.0, 1.0, 0.0);
-	let center = Vector3::new_zero();
-	let mut radius = 20.0;
-	let zoom_speed = 0.5;
-
-	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
 	let camera = {
 		let mut camera = PerspectiveCamera::new();
@@ -50,8 +30,9 @@ fn main() {
 		)
 	};
 
+	let geom_light = SharedGeometry::new(geometry_generators::sphere(0.5, 12, 12));
 
-	let mut frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
+	let frame_buffer = SharedFrameBuffer::new_color_map_output(512, 512);
 	let mut buffer_plane = root.clone();
 	{
 		let buffer_texture = {
@@ -71,7 +52,15 @@ fn main() {
 		};
 
 		if let FrameOutput::SharedTexture2D(texture) = buffer_texture {
+			println!("===================================================");
+			println!("===================================================");
+			println!("LOLOLO");
+			println!("===================================================");
+			println!("===================================================");
+
+
 			let mut mat = Material::new_mesh_standard();
+			// let mut mat = Material::new_basic(Vector4::<f32>::random());
 			mat.set_uniform(UniformName::MapColor, texture);
 			let material = mat.to_shared();
 
@@ -90,7 +79,7 @@ fn main() {
 				.set_material(material)
 				.to_shared();
 
-			// root.add_child(buffer_plane.clone());
+			root.add_child(buffer_plane.clone());
 		}
 	}
 
@@ -149,100 +138,30 @@ fn main() {
 		);
 	}
 
-	let (mut render_system, event_loop) = render::open_gl::system_render::RenderSystem::build(true, true, true);
+	let up = Vector3::new(0.0, 1.0, 0.0);
+	let center = Vector3::new_zero();
+	let radius = 20.0;
 
-	render_system.clear_color = Some(Vector4::new(0.0, 0.1, 0.1, 1.0));
-
-	render_system.windowed_context.window().set_resizable(true);
-
-	let hidpi_factor = render_system.windowed_context.window().scale_factor();
-	let mut window_state = WindowState::default();
-
-
-
-	event_loop.run(move |event, _, control_flow| {
-		*control_flow = ControlFlow::Wait;
-
-		match event {
-			Event::WindowEvent {event, .. } => {
-				match event {
-					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-
-					WindowEvent::Resized(physical_scale) => {
-						let logical_size = physical_scale.to_logical::<u32>(hidpi_factor);
-
-						window_state.window_size.0 = logical_size.width;
-						window_state.window_size.1 = logical_size.height;
-
-						render_system.windowed_context.resize(physical_scale);
-
-						gl_call!({
-							gl::Viewport(
-								0,
-								0,
-								(logical_size.width as f64 * hidpi_factor) as i32,
-								(logical_size.height as f64 * hidpi_factor) as i32,
-							);
-						});
-						println!("logical_size: {:?}, hidpi_factor: {:?}", logical_size, hidpi_factor);
-					}
-
-					WindowEvent::MouseWheel{ delta, .. } => {
-						match delta {
-							MouseScrollDelta::LineDelta(_, y) => {
-								if y > 0.0 {
-									radius -= zoom_speed
-								} else {
-									radius += zoom_speed
-								};
-							}
-							MouseScrollDelta::PixelDelta(_) => {}
-						}
-					}
-
-					WindowEvent::CursorMoved{ position: pos, .. } => {
-						window_state.pointer_pos = pos
-							.to_logical::<f64>(hidpi_factor)
-							.into();
-					}
-					_ => (),
-				}
-			},
-			Event::Resumed => {
-				println!("LOLOLOLOLO 12");
-			},
-			Event::RedrawRequested(_) => {
-				println!("LOLOLOLOLO");
-
-				{
-					let mut node_data = camera.lock();
-					{
-						let transform_camera = &mut node_data.transform;
-						let x_prog = window_state.pointer_pos.0 / window_state.window_size.0 as f64;
-						let y_prog = window_state.pointer_pos.1 / window_state.window_size.1 as f64;
-						transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
-						transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
-						transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
-						transform_camera.look_at(&center, &up);
-					}
-
-					if let Some(camera) = &mut node_data.camera {
-						let aspect = window_state.window_size.0 / window_state.window_size.1;
-						camera.aspect = aspect as f32;
-						camera.update_projection_matrix();
-					}
-				}
-
-
-				root.update_transform(false);
-				render_system.set_frame_buffer(Some(frame_buffer.clone()));
-				render_system.render(&camera, &root);
-
-				buffer_plane.update_transform(false);
-				render_system.set_frame_buffer(None);
-				render_system.render(&camera, &buffer_plane);
+	DemoRunner::run(camera.clone(), move |render_system, window_state|{
+		{
+			let mut node_data = camera.lock();
+			{
+				let transform_camera = &mut node_data.transform;
+				let x_prog = window_state.pointer_pos.0 / window_state.window_size.0 as f64;
+				let y_prog = window_state.pointer_pos.1 / window_state.window_size.1 as f64;
+				transform_camera.position.z = ((x_prog * (PI_f64 * 2.0)).sin() * radius) as f32;
+				transform_camera.position.x = ((x_prog * (PI_f64 * 2.0)).cos() * radius) as f32;
+				transform_camera.position.y = ((y_prog * radius - radius / 2.0) * -2.0) as f32;
+				transform_camera.look_at(&center, &up);
 			}
-			_ => (),
 		}
+
+		render_system.set_frame_buffer(None);
+		buffer_plane.update_transform(false);
+		render_system.run(&camera, &root);
+
+		render_system.set_frame_buffer(Some(frame_buffer.clone()));
+		root.update_transform(false);
+		render_system.run(&camera, &root);
 	});
 }

@@ -7,6 +7,7 @@ pub struct FrameBuffer {
 	pub uuid: Uuid,
 	pub frame_outputs: Vec<FrameOutput>,
 	pub need_update: bool, // TODO: UPDATE
+	pub size: (u32, u32)
 }
 
 impl FrameBuffer {
@@ -20,6 +21,7 @@ impl FrameBuffer {
 					width, height,
 				)),
 			],
+			size: (width, height),
 		}
 	}
 
@@ -31,6 +33,7 @@ impl FrameBuffer {
 				FrameOutput::SharedTexture2D(SharedTexture2D::new_color_buffer(width, height)),
 				FrameOutput::SharedTexture2D(SharedTexture2D::new_depth_stencil(width, height)),
 			],
+			size: (width, height),
 		}
 	}
 
@@ -44,7 +47,13 @@ impl FrameBuffer {
 			}
 		});
 
+		self.size = (width, height);
+
 		self.need_update = true;
+	}
+
+	pub fn get_size(&self) -> (u32, u32) {
+		self.size
 	}
 }
 
@@ -68,7 +77,7 @@ impl SharedFrameBuffer {
 		}
 	}
 
-	pub fn lock(&mut self) -> LockResult<MutexGuard<FrameBuffer>> {
+	pub fn lock(&self) -> LockResult<MutexGuard<FrameBuffer>> {
 		self.data.lock()
 	}
 
@@ -86,8 +95,12 @@ impl SharedFrameBuffer {
 		))
 	}
 
-	pub fn set_size(&mut self, width: u32, height: u32) {
+	pub fn set_size(&self, width: u32, height: u32) {
 		self.data.lock().unwrap().set_size(width, height);
+	}
+
+	pub fn get_size(&self) -> (u32, u32) {
+		self.data.lock().unwrap().get_size()
 	}
 }
 
